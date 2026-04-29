@@ -1,0 +1,90 @@
+name: Validate registry
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate providers/registry.json
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install ajv-cli
+        run: npm install -g ajv-cli@5
+
+      - name: Validate registry against schema
+        run: |
+          ajv validate \
+            -s providers/schema.json \
+            -d providers/registry.json \
+            --strict=false
+
+      - name: Check provider id uniqueness and security invariants
+        run: |
+          node <<'EOF'
+          const fs = require('fs')
+          const path = 'providers/registry.json'
+          const data = JSON.parse(fs.readFileSync(path, 'utf8'))
+          const errors = []
+
+          if (!Array.isArray(data.providers)) {
+            errors.push('providers must be an array')
+          } else {
+            const ids = new Set()
+            for (const p of data.providers) {
+              if (ids.has(p.provider)) {
+                errors.push(`Duplicate provider id: ${p.provider}`)
+              }
+              ids.add(p.provider)
+
+              if (p.api_key !== '') {
+                errors.push(
+                  `Provider "${p.provider}" has a non-empty api_key. ` +
+                    'API keys must NEVER be committed to the registry.'
+                )
+              }
+
+              if (Array.isArray(p.models)) {
+                const modelIds = new Set()
+                for (const m of p.models) {
+                  if (modelIds.has(m.id)) {
+                    errors.push(
+                      `Provider "${p.provider}" has duplicate model id: ${m.id}`
+                    )
+                  }
+                  modelIds.add(m.id)
+                }
+              }
+            }
+          }
+
+          if (typeof data.schema_version !== 'number' || data.schema_version < 1) {
+            errors.push('schema_version must be a positive integer')
+          }
+
+          if (typeof data.updated_at !== 'string' || !/\d{4}-\d{2}-\d{2}T/.test(data.updated_at)) {
+            errors.push('updated_at must be an ISO-8601 timestamp')
+          }
+
+          if (errors.length > 0) {
+            console.error('Registry validation failed:')
+            for (const e of errors) console.error('  - ' + e)
+            process.exit(1)
+          }
+
+          console.log('Registry passed all integrity checks.')
+          console.log(`  providers: ${data.providers.length}`)
+          console.log(`  schema_version: ${data.schema_version}`)
+          console.log(`  updated_at: ${data.updated_at}`)
+          EOF

@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat Provider Registry",
+  "description": "Schema for the remote provider registry consumed by the Atomic Chat (Jan) client.",
+  "type": "object",
+  "required": ["schema_version", "updated_at", "providers"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Bump this when the shape of a provider entry changes in a backwards-incompatible way."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp; refresh on every meaningful change."
+    },
+    "providers": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/provider" }
+    }
+  },
+  "definitions": {
+    "provider": {
+      "type": "object",
+      "required": ["provider", "base_url", "settings", "models"],
+      "additionalProperties": false,
+      "properties": {
+        "active": { "type": "boolean", "default": true },
+        "api_key": {
+          "type": "string",
+          "const": "",
+          "description": "MUST always be an empty string. API keys are stored locally and never live in the registry."
+        },
+        "base_url": { "type": "string", "format": "uri" },
+        "explore_models_url": { "type": "string", "format": "uri" },
+        "provider": {
+          "type": "string",
+          "pattern": "^[a-z0-9_-]+$",
+          "description": "Stable, unique provider id. Lowercase, no spaces."
+        },
+        "settings": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/providerSetting" }
+        },
+        "models": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/model" }
+        },
+        "custom_header": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/customHeader" }
+        }
+      }
+    },
+    "providerSetting": {
+      "type": "object",
+      "required": ["key", "title", "description", "controller_type", "controller_props"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "controller_type": {
+          "type": "string",
+          "enum": ["input", "checkbox", "slider", "select"]
+        },
+        "controller_props": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": ["id", "name", "version", "description", "capabilities"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "description": { "type": "string" },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["completion", "tools", "vision", "embeddings", "reasoning"]
+          }
+        }
+      }
+    },
+    "customHeader": {
+      "type": "object",
+      "required": ["header", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "header": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    }
+  }
+}
