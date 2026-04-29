@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-04-29T00:00:00Z",
+  "updated_at": "2026-04-29T11:45:00Z",
   "providers": [
     {
       "active": true,
@@ -33,7 +33,85 @@
           }
         }
       ],
-      "models": []
+      "models": [
+        {
+          "id": "gpt-5.4",
+          "name": "GPT-5.4",
+          "version": "1.0",
+          "description": "OpenAI flagship for complex reasoning, coding, and agentic tasks. Multimodal with vision and tools.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "gpt-5.4-mini",
+          "name": "GPT-5.4 Mini",
+          "version": "1.0",
+          "description": "Cost-efficient sibling of GPT-5.4 for high-throughput workloads. Vision + tools.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "gpt-5.4-nano",
+          "name": "GPT-5.4 Nano",
+          "version": "1.0",
+          "description": "Smallest GPT-5.4 variant — ultra-fast and cheap for simple multimodal tasks.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "gpt-5",
+          "name": "GPT-5",
+          "version": "1.0",
+          "description": "Previous-generation OpenAI flagship. Strong reasoning, vision, and tool use.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "gpt-5-mini",
+          "name": "GPT-5 Mini",
+          "version": "1.0",
+          "description": "Compact GPT-5 variant for cost-sensitive multimodal use.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "gpt-4.5-preview",
+          "name": "GPT-4.5 Preview",
+          "version": "1.0",
+          "description": "Preview of GPT-4.5 — improved instruction following and broader knowledge.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "gpt-4.1",
+          "name": "GPT-4.1",
+          "version": "1.0",
+          "description": "GPT-4.1 with strong tool use and long-context support.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "gpt-4o",
+          "name": "GPT-4o",
+          "version": "1.0",
+          "description": "Multimodal GPT-4 omni model — text, vision, and tool calling.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "gpt-4o-mini",
+          "name": "GPT-4o Mini",
+          "version": "1.0",
+          "description": "Cost-efficient GPT-4o variant. Vision + tools.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "o3-mini",
+          "name": "o3-mini",
+          "version": "1.0",
+          "description": "Reasoning-focused text-only model. No vision.",
+          "capabilities": ["completion", "tools", "reasoning"]
+        },
+        {
+          "id": "gpt-4-turbo",
+          "name": "GPT-4 Turbo",
+          "version": "1.0",
+          "description": "GPT-4 Turbo — long-context multimodal predecessor.",
+          "capabilities": ["completion", "tools", "vision"]
+        }
+      ]
     },
     {
       "active": true,
@@ -65,7 +143,57 @@
           }
         }
       ],
-      "models": [],
+      "models": [
+        {
+          "id": "claude-opus-4-7",
+          "name": "Claude Opus 4.7",
+          "version": "1.0",
+          "description": "Anthropic flagship — most capable Claude for complex reasoning and agentic tasks.",
+          "capabilities": ["completion", "tools", "vision", "reasoning"]
+        },
+        {
+          "id": "claude-sonnet-4-6",
+          "name": "Claude Sonnet 4.6",
+          "version": "1.0",
+          "description": "Best balance of speed and intelligence. Strong tool use and vision.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "claude-haiku-4-5",
+          "name": "Claude Haiku 4.5",
+          "version": "1.0",
+          "description": "Fastest, most cost-effective Claude model. Vision + tools.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "claude-opus-4-6",
+          "name": "Claude Opus 4.6",
+          "version": "1.0",
+          "description": "Previous-generation Opus — strong reasoning and agentic coding.",
+          "capabilities": ["completion", "tools", "vision", "reasoning"]
+        },
+        {
+          "id": "claude-opus-4-5",
+          "name": "Claude Opus 4.5",
+          "version": "1.0",
+          "description": "Stable Opus 4.5 release with vision and tool calling.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "claude-opus-4-1",
+          "name": "Claude Opus 4.1",
+          "version": "1.0",
+          "description": "Earlier Opus generation. Vision + tools.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "claude-sonnet-4-5",
+          "name": "Claude Sonnet 4.5",
+          "version": "1.0",
+          "description": "Sonnet 4.5 — balanced cost/quality with multimodal input.",
+          "capabilities": ["completion", "tools", "vision"]
+        }
+      ],
       "custom_header": [
         { "header": "anthropic-version", "value": "2023-06-01" },
         { "header": "anthropic-dangerous-direct-browser-access", "value": "true" }
@@ -211,7 +339,64 @@
           }
         }
       ],
-      "models": []
+      "models": [
+        {
+          "id": "mistral-large-2411",
+          "name": "Mistral Large 2411",
+          "version": "1.0",
+          "description": "Mistral flagship — strong reasoning and tool use.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "magistral-medium-2509",
+          "name": "Magistral Medium 2509",
+          "version": "1.0",
+          "description": "Magistral medium — multimodal reasoning model with vision.",
+          "capabilities": ["completion", "vision"]
+        },
+        {
+          "id": "magistral-small-2509",
+          "name": "Magistral Small 2509",
+          "version": "1.0",
+          "description": "Smaller Magistral variant. Fast multimodal inference.",
+          "capabilities": ["completion", "vision"]
+        },
+        {
+          "id": "pixtral-large-2411",
+          "name": "Pixtral Large 2411",
+          "version": "1.0",
+          "description": "Pixtral Large — vision-language model from Mistral.",
+          "capabilities": ["completion", "vision"]
+        },
+        {
+          "id": "pixtral-12b-2409",
+          "name": "Pixtral 12B",
+          "version": "1.0",
+          "description": "Compact vision-language model based on the 12B Mistral foundation.",
+          "capabilities": ["completion", "vision"]
+        },
+        {
+          "id": "codestral-2508",
+          "name": "Codestral 2508",
+          "version": "1.0",
+          "description": "Code-specialized Mistral model with structured output support.",
+          "capabilities": ["completion"]
+        },
+        {
+          "id": "mistral-small-2506",
+          "name": "Mistral Small 2506",
+          "version": "1.0",
+          "description": "Compact Mistral model with multimodal input and tool calling.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "mistral-nemo-2407",
+          "name": "Mistral Nemo 2407",
+          "version": "1.0",
+          "description": "Mistral Nemo — efficient general-purpose chat model.",
+          "capabilities": ["completion"]
+        }
+      ]
     },
     {
       "active": true,
@@ -243,7 +428,64 @@
           }
         }
       ],
-      "models": []
+      "models": [
+        {
+          "id": "meta-llama/llama-4-maverick-17b-128e-instruct",
+          "name": "Llama 4 Maverick 17B",
+          "version": "1.0",
+          "description": "Meta Llama 4 Maverick — multimodal MoE model on Groq's fast inference.",
+          "capabilities": ["completion", "vision"]
+        },
+        {
+          "id": "meta-llama/llama-4-scout-17b-16e-instruct",
+          "name": "Llama 4 Scout 17B",
+          "version": "1.0",
+          "description": "Meta Llama 4 Scout — compact multimodal MoE on Groq.",
+          "capabilities": ["completion", "vision"]
+        },
+        {
+          "id": "llama-3.3-70b-versatile",
+          "name": "Llama 3.3 70B Versatile",
+          "version": "1.0",
+          "description": "Meta Llama 3.3 70B — versatile general-purpose model.",
+          "capabilities": ["completion"]
+        },
+        {
+          "id": "llama-3.1-8b-instant",
+          "name": "Llama 3.1 8B Instant",
+          "version": "1.0",
+          "description": "Meta Llama 3.1 8B tuned for ultra-fast Groq inference.",
+          "capabilities": ["completion"]
+        },
+        {
+          "id": "moonshotai/kimi-k2-instruct-0905",
+          "name": "Kimi K2 Instruct",
+          "version": "1.0",
+          "description": "Moonshot AI Kimi K2 — large-context tool-aware chat model.",
+          "capabilities": ["completion"]
+        },
+        {
+          "id": "qwen/qwen3-32b",
+          "name": "Qwen 3 32B",
+          "version": "1.0",
+          "description": "Alibaba Qwen 3 32B — strong multilingual general-purpose model.",
+          "capabilities": ["completion"]
+        },
+        {
+          "id": "openai/gpt-oss-120b",
+          "name": "GPT-OSS 120B",
+          "version": "1.0",
+          "description": "OpenAI open-weights model on Groq inference.",
+          "capabilities": ["completion"]
+        },
+        {
+          "id": "whisper-large-v3-turbo",
+          "name": "Whisper Large v3 Turbo",
+          "version": "1.0",
+          "description": "OpenAI Whisper Large v3 Turbo — speech-to-text on Groq.",
+          "capabilities": ["completion"]
+        }
+      ]
     },
     {
       "active": true,
@@ -275,7 +517,64 @@
           }
         }
       ],
-      "models": []
+      "models": [
+        {
+          "id": "grok-4.20-0309-reasoning",
+          "name": "Grok 4.20 Reasoning",
+          "version": "1.0",
+          "description": "xAI Grok 4.20 in reasoning mode — flagship for complex tasks.",
+          "capabilities": ["completion", "tools", "vision", "reasoning"]
+        },
+        {
+          "id": "grok-4.20-0309-non-reasoning",
+          "name": "Grok 4.20 Non-Reasoning",
+          "version": "1.0",
+          "description": "xAI Grok 4.20 in standard chat mode. Vision + tools.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "grok-4-1-fast-reasoning",
+          "name": "Grok 4.1 Fast Reasoning",
+          "version": "1.0",
+          "description": "Cost-efficient Grok 4.1 in reasoning mode.",
+          "capabilities": ["completion", "tools", "vision", "reasoning"]
+        },
+        {
+          "id": "grok-4-1-fast-non-reasoning",
+          "name": "Grok 4.1 Fast Non-Reasoning",
+          "version": "1.0",
+          "description": "Cost-efficient Grok 4.1 in standard chat mode.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "grok-code-fast-1",
+          "name": "Grok Code Fast 1",
+          "version": "1.0",
+          "description": "Code-specialized Grok variant. Tools-capable.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "grok-3",
+          "name": "Grok 3",
+          "version": "1.0",
+          "description": "Previous-generation Grok flagship.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "grok-3-mini",
+          "name": "Grok 3 Mini",
+          "version": "1.0",
+          "description": "Compact Grok 3 variant.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "grok-2-vision-1212",
+          "name": "Grok 2 Vision",
+          "version": "1.0",
+          "description": "Legacy Grok 2 vision-language model. Kept for thread back-compat.",
+          "capabilities": ["completion", "vision"]
+        }
+      ]
     },
     {
       "active": true,
@@ -307,7 +606,50 @@
           }
         }
       ],
-      "models": []
+      "models": [
+        {
+          "id": "gemini-3.1-pro-preview",
+          "name": "Gemini 3.1 Pro Preview",
+          "version": "1.0",
+          "description": "Google Gemini 3.1 Pro preview — frontier multimodal reasoning.",
+          "capabilities": ["completion", "tools", "vision", "reasoning"]
+        },
+        {
+          "id": "gemini-3-flash-preview",
+          "name": "Gemini 3 Flash Preview",
+          "version": "1.0",
+          "description": "Gemini 3 Flash preview — fast multimodal inference.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "gemini-3.1-flash-lite-preview",
+          "name": "Gemini 3.1 Flash Lite Preview",
+          "version": "1.0",
+          "description": "Most budget-friendly Gemini 3.1 preview. Multimodal.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "gemini-2.5-pro",
+          "name": "Gemini 2.5 Pro",
+          "version": "1.0",
+          "description": "Stable Gemini 2.5 Pro — balanced cost and quality.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "gemini-2.5-flash",
+          "name": "Gemini 2.5 Flash",
+          "version": "1.0",
+          "description": "Fast Gemini 2.5 multimodal variant.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "gemini-2.5-flash-lite",
+          "name": "Gemini 2.5 Flash Lite",
+          "version": "1.0",
+          "description": "Lightweight Gemini 2.5 Flash for cost-sensitive use.",
+          "capabilities": ["completion", "tools", "vision"]
+        }
+      ]
     },
     {
       "active": true,
@@ -413,7 +755,7 @@
           "name": "DeepSeek-R1-0528",
           "version": "1.0",
           "description": "DeepSeek's flagship reasoning engine with open weights and advanced tool control.",
-          "capabilities": ["completion", "tools"]
+          "capabilities": ["completion", "tools", "reasoning"]
         },
         {
           "id": "deepseek-ai/DeepSeek-V3-0324",
@@ -454,7 +796,29 @@
           }
         }
       ],
-      "models": []
+      "models": [
+        {
+          "id": "moonshotai/kimi-k2.5",
+          "name": "Kimi K2.5",
+          "version": "1.0",
+          "description": "Moonshot AI Kimi K2.5 hosted on NVIDIA NIM.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "minimaxai/minimax-m2.5",
+          "name": "MiniMax M2.5",
+          "version": "1.0",
+          "description": "MiniMax M2.5 hosted on NVIDIA NIM. Tools + vision.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "z-ai/glm5",
+          "name": "GLM 5",
+          "version": "1.0",
+          "description": "Zhipu AI GLM-5 hosted on NVIDIA NIM.",
+          "capabilities": ["completion", "tools", "vision"]
+        }
+      ]
     }
   ]
 }
