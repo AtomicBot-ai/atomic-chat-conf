@@ -18,8 +18,11 @@ Windows, Linux) without an application release.
 providers/
   registry.json      # Single source of truth for cloud providers
   schema.json        # JSON Schema (Draft-07) used by CI validation
+models/
+  recommended.json   # Recommended models surfaced in Hub + onboarding
+  schema.json        # JSON Schema (Draft-07) for the recommended-models manifest
 .github/workflows/
-  validate.yml       # Validates registry.json on every PR
+  validate.yml       # Validates every manifest on every PR
 README.md
 ```
 
@@ -118,14 +121,93 @@ baseline manifest and prompt the user to update Jan.
 shape of existing fields in a backwards-incompatible way.** Adding a new
 provider or new model never requires a bump.
 
+## Recommended models
+
+[`models/recommended.json`](models/recommended.json) drives the **Recommended**
+section in two places of the Atomic Chat client:
+
+1. The **Hub** screen (`/hub`).
+2. The first-run **Setup / onboarding** screen.
+
+Each entry is a small object — only the model id and the i18n key for the
+chip label live here. The full Hugging Face metadata (quants, mmproj, file
+sizes) is fetched at runtime from `huggingface.co`. A bundled, slim
+fallback in the client covers the offline first launch.
+
+Entry shape (full schema in [`models/schema.json`](models/schema.json)):
+
+```json
+{
+  "model_name": "unsloth/gemma-4-E4B-it-GGUF",
+  "description_key": "hub:recEverydayUse",
+  "platforms": ["macos", "windows", "linux"],
+  "active": true
+}
+```
+
+| Field             | Required | Notes                                                                                       |
+| ----------------- | -------- | ------------------------------------------------------------------------------------------- |
+| `model_name`      | yes      | Hugging Face repo id (`owner/name`).                                                         |
+| `description_key` | yes      | i18n key for the chip label. Must start with `hub:` and exist in the client's `hub.json`s.   |
+| `platforms`       | no       | Subset of `["macos", "windows", "linux"]`. **Omit to show on every platform.**               |
+| `active`          | no       | Defaults to `true`. Set to `false` to hide an entry without deleting it.                     |
+
+### Currently supported `description_key` values
+
+These keys are translated in
+[`web-app/src/locales/*/hub.json`](https://github.com/AtomicBot-ai/Atomic-Chat/tree/main/web-app/src/locales)
+and mapped to chip colors in `web-app/src/constants/recommendedModelChip.ts`:
+
+| Key                       | Chip color | English label        |
+| ------------------------- | ---------- | -------------------- |
+| `hub:recEverydayUse`      | green      | Everyday use         |
+| `hub:recVisionKnowledge`  | purple     | Vision & knowledge   |
+| `hub:recFinetuningChat`   | blue       | Fine-tuning & chat   |
+| `hub:recMathReasoning`    | yellow     | Math & reasoning     |
+| `hub:recForMlx`           | orange     | For MLX              |
+
+Adding a brand-new `description_key` requires both adding the translation in
+the Atomic-Chat repo **and** publishing a client release — until then, older
+clients render the entry with a neutral gray chip.
+
+### Platform-aware recommendations
+
+`platforms` is purely a presentation hint:
+
+- **MLX models** (anything from the `mlx-community` org or marked as
+  `library_name: "mlx"`) only run on macOS — list them with
+  `"platforms": ["macos"]`.
+- **GGUF models** generally run everywhere; setting `platforms` lets you
+  promote a different default for Windows/Linux users (e.g. recommend
+  Llama 3.1 GGUF on Windows when MLX is not an option).
+
+The Atomic Chat client filters this list locally based on the host OS
+before rendering.
+
+### How to add or update a recommendation
+
+1. Open [`models/recommended.json`](models/recommended.json) on GitHub.
+2. Click the pencil icon ("Edit").
+3. Append (or modify) an entry following the shape above.
+4. Bump `updated_at` to today (`YYYY-MM-DDTHH:MM:SSZ`).
+5. Commit to a new branch and open a Pull Request.
+6. Wait for CI ("Validate registry") to pass — it runs the JSON Schema
+   plus a duplicate-entry check against `models/recommended.json`.
+7. Request a review and merge.
+
+All running Atomic Chat clients pick up the change within an hour.
+
 ## CI validation
 
 [`.github/workflows/validate.yml`](.github/workflows/validate.yml) runs on
-every push and pull request:
+every push and pull request. It performs the following checks:
 
 - `ajv` validates `providers/registry.json` against `providers/schema.json`.
-- The job ensures every `provider` id is unique.
+- Every `provider` id must be unique.
 - The job fails if any `api_key` field is non-empty.
+- `ajv` validates `models/recommended.json` against `models/schema.json`.
+- Every `(model_name, description_key)` pair in the recommended-models
+  manifest must be unique.
 
 You cannot merge a PR until CI is green.
 
@@ -135,6 +217,7 @@ If you want to validate locally before pushing:
 
 ```bash
 npx ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
+npx ajv-cli@5 validate -s models/schema.json    -d models/recommended.json   --strict=false
 ```
 
 ## Security

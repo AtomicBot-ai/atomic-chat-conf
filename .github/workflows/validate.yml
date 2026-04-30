@@ -23,7 +23,7 @@ jobs:
       - name: Install ajv-cli
         run: npm install -g ajv-cli@5
 
-      - name: Validate registry against schema
+      - name: Validate providers registry against schema
         run: |
           ajv validate \
             -s providers/schema.json \
@@ -85,6 +85,56 @@ jobs:
 
           console.log('Registry passed all integrity checks.')
           console.log(`  providers: ${data.providers.length}`)
+          console.log(`  schema_version: ${data.schema_version}`)
+          console.log(`  updated_at: ${data.updated_at}`)
+          EOF
+
+      - name: Validate recommended-models manifest against schema
+        run: |
+          ajv validate \
+            -s models/schema.json \
+            -d models/recommended.json \
+            --strict=false
+
+      - name: Check recommended-models integrity
+        run: |
+          node <<'EOF'
+          const fs = require('fs')
+          const path = 'models/recommended.json'
+          const data = JSON.parse(fs.readFileSync(path, 'utf8'))
+          const errors = []
+
+          if (typeof data.schema_version !== 'number' || data.schema_version < 1) {
+            errors.push('schema_version must be a positive integer')
+          }
+
+          if (typeof data.updated_at !== 'string' || !/\d{4}-\d{2}-\d{2}T/.test(data.updated_at)) {
+            errors.push('updated_at must be an ISO-8601 timestamp')
+          }
+
+          if (!Array.isArray(data.recommendations)) {
+            errors.push('recommendations must be an array')
+          } else {
+            const seen = new Set()
+            for (const r of data.recommendations) {
+              const key = `${r.model_name}|${r.description_key}`
+              if (seen.has(key)) {
+                errors.push(
+                  `Duplicate recommendation: ${r.model_name} / ${r.description_key}`
+                )
+              }
+              seen.add(key)
+            }
+          }
+
+          if (errors.length > 0) {
+            console.error('Recommended-models manifest validation failed:')
+            for (const e of errors) console.error('  - ' + e)
+            process.exit(1)
+          }
+
+          console.log('Recommended-models manifest passed all integrity checks.')
+          console.log(`  recommendations: ${data.recommendations.length}`)
           console.log(`  schema_version: ${data.schema_version}`)
           console.log(`  updated_at: ${data.updated_at}`)
           EOF

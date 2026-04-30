@@ -1,0 +1,30 @@
+{
+  "$schema": "./schema.json",
+  "schema_version": 1,
+  "updated_at": "2026-04-30T12:00:00Z",
+  "recommendations": [
+    {
+      "model_name": "unsloth/gemma-4-E4B-it-GGUF",
+      "description_key": "hub:recEverydayUse"
+    },
+    {
+      "model_name": "unsloth/Qwen3.5-9B-GGUF",
+      "description_key": "hub:recVisionKnowledge"
+    },
+    {
+      "model_name": "mlx-community/gemma-4-e4b-it-4bit",
+      "description_key": "hub:recForMlx",
+      "platforms": ["macos"]
+    },
+    {
+      "model_name": "mlx-community/Qwen3.5-9B-MLX-4bit",
+      "description_key": "hub:recForMlx",
+      "platforms": ["macos"]
+    },
+    {
+      "model_name": "meta-llama/Meta-Llama-3.1-8B-Instruct-GGUF",
+      "description_key": "hub:recFinetuningChat",
+      "platforms": ["windows", "linux"]
+    }
+  ]
+}

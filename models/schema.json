@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat Recommended Models",
+  "description": "Schema for the remote recommended-models manifest consumed by the Atomic Chat (Jan) client.",
+  "type": "object",
+  "required": ["schema_version", "updated_at", "recommendations"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Bump this when the shape of a recommendation entry changes in a backwards-incompatible way."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp; refresh on every meaningful change."
+    },
+    "recommendations": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/recommendation" }
+    }
+  },
+  "definitions": {
+    "recommendation": {
+      "type": "object",
+      "required": ["model_name", "description_key"],
+      "additionalProperties": false,
+      "properties": {
+        "model_name": {
+          "type": "string",
+          "description": "Hugging Face repo id (owner/name)."
+        },
+        "description_key": {
+          "type": "string",
+          "pattern": "^hub:",
+          "description": "i18n key for the chip label. Must start with 'hub:' and exist in web-app/src/locales/*/hub.json."
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["macos", "windows", "linux"]
+          },
+          "uniqueItems": true,
+          "description": "If omitted, the recommendation is shown on every platform."
+        },
+        "active": {
+          "type": "boolean",
+          "default": true,
+          "description": "Set to false to hide a recommendation without removing the entry."
+        }
+      }
+    }
+  }
+}
