@@ -18,7 +18,7 @@
     },
     {
       "model_name": "mlx-community/Qwen3.5-9B-MLX-4bit",
-      "description_key": "hub:recForMlxx",
+      "description_key": "hub:recForMlx",
       "platforms": ["macos"]
     },
     {
