@@ -1,13 +1,13 @@
 # Atomic Chat — Configuration Registry
 
-This repository hosts **runtime configuration** consumed by the Atomic Chat (Jan)
+This repository hosts **runtime configuration** consumed by the Atomic Chat
 desktop client. The client fetches the manifest at startup and refreshes it
-periodically, so changes here propagate to all installed Jan clients (macOS,
+periodically, so changes here propagate to all installed Atomic Chat clients (macOS,
 Windows, Linux) without an application release.
 
 > **TL;DR for non-developers** — to add a new model or provider, edit
 > [`providers/registry.json`](providers/registry.json) on GitHub, open a Pull
-> Request, get it reviewed, merge it. All running Jan clients will pick up the
+> Request, get it reviewed, merge it. All running Atomic Chat clients will pick up the
 > change within an hour.
 
 ---
@@ -44,18 +44,18 @@ The following are **not** in the registry and must not be added:
 | `azure`                          | Kept inside the client as a baseline fallback — it requires per-resource configuration.          |
 | API keys                         | Must always remain on the user's machine. The `api_key` field MUST be `""` in the registry.      |
 
-## How a Jan client uses the registry
+## How the Atomic Chat client uses the registry
 
 ```
 raw.githubusercontent.com/AtomicBot-ai/atomic-chat-conf/main/providers/registry.json
                               │
                               ▼ fetched once per hour (TTL = 1h)
-                ┌───────────────────────────┐
-                │  Jan client (web-app)     │
-                │  - validates schema_version│
-                │  - merges with `azure`    │
-                │  - caches in localStorage │
-                └───────────────────────────┘
+                ┌─────────────────────────────────┐
+                │  Atomic Chat client (web-app)   │
+                │  - validates schema_version     │
+                │  - merges with `azure`          │
+                │  - caches in localStorage       │
+                └─────────────────────────────────┘
 ```
 
 If the network is unreachable or the manifest is malformed, the client falls
@@ -112,10 +112,10 @@ The `capabilities` array on each model uses these values:
 
 ## Schema versioning
 
-Every manifest carries a top-level `schema_version`. The Jan client embeds
+Every manifest carries a top-level `schema_version`. The Atomic Chat client embeds
 its highest supported version. If you ship a manifest whose `schema_version`
 exceeds what older clients understand, they will fall back to their cached or
-baseline manifest and prompt the user to update Jan.
+baseline manifest and prompt the user to update Atomic Chat.
 
 **Bump `schema_version` only when adding new required fields or changing the
 shape of existing fields in a backwards-incompatible way.** Adding a new
@@ -224,7 +224,7 @@ npx ajv-cli@5 validate -s models/schema.json    -d models/recommended.json   --s
 
 - API keys must never appear in this repository.
 - The registry is served via HTTPS from `raw.githubusercontent.com`.
-- Jan clients ignore the `api_key` field even if a malicious commit slips
+- Atomic Chat clients ignore the `api_key` field even if a malicious commit slips
   through; user-supplied keys live only in the local OS keychain.
 
 ## License
