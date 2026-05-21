@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-04-29T12:00:00Z",
+  "updated_at": "2026-05-21T12:00:00Z",
   "providers": [
     {
       "active": true,
@@ -824,6 +824,226 @@
           "version": "1.0",
           "description": "Zhipu AI GLM-5 hosted on NVIDIA NIM.",
           "capabilities": ["completion", "tools", "vision"]
+        }
+      ]
+    },
+    {
+      "active": true,
+      "api_key": "",
+      "base_url": "https://api.moonshot.ai/v1",
+      "explore_models_url": "https://platform.moonshot.ai/docs/pricing/chat",
+      "provider": "moonshot",
+      "settings": [
+        {
+          "key": "api-key",
+          "title": "API Key",
+          "description": "The Moonshot AI (Kimi) API uses API keys for authentication. Visit your [API Keys](https://platform.moonshot.ai/console/api-keys) page to retrieve the API key you'll use in your requests.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "Insert API Key",
+            "value": "",
+            "type": "password",
+            "input_actions": ["unobscure", "copy"]
+          }
+        },
+        {
+          "key": "base-url",
+          "title": "Base URL",
+          "description": "The base OpenAI-compatible endpoint to use. Use `https://api.moonshot.ai/v1` for global access or `https://api.moonshot.cn/v1` for users in China. See the [Moonshot AI documentation](https://platform.moonshot.ai/docs/guide/migrating-from-openai-to-kimi) for more information.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "https://api.moonshot.ai/v1",
+            "value": "https://api.moonshot.ai/v1"
+          }
+        }
+      ],
+      "models": [
+        {
+          "id": "kimi-k2.6",
+          "name": "Kimi K2.6",
+          "version": "1.0",
+          "description": "Moonshot flagship — 1T-param MoE (32B active), 256K context, native vision via MoonViT, agent swarms, toggleable extended thinking. Ties GPT-5.5 on SWE-Bench Pro.",
+          "capabilities": ["completion", "tools", "vision", "reasoning"]
+        },
+        {
+          "id": "kimi-k2.5",
+          "name": "Kimi K2.5",
+          "version": "1.0",
+          "description": "Previous-generation Kimi flagship — multimodal MoE with vision and tool calling.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "kimi-k2-thinking-turbo",
+          "name": "Kimi K2 Thinking Turbo",
+          "version": "1.0",
+          "description": "Faster variant of Kimi K2 Thinking — structured reasoning with lower latency.",
+          "capabilities": ["completion", "tools", "reasoning"]
+        },
+        {
+          "id": "kimi-k2-thinking",
+          "name": "Kimi K2 Thinking",
+          "version": "1.0",
+          "description": "Kimi K2 in extended-thinking mode — structured reasoning for complex tasks.",
+          "capabilities": ["completion", "tools", "reasoning"]
+        },
+        {
+          "id": "moonshot-v1-128k",
+          "name": "Moonshot v1 128K",
+          "version": "1.0",
+          "description": "Moonshot v1 with 128K context window for long-document chat.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "moonshot-v1-32k",
+          "name": "Moonshot v1 32K",
+          "version": "1.0",
+          "description": "Moonshot v1 with 32K context — balanced cost and context size.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "moonshot-v1-8k",
+          "name": "Moonshot v1 8K",
+          "version": "1.0",
+          "description": "Compact Moonshot v1 for low-cost, short-context chat.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "moonshot-v1-128k-vision-preview",
+          "name": "Moonshot v1 128K Vision Preview",
+          "version": "1.0",
+          "description": "Moonshot v1 128K with vision input — preview multimodal variant.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "moonshot-v1-32k-vision-preview",
+          "name": "Moonshot v1 32K Vision Preview",
+          "version": "1.0",
+          "description": "Moonshot v1 32K with vision input — preview multimodal variant.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "moonshot-v1-8k-vision-preview",
+          "name": "Moonshot v1 8K Vision Preview",
+          "version": "1.0",
+          "description": "Moonshot v1 8K with vision input — preview multimodal variant.",
+          "capabilities": ["completion", "tools", "vision"]
+        }
+      ]
+    },
+    {
+      "active": true,
+      "api_key": "",
+      "base_url": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "explore_models_url": "https://www.alibabacloud.com/help/en/model-studio/getting-started/models",
+      "provider": "qwen",
+      "settings": [
+        {
+          "key": "api-key",
+          "title": "API Key",
+          "description": "The Qwen (Alibaba DashScope) API uses API keys for authentication. Visit your [API Keys](https://bailian.console.alibabacloud.com/?apiKey=1) page in Alibaba Cloud Model Studio to retrieve the API key you'll use in your requests.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "Insert API Key",
+            "value": "",
+            "type": "password",
+            "input_actions": ["unobscure", "copy"]
+          }
+        },
+        {
+          "key": "base-url",
+          "title": "Base URL",
+          "description": "The base OpenAI-compatible endpoint to use. Use `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` for international (Singapore) access or `https://dashscope.aliyuncs.com/compatible-mode/v1` for users in mainland China. See the [DashScope OpenAI-compatible API documentation](https://www.alibabacloud.com/help/en/model-studio/compatibility-of-openai-with-dashscope) for more information.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+            "value": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+          }
+        }
+      ],
+      "models": [
+        {
+          "id": "qwen3.7-max",
+          "name": "Qwen3.7 Max",
+          "version": "1.0",
+          "description": "Alibaba's newest flagship agent model — sustained autonomous execution over 1000+ tool calls and 35-hour task horizons. Strong coding, debugging, and long-horizon agentic workflows. Toggle deep thinking with `enable_thinking`.",
+          "capabilities": ["completion", "tools", "reasoning"]
+        },
+        {
+          "id": "qwen3.7-plus",
+          "name": "Qwen3.7 Plus",
+          "version": "1.0",
+          "description": "Open-source-track sibling of Qwen3.7 Max — balanced cost/quality with hybrid thinking and tool use.",
+          "capabilities": ["completion", "tools", "reasoning"]
+        },
+        {
+          "id": "qwen3-max",
+          "name": "Qwen3 Max",
+          "version": "1.0",
+          "description": "Stable Qwen3 Max — previous-gen flagship for complex reasoning, coding, and agentic tasks.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "qwen3.5-plus",
+          "name": "Qwen3.5 Plus",
+          "version": "1.0",
+          "description": "Qwen3.5 Plus — balanced cost/quality with hybrid thinking mode and tool use.",
+          "capabilities": ["completion", "tools", "reasoning"]
+        },
+        {
+          "id": "qwen3.5-flash",
+          "name": "Qwen3.5 Flash",
+          "version": "1.0",
+          "description": "Qwen3.5 Flash — fast, cost-efficient general-purpose chat with tool calling.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "qwen3-vl-plus",
+          "name": "Qwen3-VL Plus",
+          "version": "1.0",
+          "description": "Qwen3 vision-language flagship — multimodal reasoning with tool use.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "qwen3-coder-plus",
+          "name": "Qwen3 Coder Plus",
+          "version": "1.0",
+          "description": "Qwen3 Coder Plus — code-specialized model with strong tool use and long context.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "qwen3-coder-flash",
+          "name": "Qwen3 Coder Flash",
+          "version": "1.0",
+          "description": "Fast, cost-efficient Qwen3 Coder variant for high-throughput code tasks.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "qwq-plus",
+          "name": "QwQ Plus",
+          "version": "1.0",
+          "description": "QwQ Plus — Alibaba's open reasoning model exposing structured reasoning traces.",
+          "capabilities": ["completion", "tools", "reasoning"]
+        },
+        {
+          "id": "qwen-plus",
+          "name": "Qwen Plus",
+          "version": "1.0",
+          "description": "Stable Qwen Plus generation — balanced general-purpose chat with tool calling.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "qwen-flash",
+          "name": "Qwen Flash",
+          "version": "1.0",
+          "description": "Qwen Flash — fast, cost-efficient general-purpose chat.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "qwen-turbo",
+          "name": "Qwen Turbo",
+          "version": "1.0",
+          "description": "Qwen Turbo — fastest, most budget-friendly Qwen tier.",
+          "capabilities": ["completion", "tools"]
         }
       ]
     }
