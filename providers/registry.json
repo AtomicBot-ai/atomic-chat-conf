@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-05-21T12:00:00Z",
+  "updated_at": "2026-06-01T12:00:00Z",
   "providers": [
     {
       "active": true,
@@ -689,6 +689,13 @@
         }
       ],
       "models": [
+        {
+          "id": "MiniMax-M3",
+          "name": "MiniMax-M3",
+          "version": "1.0",
+          "description": "Latest M-series flagship for agentic reasoning, tool use, coding, and long-context tasks. 1M context window with image and video input.",
+          "capabilities": ["completion", "tools", "vision", "reasoning"]
+        },
         {
           "id": "MiniMax-M2.7",
           "name": "MiniMax-M2.7",
