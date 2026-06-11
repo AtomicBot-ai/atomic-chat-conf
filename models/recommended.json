@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-05-06T12:00:00Z",
+  "updated_at": "2026-06-08T12:00:00Z",
   "recommendations": [
     {
       "model_name": "unsloth/gemma-4-E4B-it-GGUF",
@@ -22,12 +22,12 @@
       "platforms": ["macos"]
     },
     {
-      "model_name": "mlx-community/gemma-4-e2b-4bit",
+      "model_name": "mlx-community/gemma-4-e2b-it-4bit",
       "description_key": "hub:recForMlx",
       "platforms": ["macos"]
     },
     {
-      "model_name": "mlx-community/gemma-4-e4b-4bit",
+      "model_name": "mlx-community/gemma-4-e4b-it-4bit",
       "description_key": "hub:recForMlx",
       "platforms": ["macos"]
     },
