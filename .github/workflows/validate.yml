@@ -138,3 +138,62 @@ jobs:
           console.log(`  schema_version: ${data.schema_version}`)
           console.log(`  updated_at: ${data.updated_at}`)
           EOF
+
+      - name: Validate backends manifest against schema
+        run: |
+          ajv validate \
+            -s backends/schema.json \
+            -d backends/manifest.json \
+            --strict=false
+
+      - name: Check backends manifest integrity
+        run: |
+          node <<'EOF'
+          const fs = require('fs')
+          const path = 'backends/manifest.json'
+          const data = JSON.parse(fs.readFileSync(path, 'utf8'))
+          const errors = []
+
+          if (typeof data.tag_name !== 'string' || !/^b\d+$/.test(data.tag_name)) {
+            errors.push('tag_name must look like a ggml-org release tag (e.g. b9691)')
+          }
+
+          if (data.updated_at !== undefined &&
+              (typeof data.updated_at !== 'string' || !/\d{4}-\d{2}-\d{2}T/.test(data.updated_at))) {
+            errors.push('updated_at, if present, must be an ISO-8601 timestamp')
+          }
+
+          if (!Array.isArray(data.assets) || data.assets.length === 0) {
+            errors.push('assets must be a non-empty array')
+          } else {
+            const names = new Set()
+            for (const a of data.assets) {
+              if (typeof a.name !== 'string' || !a.name) {
+                errors.push('every asset must have a non-empty string name')
+                continue
+              }
+              if (names.has(a.name)) {
+                errors.push(`Duplicate asset name: ${a.name}`)
+              }
+              names.add(a.name)
+            }
+            // Every llama-* asset must carry the declared tag, so the
+            // client's `llama-<tag>-bin-...` regex actually matches.
+            const tag = data.tag_name
+            for (const a of data.assets) {
+              if (a.name && a.name.startsWith('llama-') && !a.name.startsWith(`llama-${tag}-bin-`)) {
+                errors.push(`Asset "${a.name}" does not match declared tag ${tag}`)
+              }
+            }
+          }
+
+          if (errors.length > 0) {
+            console.error('Backends manifest validation failed:')
+            for (const e of errors) console.error('  - ' + e)
+            process.exit(1)
+          }
+
+          console.log('Backends manifest passed all integrity checks.')
+          console.log(`  tag_name: ${data.tag_name}`)
+          console.log(`  assets: ${data.assets.length}`)
+          EOF

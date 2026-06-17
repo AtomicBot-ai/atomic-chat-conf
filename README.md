@@ -21,6 +21,9 @@ providers/
 models/
   recommended.json   # Recommended models surfaced in Hub + onboarding
   schema.json        # JSON Schema (Draft-07) for the recommended-models manifest
+backends/
+  manifest.json      # llama.cpp backend catalog (mirrors a ggml-org release)
+  schema.json        # JSON Schema (Draft-07) for the backends manifest
 .github/workflows/
   validate.yml       # Validates every manifest on every PR
 README.md
@@ -197,6 +200,66 @@ before rendering.
 
 All running Atomic Chat clients pick up the change within an hour.
 
+## llama.cpp backends manifest
+
+[`backends/manifest.json`](backends/manifest.json) is the catalog of
+downloadable `llama.cpp` backend builds the Atomic Chat client offers on
+**Windows and Linux x64**. It exists to dodge GitHub's unauthenticated API
+rate limit (60 req/hr/IP): the client used to resolve the backend list
+straight from `api.github.com/repos/ggml-org/llama.cpp/releases/latest`,
+which dead-ended on shared / NAT / VPN networks (see ATO-199). It now reads
+this static file via `raw.githubusercontent.com`, which has no per-IP limit.
+
+The file **mirrors the shape of a GitHub release JSON** (`tag_name` +
+`assets[].name`) so the client reuses its existing asset-name parser
+verbatim — only the source URL changed. The backend **archives themselves**
+are still downloaded from the ggml-org CDN
+(`github.com/ggml-org/llama.cpp/releases/download`); this manifest is only
+the index of *what exists*.
+
+```json
+{
+  "$schema": "./schema.json",
+  "updated_at": "2026-06-17T00:00:00Z",
+  "tag_name": "b9691",
+  "assets": [
+    { "name": "llama-b9691-bin-win-cpu-x64.zip" },
+    { "name": "llama-b9691-bin-win-cuda-12.4-x64.zip" },
+    { "name": "llama-b9691-bin-win-cuda-13.3-x64.zip" },
+    { "name": "llama-b9691-bin-win-vulkan-x64.zip" },
+    { "name": "llama-b9691-bin-ubuntu-x64.tar.gz" },
+    { "name": "llama-b9691-bin-ubuntu-vulkan-x64.tar.gz" },
+    { "name": "cudart-llama-bin-win-cuda-12.4-x64.zip" },
+    { "name": "cudart-llama-bin-win-cuda-13.3-x64.zip" }
+  ]
+}
+```
+
+- `$schema` / `updated_at` are advisory; the client reads only `tag_name`
+  and `assets[].name`, so the GitHub-mirror shape is preserved.
+- Only Windows/Linux x64 assets are listed. **macOS is bundled-only** and is
+  never resolved from this manifest, so macOS assets are intentionally
+  omitted.
+- The `cudart-*` companions are listed for completeness; the client's
+  backend regex ignores them (it matches only `llama-<tag>-bin-...`), so
+  they are harmless.
+
+### How to update the backends manifest
+
+> The manifest is **static and hand-maintained** for now. Automated
+> generation from the ggml-org release stream is a planned follow-up.
+
+1. Pick the newest **complete** ggml-org release — one that has finished
+   uploading *all* whitelisted assets (`win-cpu-x64`, `win-cuda-12.4-x64`,
+   `win-cuda-13.x-x64`, `win-vulkan-x64`, `ubuntu-x64`, `ubuntu-vulkan-x64`,
+   plus the two `cudart-*` companions). Releases publish their tag before
+   every asset finishes uploading, so do not blindly grab `latest`.
+2. Edit [`backends/manifest.json`](backends/manifest.json): set `tag_name`
+   to the new tag, rewrite each `assets[].name` to carry that tag, and bump
+   `updated_at`.
+3. Commit to a branch, open a PR, wait for CI ("Validate registry") to pass,
+   get a review, merge. All clients pick up the change within an hour.
+
 ## CI validation
 
 [`.github/workflows/validate.yml`](.github/workflows/validate.yml) runs on
@@ -208,6 +271,9 @@ every push and pull request. It performs the following checks:
 - `ajv` validates `models/recommended.json` against `models/schema.json`.
 - Every `(model_name, description_key)` pair in the recommended-models
   manifest must be unique.
+- `ajv` validates `backends/manifest.json` against `backends/schema.json`.
+- Every `llama-*` asset name must carry the declared `tag_name`, and asset
+  names must be unique.
 
 You cannot merge a PR until CI is green.
 
@@ -218,6 +284,7 @@ If you want to validate locally before pushing:
 ```bash
 npx ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
 npx ajv-cli@5 validate -s models/schema.json    -d models/recommended.json   --strict=false
+npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
 ```
 
 ## Security

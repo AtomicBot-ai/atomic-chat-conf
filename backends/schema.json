@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat llama.cpp Backends Manifest",
+  "description": "Schema for the remote llama.cpp backends manifest consumed by the Atomic Chat client (llamacpp-upstream extension). Mirrors the shape of a GitHub release JSON ({ tag_name, assets: [{ name }] }) so the client's existing asset-name parser is reused verbatim.",
+  "type": "object",
+  "required": ["tag_name", "assets"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp; refresh on every meaningful change."
+    },
+    "tag_name": {
+      "type": "string",
+      "pattern": "^b[0-9]+$",
+      "description": "ggml-org/llama.cpp release tag the assets belong to (e.g. b9691)."
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/asset" },
+      "description": "Release assets, mirroring GitHub's release JSON. Only Windows/Linux backend archives (and Windows cudart companions) are listed; macOS is bundled-only and never parsed from this manifest."
+    }
+  },
+  "definitions": {
+    "asset": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Asset filename, e.g. llama-b9691-bin-win-cuda-13.3-x64.zip."
+        }
+      }
+    }
+  }
+}
