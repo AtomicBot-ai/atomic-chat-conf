@@ -101,6 +101,27 @@ The same as above, but you add a whole provider object to the top-level
 If your provider needs extra HTTP headers (Anthropic does, for example), use
 the optional `custom_header` array.
 
+### Controlling live model listing (`supports_model_listing`)
+
+The client's **Refresh (↻)** button on a provider page is hybrid: it merges
+this curated registry list with whatever the provider returns from a live
+`GET /v1/models`, deduped by id. This is what lets custom / self-hosted
+providers (vLLM, llama.cpp, LM Studio, …) surface their real model ids.
+
+For a few clouds the live `/v1/models` endpoint returns hundreds of
+junk/internal ids that would pollute the picker. To opt such a provider out of
+the live probe, set the optional boolean:
+
+```json
+"supports_model_listing": false
+```
+
+- `true` (or the field omitted) → registry list ∪ live `/v1/models` (default).
+- `false` → curated registry list only; the client never calls `/v1/models`.
+
+This is backwards-compatible — older clients simply ignore the field — so it
+does **not** require a `schema_version` bump.
+
 ## Capabilities
 
 The `capabilities` array on each model uses these values:
