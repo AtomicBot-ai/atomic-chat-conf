@@ -41,6 +41,11 @@
           "pattern": "^[a-z0-9_-]+$",
           "description": "Stable, unique provider id. Lowercase, no spaces."
         },
+        "supports_model_listing": {
+          "type": "boolean",
+          "default": true,
+          "description": "Controls the client's Refresh (\u21bb) button. true or absent: show the curated registry list UNION the provider's live GET /v1/models. false: show the curated registry list only and skip the live probe (use when /v1/models returns hundreds of junk/internal model ids)."
+        },
         "settings": {
           "type": "array",
           "items": { "$ref": "#/definitions/providerSetting" }
