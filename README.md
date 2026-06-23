@@ -22,8 +22,10 @@ models/
   recommended.json   # Recommended models surfaced in Hub + onboarding
   schema.json        # JSON Schema (Draft-07) for the recommended-models manifest
 backends/
-  manifest.json      # llama.cpp backend catalog (mirrors a ggml-org release)
-  schema.json        # JSON Schema (Draft-07) for the backends manifest
+  manifest.json            # llama.cpp backend catalog (mirrors a ggml-org release)
+  schema.json              # JSON Schema (Draft-07) for the backends manifest
+  turboquant-manifest.json # TurboQuant backend catalog (one tag per variant)
+  turboquant-schema.json   # JSON Schema (Draft-07) for the TurboQuant manifest
 .github/workflows/
   validate.yml       # Validates every manifest on every PR
 README.md
@@ -281,6 +283,49 @@ the index of *what exists*.
 3. Commit to a branch, open a PR, wait for CI ("Validate registry") to pass,
    get a review, merge. All clients pick up the change within an hour.
 
+## TurboQuant backends manifest
+
+[`backends/turboquant-manifest.json`](backends/turboquant-manifest.json) is
+the catalog of downloadable **TurboQuant** `llama.cpp` builds
+(`AtomicBot-ai/atomic-llama-cpp-turboquant`) the Atomic Chat client offers as
+a *second* provider on **Windows and Linux x64** (alongside the upstream
+provider above). It exists for the same rate-limit reason as the upstream
+manifest, with one twist: TurboQuant ships **each variant in its own
+release** (every variant on the same SHA but a different tag), so a
+`/releases/latest` lookup is useless and a `/releases` scan would hammer
+`api.github.com`. Therefore **every backend entry carries its own `tag`**.
+
+```json
+{
+  "$schema": "./turboquant-schema.json",
+  "updated_at": "2026-06-23T00:00:00Z",
+  "commit": "d86eb0b",
+  "backends": [
+    { "id": "windows-x64-cpu",       "tag": "turboquant-windows-x64-cpu-d86eb0b",       "asset": "llama-turboquant-windows-x64-cpu.zip" },
+    { "id": "windows-x64-cuda-12.4", "tag": "turboquant-windows-x64-cuda-12.4-d86eb0b", "asset": "llama-turboquant-windows-x64-cuda-12.4.zip" },
+    { "id": "windows-x64-cuda-13.3", "tag": "turboquant-windows-x64-cuda-13.3-d86eb0b", "asset": "llama-turboquant-windows-x64-cuda-13.3.zip" },
+    { "id": "windows-x64-vulkan",    "tag": "turboquant-windows-x64-vulkan-d86eb0b",    "asset": "llama-turboquant-windows-x64-vulkan.zip" },
+    { "id": "linux-x64-vulkan",      "tag": "turboquant-linux-x64-vulkan-d86eb0b",      "asset": "llama-turboquant-linux-x64-vulkan.tar.gz" }
+  ]
+}
+```
+
+- `id` is the clean, release-aligned backend id the client uses verbatim.
+- `tag` must start `turboquant-<id>`; the archive download URL is built as
+  `…/releases/download/<tag>/<asset>` against the releases CDN (not rate-limited).
+- `asset` must be `llama-turboquant-<id>.zip` (Windows) or
+  `llama-turboquant-<id>.tar.gz` (Linux). Windows CUDA archives **bundle**
+  `cudart64`/`cublas64`/`cublasLt64` — no separate cudart download.
+- **macOS is bundled-only** and intentionally omitted (`macos-arm64` is never
+  resolved from this manifest).
+
+### How to update the TurboQuant manifest
+
+> Also static and hand-maintained. Pick the new SHA's release set, then for
+> each `backends[]` entry set `tag` to `turboquant-<id>-<sha>`, keep `asset`
+> as `llama-turboquant-<id>.{zip,tar.gz}`, bump `commit` + `updated_at`,
+> open a PR, and merge once CI is green.
+
 ## CI validation
 
 [`.github/workflows/validate.yml`](.github/workflows/validate.yml) runs on
@@ -295,6 +340,10 @@ every push and pull request. It performs the following checks:
 - `ajv` validates `backends/manifest.json` against `backends/schema.json`.
 - Every `llama-*` asset name must carry the declared `tag_name`, and asset
   names must be unique.
+- `ajv` validates `backends/turboquant-manifest.json` against
+  `backends/turboquant-schema.json`.
+- Every TurboQuant `tag` must start `turboquant-<id>`, every `asset` must be
+  `llama-turboquant-<id>.{zip,tar.gz}`, and backend ids must be unique.
 
 You cannot merge a PR until CI is green.
 
@@ -306,6 +355,7 @@ If you want to validate locally before pushing:
 npx ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
 npx ajv-cli@5 validate -s models/schema.json    -d models/recommended.json   --strict=false
 npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
+npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 ```
 
 ## Security

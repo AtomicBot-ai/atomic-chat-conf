@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat TurboQuant llama.cpp Backends Manifest",
+  "description": "Schema for the static TurboQuant (AtomicBot-ai/atomic-llama-cpp-turboquant) backends manifest consumed by the Atomic Chat client (@janhq/llamacpp-extension) on Windows and Linux. Unlike the upstream backends manifest (a single tag_name + assets, mirroring one GitHub release), TurboQuant ships each backend variant in its OWN release, so every entry carries its own tag. The archive downloads still come from the GitHub releases CDN; only the index lives here to dodge the api.github.com rate limit.",
+  "type": "object",
+  "required": ["backends"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp; refresh on every meaningful change."
+    },
+    "commit": {
+      "type": "string",
+      "description": "Short SHA the release set was built from (e.g. d86eb0b). Informational only."
+    },
+    "backends": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/backend" },
+      "description": "TurboQuant backend variants. Each carries its own release tag because the variants live in separate releases. macOS is bundled-only and never parsed from this manifest."
+    }
+  },
+  "definitions": {
+    "backend": {
+      "type": "object",
+      "required": ["id", "tag", "asset"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(windows-x64-(cpu|vulkan|cuda-[0-9]+\\.[0-9]+)|linux-x64-vulkan|macos-arm64)$",
+          "description": "Clean backend id, e.g. windows-x64-cuda-12.4, linux-x64-vulkan."
+        },
+        "tag": {
+          "type": "string",
+          "pattern": "^turboquant-",
+          "description": "GitHub release tag carrying this variant's asset, e.g. turboquant-windows-x64-cuda-12.4-d86eb0b."
+        },
+        "asset": {
+          "type": "string",
+          "pattern": "^llama-turboquant-.+\\.(zip|tar\\.gz)$",
+          "description": "Release asset filename, e.g. llama-turboquant-windows-x64-cuda-12.4.zip."
+        }
+      }
+    }
+  }
+}

@@ -197,3 +197,65 @@ jobs:
           console.log(`  tag_name: ${data.tag_name}`)
           console.log(`  assets: ${data.assets.length}`)
           EOF
+
+      - name: Validate turboquant manifest against schema
+        run: |
+          ajv validate \
+            -s backends/turboquant-schema.json \
+            -d backends/turboquant-manifest.json \
+            --strict=false
+
+      - name: Check turboquant manifest integrity
+        run: |
+          node <<'EOF'
+          const fs = require('fs')
+          const path = 'backends/turboquant-manifest.json'
+          const data = JSON.parse(fs.readFileSync(path, 'utf8'))
+          const errors = []
+
+          if (data.updated_at !== undefined &&
+              (typeof data.updated_at !== 'string' || !/\d{4}-\d{2}-\d{2}T/.test(data.updated_at))) {
+            errors.push('updated_at, if present, must be an ISO-8601 timestamp')
+          }
+
+          if (!Array.isArray(data.backends) || data.backends.length === 0) {
+            errors.push('backends must be a non-empty array')
+          } else {
+            const ids = new Set()
+            for (const b of data.backends) {
+              if (typeof b.id !== 'string' || !b.id) {
+                errors.push('every backend must have a non-empty string id')
+                continue
+              }
+              if (ids.has(b.id)) {
+                errors.push(`Duplicate backend id: ${b.id}`)
+              }
+              ids.add(b.id)
+
+              // Each variant lives in its own release: the tag must start
+              // turboquant-<id> so the URL the client builds is exact.
+              if (typeof b.tag !== 'string' || !b.tag.startsWith(`turboquant-${b.id}`)) {
+                errors.push(`Backend "${b.id}" tag "${b.tag}" must start with turboquant-${b.id}`)
+              }
+
+              // Asset must match llama-turboquant-<id>.(zip|tar.gz).
+              const expectZip = `llama-turboquant-${b.id}.zip`
+              const expectTar = `llama-turboquant-${b.id}.tar.gz`
+              if (b.asset !== expectZip && b.asset !== expectTar) {
+                errors.push(
+                  `Backend "${b.id}" asset "${b.asset}" must be ${expectZip} or ${expectTar}`
+                )
+              }
+            }
+          }
+
+          if (errors.length > 0) {
+            console.error('TurboQuant manifest validation failed:')
+            for (const e of errors) console.error('  - ' + e)
+            process.exit(1)
+          }
+
+          console.log('TurboQuant manifest passed all integrity checks.')
+          console.log(`  backends: ${data.backends.length}`)
+          if (data.commit) console.log(`  commit: ${data.commit}`)
+          EOF
