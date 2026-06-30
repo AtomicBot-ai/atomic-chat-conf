@@ -1,26 +1,26 @@
 {
   "$schema": "./turboquant-schema.json",
-  "updated_at": "2026-06-23T00:00:00Z",
-  "commit": "d86eb0b",
+  "updated_at": "2026-06-30T00:00:00Z",
+  "commit": "69e91e7",
   "backends": [
     {
       "id": "windows-x64-cpu",
-      "tag": "turboquant-windows-x64-cpu-d86eb0b",
+      "tag": "turboquant-windows-x64-cpu-69e91e7",
       "asset": "llama-turboquant-windows-x64-cpu.zip"
     },
     {
       "id": "windows-x64-cuda-12.4",
-      "tag": "turboquant-windows-x64-cuda-12.4-d86eb0b",
+      "tag": "turboquant-windows-x64-cuda-12.4-69e91e7",
       "asset": "llama-turboquant-windows-x64-cuda-12.4.zip"
     },
     {
       "id": "windows-x64-cuda-13.3",
-      "tag": "turboquant-windows-x64-cuda-13.3-d86eb0b",
+      "tag": "turboquant-windows-x64-cuda-13.3-69e91e7",
       "asset": "llama-turboquant-windows-x64-cuda-13.3.zip"
     },
     {
       "id": "windows-x64-vulkan",
-      "tag": "turboquant-windows-x64-vulkan-d86eb0b",
+      "tag": "turboquant-windows-x64-vulkan-69e91e7",
       "asset": "llama-turboquant-windows-x64-vulkan.zip"
     },
     {
