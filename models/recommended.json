@@ -1,15 +1,19 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-06-08T12:00:00Z",
+  "updated_at": "2026-06-30T13:00:00Z",
   "recommendations": [
     {
-      "model_name": "unsloth/gemma-4-E4B-it-GGUF",
+      "model_name": "AtomicChat/gemma4-e4b-it-GGUF",
       "description_key": "hub:recEverydayUse"
     },
     {
-      "model_name": "unsloth/Qwen3.5-9B-GGUF",
-      "description_key": "hub:recVisionKnowledge"
+      "model_name": "AtomicChat/qwen35-4b-GGUF",
+      "description_key": "hub:recEverydayUse"
+    },
+    {
+      "model_name": "AtomicChat/qwen3-coder-30b-a3b-GGUF",
+      "description_key": "hub:recCoding"
     },
     {
       "model_name": "mlx-community/Qwen3.5-4B-MLX-4bit",
