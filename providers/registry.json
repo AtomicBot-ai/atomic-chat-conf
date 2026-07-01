@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-06-01T12:00:00Z",
+  "updated_at": "2026-07-01T12:00:00Z",
   "providers": [
     {
       "active": true,
@@ -1053,6 +1053,38 @@
           "capabilities": ["completion", "tools"]
         }
       ]
+    },
+    {
+      "active": true,
+      "api_key": "",
+      "base_url": "http://localhost:11434/v1",
+      "explore_models_url": "https://ollama.com/library",
+      "provider": "ollama",
+      "settings": [
+        {
+          "key": "api-key",
+          "title": "API Key",
+          "description": "Ollama runs locally and needs no API key by default. Leave this empty unless you put Ollama behind an authenticating proxy.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "Optional",
+            "value": "",
+            "type": "password",
+            "input_actions": ["unobscure", "copy"]
+          }
+        },
+        {
+          "key": "base-url",
+          "title": "Base URL",
+          "description": "The OpenAI-compatible endpoint exposed by your local Ollama server. Defaults to `http://localhost:11434/v1`. See the [Ollama OpenAI compatibility docs](https://github.com/ollama/ollama/blob/main/docs/openai.md) for more information.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "http://localhost:11434/v1",
+            "value": "http://localhost:11434/v1"
+          }
+        }
+      ],
+      "models": []
     }
   ]
 }
