@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-07-02T16:45:45Z",
+  "updated_at": "2026-07-02T18:36:00Z",
   "recommendations": [
     {
       "model_name": "AtomicChat/gemma4-e4b-it-GGUF",
@@ -12,7 +12,7 @@
       "description_key": "hub:recCoding"
     },
     {
-      "model_name": "AtomicChat/qwen35-4b-GGUF",
+      "model_name": "AtomicChat/Qwen3.5-4B-GGUF",
       "description_key": "hub:recEverydayUse"
     },
     {
