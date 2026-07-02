@@ -1,14 +1,14 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-07-02T18:18:00Z",
+  "updated_at": "2026-07-02T16:45:45Z",
   "recommendations": [
     {
       "model_name": "AtomicChat/gemma4-e4b-it-GGUF",
       "description_key": "hub:recEverydayUse"
     },
     {
-      "model_name": "poolside/Laguna-XS-2.1-GGUF",
+      "model_name": "AtomicChat/Laguna-XS-2.1-GGUF",
       "description_key": "hub:recCoding"
     },
     {
@@ -46,6 +46,11 @@
     },
     {
       "model_name": "mlx-community/gemma-4-31b-it-4bit",
+      "description_key": "hub:recForMlx",
+      "platforms": ["macos"]
+    },
+    {
+      "model_name": "AtomicChat/Laguna-XS-2.1-MLX-8bit",
       "description_key": "hub:recForMlx",
       "platforms": ["macos"]
     },
