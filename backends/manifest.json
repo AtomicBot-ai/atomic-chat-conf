@@ -1,14 +1,14 @@
 {
   "$schema": "./schema.json",
-  "updated_at": "2026-07-03T00:00:00Z",
-  "tag_name": "b9702",
+  "updated_at": "2026-07-06T00:00:00Z",
+  "tag_name": "b9881",
   "assets": [
-    { "name": "llama-b9702-bin-win-cpu-x64.zip" },
-    { "name": "llama-b9702-bin-win-cuda-12.4-x64.zip" },
-    { "name": "llama-b9702-bin-win-cuda-13.3-x64.zip" },
-    { "name": "llama-b9702-bin-win-vulkan-x64.zip" },
-    { "name": "llama-b9702-bin-ubuntu-x64.tar.gz" },
-    { "name": "llama-b9702-bin-ubuntu-vulkan-x64.tar.gz" },
+    { "name": "llama-b9881-bin-win-cpu-x64.zip" },
+    { "name": "llama-b9881-bin-win-cuda-12.4-x64.zip" },
+    { "name": "llama-b9881-bin-win-cuda-13.3-x64.zip" },
+    { "name": "llama-b9881-bin-win-vulkan-x64.zip" },
+    { "name": "llama-b9881-bin-ubuntu-x64.tar.gz" },
+    { "name": "llama-b9881-bin-ubuntu-vulkan-x64.tar.gz" },
     { "name": "cudart-llama-bin-win-cuda-12.4-x64.zip" },
     { "name": "cudart-llama-bin-win-cuda-13.3-x64.zip" }
   ]
