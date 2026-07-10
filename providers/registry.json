@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-07-01T12:00:00Z",
+  "updated_at": "2026-07-09T11:16:00Z",
   "providers": [
     {
       "active": true,
@@ -812,25 +812,25 @@
       ],
       "models": [
         {
-          "id": "moonshotai/kimi-k2.5",
-          "name": "Kimi K2.5",
+          "id": "meta/llama-3.1-8b-instruct",
+          "name": "Llama 3.1 8B Instruct",
           "version": "1.0",
-          "description": "Moonshot AI Kimi K2.5 hosted on NVIDIA NIM.",
-          "capabilities": ["completion", "tools", "vision"]
+          "description": "Meta Llama 3.1 8B Instruct hosted on NVIDIA NIM.",
+          "capabilities": ["completion", "tools"]
         },
         {
-          "id": "minimaxai/minimax-m2.5",
-          "name": "MiniMax M2.5",
+          "id": "meta/llama-3.3-70b-instruct",
+          "name": "Llama 3.3 70B Instruct",
           "version": "1.0",
-          "description": "MiniMax M2.5 hosted on NVIDIA NIM. Tools + vision.",
-          "capabilities": ["completion", "tools", "vision"]
+          "description": "Meta Llama 3.3 70B Instruct hosted on NVIDIA NIM.",
+          "capabilities": ["completion", "tools"]
         },
         {
-          "id": "z-ai/glm5",
-          "name": "GLM 5",
+          "id": "openai/gpt-oss-120b",
+          "name": "GPT-OSS 120B",
           "version": "1.0",
-          "description": "Zhipu AI GLM-5 hosted on NVIDIA NIM.",
-          "capabilities": ["completion", "tools", "vision"]
+          "description": "OpenAI GPT-OSS 120B hosted on NVIDIA NIM. Emits chain-of-thought as reasoning_content.",
+          "capabilities": ["completion", "tools", "reasoning"]
         }
       ]
     },
