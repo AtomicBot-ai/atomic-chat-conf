@@ -1,63 +1,13 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-07-02T18:36:00Z",
+  "updated_at": "2026-07-13T12:45:09Z",
   "recommendations": [
-    {
-      "model_name": "AtomicChat/gemma4-e4b-it-GGUF",
-      "description_key": "hub:recEverydayUse"
-    },
-    {
-      "model_name": "AtomicChat/Laguna-XS-2.1-GGUF",
-      "description_key": "hub:recCoding"
-    },
-    {
-      "model_name": "AtomicChat/Qwen3.5-4B-GGUF",
-      "description_key": "hub:recEverydayUse"
-    },
-    {
-      "model_name": "AtomicChat/qwen3-coder-30b-a3b-GGUF",
-      "description_key": "hub:recCoding"
-    },
-    {
-      "model_name": "mlx-community/Qwen3.5-4B-MLX-4bit",
-      "description_key": "hub:recForMlx",
-      "platforms": ["macos"]
-    },
-    {
-      "model_name": "mlx-community/Qwen3.5-9B-MLX-4bit",
-      "description_key": "hub:recForMlx",
-      "platforms": ["macos"]
-    },
-    {
-      "model_name": "mlx-community/gemma-4-e2b-it-4bit",
-      "description_key": "hub:recForMlx",
-      "platforms": ["macos"]
-    },
-    {
-      "model_name": "mlx-community/gemma-4-e4b-it-4bit",
-      "description_key": "hub:recForMlx",
-      "platforms": ["macos"]
-    },
-    {
-      "model_name": "mlx-community/gemma-4-26b-a4b-it-4bit",
-      "description_key": "hub:recForMlx",
-      "platforms": ["macos"]
-    },
-    {
-      "model_name": "mlx-community/gemma-4-31b-it-4bit",
-      "description_key": "hub:recForMlx",
-      "platforms": ["macos"]
-    },
-    {
-      "model_name": "AtomicChat/Laguna-XS-2.1-MLX-8bit",
-      "description_key": "hub:recForMlx",
-      "platforms": ["macos"]
-    },
-    {
-      "model_name": "unsloth/Llama-3.2-3B-Instruct-GGUF",
-      "description_key": "hub:recFinetuningChat",
-      "platforms": ["windows", "linux"]
-    }
+    { "model_name": "AtomicChat/Qwen3.5-4B-GGUF", "description_key": "hub:recEverydayUse" },
+    { "model_name": "AtomicChat/gemma-4-E4B-it-GGUF", "description_key": "hub:recEverydayUse" },
+    { "model_name": "AtomicChat/Qwen3.5-9B-GGUF", "description_key": "hub:recEverydayUse" },
+    { "model_name": "AtomicChat/gemma-4-12b-it-GGUF", "description_key": "hub:recEverydayUse" },
+    { "model_name": "AtomicChat/qwen36-27b-GGUF", "description_key": "hub:recEverydayUse" },
+    { "model_name": "AtomicChat/gemma-4-31B-it-GGUF", "description_key": "hub:recEverydayUse" }
   ]
 }
