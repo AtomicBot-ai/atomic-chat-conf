@@ -24,7 +24,7 @@ models/
 backends/
   manifest.json            # llama.cpp backend catalog (mirrors a ggml-org release)
   schema.json              # JSON Schema (Draft-07) for the backends manifest
-  turboquant-manifest.json # TurboQuant backend catalog (one tag per variant)
+  turboquant-manifest.json # TurboQuant backend catalog (one unified release tag)
   turboquant-schema.json   # JSON Schema (Draft-07) for the TurboQuant manifest
 .github/workflows/
   validate.yml       # Validates every manifest on every PR
@@ -325,9 +325,11 @@ set stays expressible without a schema change.
   `…/releases/download/<tag>/<asset>` against the releases CDN (not rate-limited).
 - `asset` must be `llama-turboquant-<id>.zip` (Windows) or
   `llama-turboquant-<id>.tar.gz` (Linux/macOS). The release also publishes
-  `.zip` copies of the Linux archives — do **not** list those. Windows CUDA
-  archives **bundle** `cudart64`/`cublas64`/`cublasLt64` — no separate cudart
-  download.
+  `.zip` copies of the Linux and macOS archives — do **not** list those.
+- Windows CUDA archives ship `ggml-cuda.dll` but **no** CUDA runtime DLLs, so
+  the client still fetches the `cudart-*` companion from the pinned ggml-org
+  release (or reuses one already installed under the upstream provider).
+  Verified on `b10018-1.3.0`.
 - Linux GPU tiers (`cuda-12.4`, `cuda-13.3`, `rocm`) are downloaded at runtime
   by the client; `linux-x64-vulkan` is what the installer bundles as the offline
   fallback. `linux-x64-rocm` targets RDNA2–RDNA4 and needs a host ROCm runtime,
