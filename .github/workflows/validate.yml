@@ -222,6 +222,7 @@ jobs:
             errors.push('backends must be a non-empty array')
           } else {
             const ids = new Set()
+            const tags = new Set()
             for (const b of data.backends) {
               if (typeof b.id !== 'string' || !b.id) {
                 errors.push('every backend must have a non-empty string id')
@@ -232,20 +233,31 @@ jobs:
               }
               ids.add(b.id)
 
-              // Each variant lives in its own release: the tag must start
-              // turboquant-<id> so the URL the client builds is exact.
-              if (typeof b.tag !== 'string' || !b.tag.startsWith(`turboquant-${b.id}`)) {
-                errors.push(`Backend "${b.id}" tag "${b.tag}" must start with turboquant-${b.id}`)
+              // The fork publishes every variant of a build under ONE release
+              // tag, b<upstream-build>-<fork-semver>, e.g. b10018-1.3.0.
+              if (typeof b.tag !== 'string' || !/^b\d+-\d+\.\d+\.\d+$/.test(b.tag)) {
+                errors.push(
+                  `Backend "${b.id}" tag "${b.tag}" must look like b<build>-<major>.<minor>.<patch> (e.g. b10018-1.3.0)`
+                )
+              } else {
+                tags.add(b.tag)
               }
 
-              // Asset must match llama-turboquant-<id>.(zip|tar.gz).
-              const expectZip = `llama-turboquant-${b.id}.zip`
-              const expectTar = `llama-turboquant-${b.id}.tar.gz`
-              if (b.asset !== expectZip && b.asset !== expectTar) {
+              // Windows ships .zip, Linux/macOS ship .tar.gz. Pinning the
+              // extension per platform keeps the client's URL builder exact.
+              const ext = b.id.startsWith('windows-') ? 'zip' : 'tar.gz'
+              const expected = `llama-turboquant-${b.id}.${ext}`
+              if (b.asset !== expected) {
                 errors.push(
-                  `Backend "${b.id}" asset "${b.asset}" must be ${expectZip} or ${expectTar}`
+                  `Backend "${b.id}" asset "${b.asset}" must be ${expected}`
                 )
               }
+            }
+
+            if (tags.size > 1) {
+              errors.push(
+                `All backends must come from ONE unified release; found tags: ${[...tags].join(', ')}`
+              )
             }
           }
 
@@ -257,5 +269,6 @@ jobs:
 
           console.log('TurboQuant manifest passed all integrity checks.')
           console.log(`  backends: ${data.backends.length}`)
+          console.log(`  tag: ${data.backends[0] && data.backends[0].tag}`)
           if (data.commit) console.log(`  commit: ${data.commit}`)
           EOF

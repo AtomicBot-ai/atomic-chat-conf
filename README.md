@@ -290,41 +290,59 @@ the catalog of downloadable **TurboQuant** `llama.cpp` builds
 (`AtomicBot-ai/atomic-llama-cpp-turboquant`) the Atomic Chat client offers as
 a *second* provider on **Windows and Linux x64** (alongside the upstream
 provider above). It exists for the same rate-limit reason as the upstream
-manifest, with one twist: TurboQuant ships **each variant in its own
-release** (every variant on the same SHA but a different tag), so a
-`/releases/latest` lookup is useless and a `/releases` scan would hammer
-`api.github.com`. Therefore **every backend entry carries its own `tag`**.
+manifest: the index lives here so the client never has to scan
+`api.github.com`.
+
+The fork publishes **every variant of a build under one release tag**, named
+`b<upstream-build>-<fork-semver>` — e.g. `b10018-1.3.0` is upstream llama.cpp
+build `b10018` carrying fork version `1.3.0`. All entries therefore share the
+same `tag`; the per-entry `tag` field is retained so an older scattered release
+set stays expressible without a schema change.
 
 ```json
 {
   "$schema": "./turboquant-schema.json",
-  "updated_at": "2026-06-23T00:00:00Z",
-  "commit": "d86eb0b",
+  "updated_at": "2026-07-31T09:00:00Z",
+  "commit": "5bc5c248d",
   "backends": [
-    { "id": "windows-x64-cpu",       "tag": "turboquant-windows-x64-cpu-d86eb0b",       "asset": "llama-turboquant-windows-x64-cpu.zip" },
-    { "id": "windows-x64-cuda-12.4", "tag": "turboquant-windows-x64-cuda-12.4-d86eb0b", "asset": "llama-turboquant-windows-x64-cuda-12.4.zip" },
-    { "id": "windows-x64-cuda-13.3", "tag": "turboquant-windows-x64-cuda-13.3-d86eb0b", "asset": "llama-turboquant-windows-x64-cuda-13.3.zip" },
-    { "id": "windows-x64-vulkan",    "tag": "turboquant-windows-x64-vulkan-d86eb0b",    "asset": "llama-turboquant-windows-x64-vulkan.zip" },
-    { "id": "linux-x64-vulkan",      "tag": "turboquant-linux-x64-vulkan-d86eb0b",      "asset": "llama-turboquant-linux-x64-vulkan.tar.gz" }
+    { "id": "windows-x64-cpu",       "tag": "b10018-1.3.0", "asset": "llama-turboquant-windows-x64-cpu.zip" },
+    { "id": "windows-x64-cuda-12.4", "tag": "b10018-1.3.0", "asset": "llama-turboquant-windows-x64-cuda-12.4.zip" },
+    { "id": "windows-x64-cuda-13.3", "tag": "b10018-1.3.0", "asset": "llama-turboquant-windows-x64-cuda-13.3.zip" },
+    { "id": "windows-x64-vulkan",    "tag": "b10018-1.3.0", "asset": "llama-turboquant-windows-x64-vulkan.zip" },
+    { "id": "linux-x64-cpu",         "tag": "b10018-1.3.0", "asset": "llama-turboquant-linux-x64-cpu.tar.gz" },
+    { "id": "linux-x64-cuda-12.4",   "tag": "b10018-1.3.0", "asset": "llama-turboquant-linux-x64-cuda-12.4.tar.gz" },
+    { "id": "linux-x64-cuda-13.3",   "tag": "b10018-1.3.0", "asset": "llama-turboquant-linux-x64-cuda-13.3.tar.gz" },
+    { "id": "linux-x64-rocm",        "tag": "b10018-1.3.0", "asset": "llama-turboquant-linux-x64-rocm.tar.gz" },
+    { "id": "linux-x64-vulkan",      "tag": "b10018-1.3.0", "asset": "llama-turboquant-linux-x64-vulkan.tar.gz" },
+    { "id": "macos-arm64",           "tag": "b10018-1.3.0", "asset": "llama-turboquant-macos-arm64.tar.gz" }
   ]
 }
 ```
 
 - `id` is the clean, release-aligned backend id the client uses verbatim.
-- `tag` must start `turboquant-<id>`; the archive download URL is built as
+- `tag` must match `b<build>-<major>.<minor>.<patch>` and must be **identical
+  across all entries**; the archive download URL is built as
   `…/releases/download/<tag>/<asset>` against the releases CDN (not rate-limited).
 - `asset` must be `llama-turboquant-<id>.zip` (Windows) or
-  `llama-turboquant-<id>.tar.gz` (Linux). Windows CUDA archives **bundle**
-  `cudart64`/`cublas64`/`cublasLt64` — no separate cudart download.
-- **macOS is bundled-only** and intentionally omitted (`macos-arm64` is never
-  resolved from this manifest).
+  `llama-turboquant-<id>.tar.gz` (Linux/macOS). The release also publishes
+  `.zip` copies of the Linux archives — do **not** list those. Windows CUDA
+  archives **bundle** `cudart64`/`cublas64`/`cublasLt64` — no separate cudart
+  download.
+- Linux GPU tiers (`cuda-12.4`, `cuda-13.3`, `rocm`) are downloaded at runtime
+  by the client; `linux-x64-vulkan` is what the installer bundles as the offline
+  fallback. `linux-x64-rocm` targets RDNA2–RDNA4 and needs a host ROCm runtime,
+  so the client only offers it after a conservative hardware probe.
+- `macos-arm64` is **bundled into the installer**, not downloaded at runtime,
+  but it is listed here so the build system resolves it from the same pin.
 
 ### How to update the TurboQuant manifest
 
-> Also static and hand-maintained. Pick the new SHA's release set, then for
-> each `backends[]` entry set `tag` to `turboquant-<id>-<sha>`, keep `asset`
-> as `llama-turboquant-<id>.{zip,tar.gz}`, bump `commit` + `updated_at`,
-> open a PR, and merge once CI is green.
+> Also static and hand-maintained. Pick the new release tag, set the same
+> `tag` on every `backends[]` entry, keep `asset` as
+> `llama-turboquant-<id>.{zip,tar.gz}`, bump `commit` + `updated_at`, open a
+> PR, and merge once CI is green. Consumers pin an immutable commit of this
+> repository, so a merge alone does not upgrade anyone — the Atomic Chat
+> client must bump its pinned revision in a deliberate compatibility change.
 
 ## CI validation
 
@@ -342,8 +360,9 @@ every push and pull request. It performs the following checks:
   names must be unique.
 - `ajv` validates `backends/turboquant-manifest.json` against
   `backends/turboquant-schema.json`.
-- Every TurboQuant `tag` must start `turboquant-<id>`, every `asset` must be
-  `llama-turboquant-<id>.{zip,tar.gz}`, and backend ids must be unique.
+- Every TurboQuant `tag` must look like `b<build>-<semver>` and all entries must
+  share one tag, every `asset` must be `llama-turboquant-<id>.zip` on Windows /
+  `.tar.gz` elsewhere, and backend ids must be unique.
 
 You cannot merge a PR until CI is green.
 
