@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Atomic Chat TurboQuant llama.cpp Backends Manifest",
-  "description": "Schema for the static TurboQuant (AtomicBot-ai/atomic-llama-cpp-turboquant) backends manifest consumed by the Atomic Chat client (@janhq/llamacpp-extension) on Windows and Linux. Unlike the upstream backends manifest (a single tag_name + assets, mirroring one GitHub release), TurboQuant ships each backend variant in its OWN release, so every entry carries its own tag. The archive downloads still come from the GitHub releases CDN; only the index lives here to dodge the api.github.com rate limit.",
+  "description": "Schema for the static TurboQuant (AtomicBot-ai/atomic-llama-cpp-turboquant) backends manifest consumed by the Atomic Chat client (@janhq/llamacpp-extension) on Windows and Linux, and by the build system for the bundled macOS artifact. The fork publishes every backend variant of a build under ONE release tag named b<upstream-build>-<fork-semver> (e.g. b10018-1.3.0), so all entries share the same tag; the per-entry tag field is kept so legacy scattered releases stay expressible. The archive downloads still come from the GitHub releases CDN; only the index lives here to dodge the api.github.com rate limit.",
   "type": "object",
   "required": ["backends"],
   "additionalProperties": false,
@@ -14,13 +14,13 @@
     },
     "commit": {
       "type": "string",
-      "description": "Short SHA the release set was built from (e.g. d86eb0b). Informational only."
+      "description": "Short SHA the release set was built from (e.g. 5bc5c248d). Informational only."
     },
     "backends": {
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "#/definitions/backend" },
-      "description": "TurboQuant backend variants. Each carries its own release tag because the variants live in separate releases. macOS is bundled-only and never parsed from this manifest."
+      "description": "TurboQuant backend variants. Every entry of a unified release carries the same tag. macOS is bundled into the installer rather than downloaded at runtime, but its entry is listed so the build system can resolve it from here too."
     }
   },
   "definitions": {
@@ -31,18 +31,18 @@
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^(windows-x64-(cpu|vulkan|cuda-[0-9]+\\.[0-9]+)|linux-x64-vulkan|macos-arm64)$",
-          "description": "Clean backend id, e.g. windows-x64-cuda-12.4, linux-x64-vulkan."
+          "pattern": "^(windows-x64-(cpu|vulkan|cuda-[0-9]+\\.[0-9]+)|linux-x64-(cpu|vulkan|rocm|cuda-[0-9]+\\.[0-9]+)|macos-arm64)$",
+          "description": "Clean backend id, e.g. windows-x64-cuda-12.4, linux-x64-rocm."
         },
         "tag": {
           "type": "string",
-          "pattern": "^turboquant-",
-          "description": "GitHub release tag carrying this variant's asset, e.g. turboquant-windows-x64-cuda-12.4-d86eb0b."
+          "pattern": "^b[0-9]+-[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "GitHub release tag carrying this variant's asset, e.g. b10018-1.3.0 (upstream llama.cpp build b10018, fork version 1.3.0)."
         },
         "asset": {
           "type": "string",
           "pattern": "^llama-turboquant-.+\\.(zip|tar\\.gz)$",
-          "description": "Release asset filename, e.g. llama-turboquant-windows-x64-cuda-12.4.zip."
+          "description": "Release asset filename, e.g. llama-turboquant-linux-x64-rocm.tar.gz."
         }
       }
     }
