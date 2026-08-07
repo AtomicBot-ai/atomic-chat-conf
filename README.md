@@ -19,8 +19,10 @@ providers/
   registry.json      # Single source of truth for cloud providers
   schema.json        # JSON Schema (Draft-07) used by CI validation
 models/
-  recommended.json   # Recommended models surfaced in Hub + onboarding
+  recommended.json   # Recommended models surfaced in onboarding (frozen shape)
   schema.json        # JSON Schema (Draft-07) for the recommended-models manifest
+  staff-picks.json   # Curated Staff Picks list shown by default in Hub
+  schema.staff-picks.json # JSON Schema (Draft-07) for the staff-picks manifest
 backends/
   manifest.json            # llama.cpp backend catalog (mirrors a ggml-org release)
   schema.json              # JSON Schema (Draft-07) for the backends manifest
@@ -223,6 +225,62 @@ before rendering.
 
 All running Atomic Chat clients pick up the change within an hour.
 
+## Staff picks
+
+[`models/staff-picks.json`](models/staff-picks.json) drives the **Staff picks**
+list that the Hub screen (`/hub`) shows by default, before the user types a
+search query. It is deliberately a **separate file** from
+`models/recommended.json`: shipped production clients reject a manifest whose
+`schema_version` is higher than the one they were built against, so the
+recommended-models manifest is frozen at version 1 with its original entry
+shape. Staff picks get their own file, their own schema, and their own
+version dial.
+
+Entry shape (full schema in
+[`models/schema.staff-picks.json`](models/schema.staff-picks.json)):
+
+```json
+{
+  "model_name": "AtomicChat/Qwen3.6-27B-GGUF",
+  "title": "Qwen3.6 27B",
+  "summary": "Prioritizes stability and real-world coding quality.",
+  "description_key": "hub:recCoding",
+  "icon": "qwen",
+  "format": "gguf",
+  "categories": ["reasoning", "coding", "tools"],
+  "order": 80,
+  "active": true
+}
+```
+
+| Field             | Required | Notes                                                                                          |
+| ----------------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `model_name`      | yes      | Hugging Face repo id (`owner/name`).                                                            |
+| `title`           | no       | Display name override. Falls back to the name derived from the repo id.                         |
+| `summary`         | no       | One-line English description shown on the row.                                                  |
+| `description_key` | no       | i18n key for the chip label. Must start with `hub:`. Takes priority over `summary` for the chip.|
+| `icon`            | no       | Bundled icon key. Unknown keys fall back to the model-family logo, then to a letter.            |
+| `format`          | no       | `gguf` (default) or `mlx`. Decides which picks the Hub resolves at all — see below.             |
+| `categories`      | no       | Capability pills: `general`, `reasoning`, `coding`, `vision`, `tools`, `compact`, `multilingual`.|
+| `platforms`       | no       | Subset of `["macos", "windows", "linux"]`. **Omit to show on every platform.**                  |
+| `order`           | no       | Lower sorts first; entries without an order sort last. Must be unique.                          |
+| `active`          | no       | Defaults to `true`. Set to `false` to hide a pick without deleting it.                          |
+
+### GGUF and MLX entries
+
+A model that ships both a GGUF and an MLX build gets **two entries**. The Hub
+shows the GGUF one by default and swaps to the MLX one only while the MLX
+format filter is selected, so the list never carries the same model twice.
+
+`format` has to be declared rather than inferred from the repo id, because the
+client uses it to decide which picks to resolve: an entry that is off screen
+costs neither a catalog lookup nor a Hugging Face request. Give the MLX entry
+`"platforms": ["macos"]` (CI rejects an MLX pick without it), the same `order`
+as its GGUF twin plus 5, and `"description_key": "hub:recForMlx"`.
+
+Editing flow is identical to the recommended-models manifest: edit on GitHub,
+bump `updated_at`, open a PR, wait for the "Validate registry" workflow.
+
 ## llama.cpp backends manifest
 
 [`backends/manifest.json`](backends/manifest.json) is the catalog of
@@ -357,6 +415,10 @@ every push and pull request. It performs the following checks:
 - `ajv` validates `models/recommended.json` against `models/schema.json`.
 - Every `(model_name, description_key)` pair in the recommended-models
   manifest must be unique.
+- `ajv` validates `models/staff-picks.json` against
+  `models/schema.staff-picks.json`.
+- Every `model_name` and every `order` in the staff-picks manifest must be
+  unique, and `description_key`, when present, must start with `hub:`.
 - `ajv` validates `backends/manifest.json` against `backends/schema.json`.
 - Every `llama-*` asset name must carry the declared `tag_name`, and asset
   names must be unique.
@@ -375,6 +437,7 @@ If you want to validate locally before pushing:
 ```bash
 npx ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
 npx ajv-cli@5 validate -s models/schema.json    -d models/recommended.json   --strict=false
+npx ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
 npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
 npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 ```

@@ -139,6 +139,84 @@ jobs:
           console.log(`  updated_at: ${data.updated_at}`)
           EOF
 
+      - name: Validate staff-picks manifest against schema
+        run: |
+          ajv validate \
+            -s models/schema.staff-picks.json \
+            -d models/staff-picks.json \
+            --strict=false
+
+      - name: Check staff-picks integrity
+        run: |
+          node <<'EOF'
+          const fs = require('fs')
+          const path = 'models/staff-picks.json'
+          const data = JSON.parse(fs.readFileSync(path, 'utf8'))
+          const errors = []
+
+          if (typeof data.schema_version !== 'number' || data.schema_version < 1) {
+            errors.push('schema_version must be a positive integer')
+          }
+
+          if (typeof data.updated_at !== 'string' || !/\d{4}-\d{2}-\d{2}T/.test(data.updated_at)) {
+            errors.push('updated_at must be an ISO-8601 timestamp')
+          }
+
+          if (!Array.isArray(data.picks)) {
+            errors.push('picks must be an array')
+          } else {
+            const seen = new Set()
+            const orders = new Set()
+            for (const p of data.picks) {
+              if (typeof p.model_name !== 'string' || !p.model_name.includes('/')) {
+                errors.push(`Pick model_name must be a "owner/repo" string: ${p.model_name}`)
+                continue
+              }
+              if (seen.has(p.model_name)) {
+                errors.push(`Duplicate pick: ${p.model_name}`)
+              }
+              seen.add(p.model_name)
+
+              if (p.description_key !== undefined && !p.description_key.startsWith('hub:')) {
+                errors.push(
+                  `Pick "${p.model_name}" description_key must start with "hub:"`
+                )
+              }
+
+              // MLX runs on Apple Silicon only, so an MLX pick offered to
+              // every platform is an entry Windows and Linux can never use.
+              if (p.format === 'mlx') {
+                const platforms = p.platforms ?? []
+                if (platforms.length !== 1 || platforms[0] !== 'macos') {
+                  errors.push(
+                    `MLX pick "${p.model_name}" must declare platforms: ["macos"]`
+                  )
+                }
+              }
+
+              // A duplicate order makes the list order depend on JSON key
+              // ordering, which is not something an editor can reason about.
+              if (p.order !== undefined) {
+                if (orders.has(p.order)) {
+                  errors.push(`Duplicate order ${p.order} on pick ${p.model_name}`)
+                }
+                orders.add(p.order)
+              }
+            }
+          }
+
+          if (errors.length > 0) {
+            console.error('Staff-picks manifest validation failed:')
+            for (const e of errors) console.error('  - ' + e)
+            process.exit(1)
+          }
+
+          console.log('Staff-picks manifest passed all integrity checks.')
+          console.log(`  picks: ${data.picks.length}`)
+          console.log(`  schema_version: ${data.schema_version}`)
+          console.log(`  updated_at: ${data.updated_at}`)
+          EOF
+
       - name: Validate backends manifest against schema
         run: |
           ajv validate \

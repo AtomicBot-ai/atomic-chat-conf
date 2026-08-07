@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat Staff Picks",
+  "description": "Schema for the remote staff-picks manifest consumed by the Atomic Chat Hub. Intentionally separate from models/schema.json: recommended.json is frozen for shipped production clients and must keep schema_version 1 with its original entry shape.",
+  "type": "object",
+  "required": ["schema_version", "updated_at", "picks"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Bump this when the shape of a pick entry changes in a backwards-incompatible way. Ship the client that understands the new version BEFORE publishing it."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp; refresh on every meaningful change."
+    },
+    "picks": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/pick" }
+    }
+  },
+  "definitions": {
+    "pick": {
+      "type": "object",
+      "required": ["model_name"],
+      "additionalProperties": false,
+      "properties": {
+        "model_name": {
+          "type": "string",
+          "description": "Hugging Face repo id (owner/name)."
+        },
+        "title": {
+          "type": "string",
+          "description": "Display name override. Falls back to the name derived from the repo id."
+        },
+        "summary": {
+          "type": "string",
+          "description": "One-line English description. Used when description_key is absent or missing from the locale bundle."
+        },
+        "description_key": {
+          "type": "string",
+          "pattern": "^hub:",
+          "description": "i18n key for the chip label. Must start with 'hub:' and exist in web-app/src/locales/*/hub.json. Takes priority over summary."
+        },
+        "icon": {
+          "type": "string",
+          "description": "Key of a bundled icon resolved by web-app/src/lib/model-logo.ts. Unknown keys fall back to the model-family logo, then to a letter."
+        },
+        "format": {
+          "type": "string",
+          "enum": ["gguf", "mlx"],
+          "default": "gguf",
+          "description": "Build format of this repo. The Hub shows GGUF picks by default and MLX picks only while the MLX format filter is selected, so this must be declared here: it decides which entries are resolved at all, before any catalog lookup or Hugging Face request. MLX entries should also carry platforms: [\"macos\"]."
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "general",
+              "reasoning",
+              "coding",
+              "vision",
+              "tools",
+              "compact",
+              "multilingual"
+            ]
+          },
+          "uniqueItems": true,
+          "description": "Capability pills shown on the list row."
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["macos", "windows", "linux"]
+          },
+          "uniqueItems": true,
+          "description": "If omitted, the pick is shown on every platform."
+        },
+        "order": {
+          "type": "number",
+          "description": "Lower sorts first. Entries without an order sort after those with one."
+        },
+        "active": {
+          "type": "boolean",
+          "default": true,
+          "description": "Set to false to hide a pick without removing the entry."
+        }
+      }
+    }
+  }
+}
