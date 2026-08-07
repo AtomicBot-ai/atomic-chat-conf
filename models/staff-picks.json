@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.staff-picks.json",
   "schema_version": 1,
-  "updated_at": "2026-08-07T13:49:21Z",
+  "updated_at": "2026-08-07T14:54:05Z",
   "picks": [
     {
       "model_name": "AtomicChat/Qwen3.6-27B-GGUF",
@@ -12,8 +12,9 @@
       "format": "gguf",
       "categories": [
         "general",
-        "reasoning",
         "coding",
+        "vision",
+        "reasoning",
         "tools"
       ],
       "order": 10
@@ -27,8 +28,9 @@
       "format": "mlx",
       "categories": [
         "general",
-        "reasoning",
         "coding",
+        "vision",
+        "reasoning",
         "tools"
       ],
       "platforms": [
@@ -45,6 +47,7 @@
       "format": "gguf",
       "categories": [
         "general",
+        "vision",
         "reasoning",
         "tools"
       ],
@@ -59,6 +62,7 @@
       "format": "mlx",
       "categories": [
         "general",
+        "vision",
         "reasoning",
         "tools"
       ],
@@ -76,6 +80,7 @@
       "format": "gguf",
       "categories": [
         "general",
+        "vision",
         "reasoning",
         "tools"
       ],
@@ -90,6 +95,7 @@
       "format": "mlx",
       "categories": [
         "general",
+        "vision",
         "reasoning",
         "tools"
       ],
@@ -107,6 +113,7 @@
       "format": "gguf",
       "categories": [
         "general",
+        "vision",
         "reasoning",
         "tools"
       ],
@@ -121,6 +128,7 @@
       "format": "mlx",
       "categories": [
         "general",
+        "vision",
         "reasoning",
         "tools"
       ],
@@ -167,8 +175,11 @@
       "format": "gguf",
       "categories": [
         "general",
+        "multilingual",
         "vision",
-        "multilingual"
+        "audio",
+        "reasoning",
+        "tools"
       ],
       "order": 60
     },
@@ -181,8 +192,11 @@
       "format": "mlx",
       "categories": [
         "general",
+        "multilingual",
         "vision",
-        "multilingual"
+        "audio",
+        "reasoning",
+        "tools"
       ],
       "platforms": [
         "macos"
@@ -199,7 +213,8 @@
       "categories": [
         "general",
         "vision",
-        "reasoning"
+        "reasoning",
+        "tools"
       ],
       "order": 70
     },
@@ -213,7 +228,8 @@
       "categories": [
         "general",
         "vision",
-        "reasoning"
+        "reasoning",
+        "tools"
       ],
       "platforms": [
         "macos"
@@ -230,7 +246,8 @@
       "categories": [
         "general",
         "vision",
-        "reasoning"
+        "reasoning",
+        "tools"
       ],
       "order": 80
     },
@@ -244,7 +261,8 @@
       "categories": [
         "general",
         "vision",
-        "reasoning"
+        "reasoning",
+        "tools"
       ],
       "platforms": [
         "macos"
@@ -260,8 +278,11 @@
       "format": "gguf",
       "categories": [
         "general",
+        "compact",
         "vision",
-        "compact"
+        "audio",
+        "reasoning",
+        "tools"
       ],
       "order": 90
     },
@@ -274,8 +295,11 @@
       "format": "mlx",
       "categories": [
         "general",
+        "compact",
         "vision",
-        "compact"
+        "audio",
+        "reasoning",
+        "tools"
       ],
       "platforms": [
         "macos"
@@ -291,7 +315,11 @@
       "format": "gguf",
       "categories": [
         "general",
-        "compact"
+        "compact",
+        "vision",
+        "audio",
+        "reasoning",
+        "tools"
       ],
       "order": 100
     },
@@ -304,7 +332,11 @@
       "format": "mlx",
       "categories": [
         "general",
-        "compact"
+        "compact",
+        "vision",
+        "audio",
+        "reasoning",
+        "tools"
       ],
       "platforms": [
         "macos"
@@ -349,7 +381,8 @@
       "format": "gguf",
       "categories": [
         "general",
-        "compact"
+        "compact",
+        "tools"
       ],
       "order": 120
     },
@@ -362,7 +395,8 @@
       "format": "mlx",
       "categories": [
         "general",
-        "compact"
+        "compact",
+        "tools"
       ],
       "platforms": [
         "macos"
@@ -378,7 +412,8 @@
       "format": "gguf",
       "categories": [
         "general",
-        "compact"
+        "compact",
+        "tools"
       ],
       "order": 130
     },
@@ -391,7 +426,8 @@
       "format": "mlx",
       "categories": [
         "general",
-        "compact"
+        "compact",
+        "tools"
       ],
       "platforms": [
         "macos"
@@ -438,6 +474,7 @@
       "format": "gguf",
       "categories": [
         "coding",
+        "reasoning",
         "tools"
       ],
       "order": 150
@@ -451,6 +488,7 @@
       "format": "mlx",
       "categories": [
         "coding",
+        "reasoning",
         "tools"
       ],
       "platforms": [
@@ -467,7 +505,9 @@
       "format": "gguf",
       "categories": [
         "general",
-        "vision"
+        "vision",
+        "reasoning",
+        "tools"
       ],
       "order": 160
     },
@@ -480,7 +520,9 @@
       "format": "mlx",
       "categories": [
         "general",
-        "vision"
+        "vision",
+        "reasoning",
+        "tools"
       ],
       "platforms": [
         "macos"
@@ -495,8 +537,9 @@
       "icon": "nvidia",
       "format": "gguf",
       "categories": [
-        "reasoning",
         "vision",
+        "audio",
+        "reasoning",
         "tools"
       ],
       "order": 170
@@ -509,8 +552,9 @@
       "icon": "nvidia",
       "format": "mlx",
       "categories": [
-        "reasoning",
         "vision",
+        "audio",
+        "reasoning",
         "tools"
       ],
       "platforms": [
@@ -559,6 +603,7 @@
       "categories": [
         "general",
         "compact",
+        "reasoning",
         "tools"
       ],
       "order": 190
@@ -573,6 +618,7 @@
       "categories": [
         "general",
         "compact",
+        "reasoning",
         "tools"
       ],
       "platforms": [
@@ -713,6 +759,7 @@
       "format": "gguf",
       "categories": [
         "coding",
+        "vision",
         "tools"
       ],
       "order": 240
@@ -726,6 +773,7 @@
       "format": "mlx",
       "categories": [
         "coding",
+        "vision",
         "tools"
       ],
       "platforms": [
@@ -741,7 +789,8 @@
       "icon": "essentialai",
       "format": "gguf",
       "categories": [
-        "general"
+        "general",
+        "tools"
       ],
       "order": 250
     },
@@ -753,7 +802,8 @@
       "icon": "essentialai",
       "format": "mlx",
       "categories": [
-        "general"
+        "general",
+        "tools"
       ],
       "platforms": [
         "macos"
@@ -768,6 +818,7 @@
       "icon": "mistral",
       "format": "gguf",
       "categories": [
+        "vision",
         "reasoning",
         "tools"
       ],
@@ -781,6 +832,7 @@
       "icon": "mistral",
       "format": "mlx",
       "categories": [
+        "vision",
         "reasoning",
         "tools"
       ],
@@ -798,7 +850,9 @@
       "format": "gguf",
       "categories": [
         "general",
-        "compact"
+        "compact",
+        "vision",
+        "tools"
       ],
       "order": 270
     },
@@ -811,7 +865,9 @@
       "format": "mlx",
       "categories": [
         "general",
-        "compact"
+        "compact",
+        "vision",
+        "tools"
       ],
       "platforms": [
         "macos"
@@ -826,7 +882,8 @@
       "icon": "allenai",
       "format": "gguf",
       "categories": [
-        "reasoning"
+        "reasoning",
+        "tools"
       ],
       "order": 280
     },
@@ -838,7 +895,8 @@
       "icon": "allenai",
       "format": "mlx",
       "categories": [
-        "reasoning"
+        "reasoning",
+        "tools"
       ],
       "platforms": [
         "macos"
@@ -1035,8 +1093,7 @@
       "icon": "microsoft",
       "format": "gguf",
       "categories": [
-        "general",
-        "reasoning"
+        "general"
       ],
       "order": 350
     },
@@ -1048,8 +1105,7 @@
       "icon": "microsoft",
       "format": "mlx",
       "categories": [
-        "general",
-        "reasoning"
+        "general"
       ],
       "platforms": [
         "macos"
@@ -1065,6 +1121,7 @@
       "format": "gguf",
       "categories": [
         "general",
+        "reasoning",
         "tools"
       ],
       "order": 360
@@ -1078,6 +1135,7 @@
       "format": "mlx",
       "categories": [
         "general",
+        "reasoning",
         "tools"
       ],
       "platforms": [
@@ -1094,7 +1152,8 @@
       "format": "gguf",
       "categories": [
         "general",
-        "multilingual"
+        "multilingual",
+        "tools"
       ],
       "order": 370
     },
@@ -1107,7 +1166,8 @@
       "format": "mlx",
       "categories": [
         "general",
-        "multilingual"
+        "multilingual",
+        "tools"
       ],
       "platforms": [
         "macos"
@@ -1123,7 +1183,8 @@
       "format": "gguf",
       "categories": [
         "general",
-        "reasoning"
+        "reasoning",
+        "tools"
       ],
       "order": 380
     },
@@ -1136,7 +1197,8 @@
       "format": "mlx",
       "categories": [
         "general",
-        "reasoning"
+        "reasoning",
+        "tools"
       ],
       "platforms": [
         "macos"

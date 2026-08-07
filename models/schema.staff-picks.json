@@ -64,13 +64,14 @@
               "reasoning",
               "coding",
               "vision",
+              "audio",
               "tools",
               "compact",
               "multilingual"
             ]
           },
           "uniqueItems": true,
-          "description": "Capability pills shown on the list row."
+          "description": "Pills shown on the list row. `vision`, `audio`, `reasoning` and `tools` are also the authoritative source of the Hub capability badges for this pick, so they must describe the model behind this exact repo rather than its family."
         },
         "platforms": {
           "type": "array",
