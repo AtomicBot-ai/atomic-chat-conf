@@ -285,7 +285,7 @@ bump `updated_at`, open a PR, wait for the "Validate registry" workflow.
 
 [`backends/manifest.json`](backends/manifest.json) is the catalog of
 downloadable `llama.cpp` backend builds the Atomic Chat client offers on
-**Windows and Linux x64**. It exists to dodge GitHub's unauthenticated API
+**Windows, Linux x64 and Apple Silicon**. It exists to dodge GitHub's unauthenticated API
 rate limit (60 req/hr/IP): the client used to resolve the backend list
 straight from `api.github.com/repos/ggml-org/llama.cpp/releases/latest`,
 which dead-ended on shared / NAT / VPN networks (see ATO-199). It now reads
@@ -310,6 +310,7 @@ the index of *what exists*.
     { "name": "llama-b9691-bin-win-vulkan-x64.zip" },
     { "name": "llama-b9691-bin-ubuntu-x64.tar.gz" },
     { "name": "llama-b9691-bin-ubuntu-vulkan-x64.tar.gz" },
+    { "name": "llama-b9691-bin-macos-arm64.tar.gz" },
     { "name": "cudart-llama-bin-win-cuda-12.4-x64.zip" },
     { "name": "cudart-llama-bin-win-cuda-13.3-x64.zip" }
   ]
@@ -318,9 +319,16 @@ the index of *what exists*.
 
 - `$schema` / `updated_at` are advisory; the client reads only `tag_name`
   and `assets[].name`, so the GitHub-mirror shape is preserved.
-- Only Windows/Linux x64 assets are listed. **macOS is bundled-only** and is
-  never resolved from this manifest, so macOS assets are intentionally
-  omitted.
+- Windows x64, Linux x64 and `macos-arm64` assets are listed. macOS used to be
+  bundled-only and was deliberately omitted; it now resolves from this
+  manifest like the other platforms, so an engine update reaches macOS users
+  without an Atomic Chat release. The client still ships a bundled macOS build
+  as the offline baseline and picks whichever is newer.
+- **`macos-x64` is deliberately absent.** Runtime engine updates on macOS are
+  Apple Silicon only. The client filters macOS assets by host architecture, so
+  an Intel host resolves nothing from this manifest and stays on its bundled
+  build. Adding the asset would start serving updates to Intel Macs, which is
+  a product decision, not a manifest edit.
 - The `cudart-*` companions are listed for completeness; the client's
   backend regex ignores them (it matches only `llama-<tag>-bin-...`), so
   they are harmless.
@@ -333,8 +341,8 @@ the index of *what exists*.
 1. Pick the newest **complete** ggml-org release — one that has finished
    uploading *all* whitelisted assets (`win-cpu-x64`, `win-cuda-12.4-x64`,
    `win-cuda-13.x-x64`, `win-vulkan-x64`, `ubuntu-x64`, `ubuntu-vulkan-x64`,
-   plus the two `cudart-*` companions). Releases publish their tag before
-   every asset finishes uploading, so do not blindly grab `latest`.
+   `macos-arm64`, plus the two `cudart-*` companions). Releases publish their
+   tag before every asset finishes uploading, so do not blindly grab `latest`.
 2. Edit [`backends/manifest.json`](backends/manifest.json): set `tag_name`
    to the new tag, rewrite each `assets[].name` to carry that tag, and bump
    `updated_at`.

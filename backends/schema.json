@@ -21,7 +21,7 @@
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "#/definitions/asset" },
-      "description": "Release assets, mirroring GitHub's release JSON. Only Windows/Linux backend archives (and Windows cudart companions) are listed; macOS is bundled-only and never parsed from this manifest."
+      "description": "Release assets, mirroring GitHub's release JSON. Windows, Linux and Apple Silicon backend archives (plus the Windows cudart companions) are listed; the client filters them by host platform and architecture. macos-x64 is intentionally omitted - runtime engine updates on macOS are arm64 only."
     }
   },
   "definitions": {
