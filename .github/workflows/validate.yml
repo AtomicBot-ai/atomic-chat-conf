@@ -241,6 +241,11 @@ jobs:
             errors.push('updated_at, if present, must be an ISO-8601 timestamp')
           }
 
+          if (data.download_base !== undefined &&
+              !/^https:\/\/[^\s]+$/.test(data.download_base)) {
+            errors.push('download_base, if present, must be an https URL')
+          }
+
           if (!Array.isArray(data.assets) || data.assets.length === 0) {
             errors.push('assets must be a non-empty array')
           } else {
@@ -254,6 +259,35 @@ jobs:
                 errors.push(`Duplicate asset name: ${a.name}`)
               }
               names.add(a.name)
+
+              // sha256 and size travel together: the client checks the size
+              // first and only then pays for the hash, so a hash without a
+              // size silently skips the cheap guard.
+              const hasHash = a.sha256 !== undefined
+              const hasSize = a.size !== undefined
+              if (hasHash !== hasSize) {
+                errors.push(
+                  `Asset "${a.name}" must declare sha256 and size together (got sha256: ${hasHash}, size: ${hasSize})`
+                )
+              }
+              if (hasHash && !/^[0-9a-f]{64}$/.test(a.sha256)) {
+                errors.push(`Asset "${a.name}" has a malformed sha256`)
+              }
+              if (hasSize && (!Number.isInteger(a.size) || a.size <= 0)) {
+                errors.push(`Asset "${a.name}" size must be a positive integer`)
+              }
+            }
+
+            // A mirrored release must hash everything it hosts, otherwise the
+            // client downloads some archives unverified without saying so.
+            if (data.download_base) {
+              for (const a of data.assets) {
+                if (a.name && a.name.startsWith('llama-') && a.sha256 === undefined) {
+                  errors.push(
+                    `Asset "${a.name}" is served from download_base but carries no sha256`
+                  )
+                }
+              }
             }
             // Every llama-* asset must carry the declared tag, so the
             // client's `llama-<tag>-bin-...` regex actually matches.
@@ -274,6 +308,7 @@ jobs:
           console.log('Backends manifest passed all integrity checks.')
           console.log(`  tag_name: ${data.tag_name}`)
           console.log(`  assets: ${data.assets.length}`)
+          console.log(`  download_base: ${data.download_base ?? '(upstream CDN)'}`)
           EOF
 
       - name: Validate turboquant manifest against schema

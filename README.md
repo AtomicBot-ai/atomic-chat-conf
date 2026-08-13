@@ -28,8 +28,13 @@ backends/
   schema.json              # JSON Schema (Draft-07) for the backends manifest
   turboquant-manifest.json # TurboQuant backend catalog (one unified release tag)
   turboquant-schema.json   # JSON Schema (Draft-07) for the TurboQuant manifest
-.github/workflows/
-  validate.yml       # Validates every manifest on every PR
+.github/
+  workflows/validate.yml        # Validates every manifest on every PR
+  workflows/mirror-upstream.yml # Mirrors + signs an upstream llama.cpp release
+  actions/windows-code-sign/    # Authenticode signing via DigiCert KeyLocker
+  scripts/mirror.mjs            # Asset whitelist + manifest generation
+  entitlements.plist            # Entitlements for the signed macOS binaries
+Makefile                        # make mirror TAG=... and friends
 README.md
 ```
 
@@ -293,32 +298,38 @@ this static file via `raw.githubusercontent.com`, which has no per-IP limit.
 
 The file **mirrors the shape of a GitHub release JSON** (`tag_name` +
 `assets[].name`) so the client reuses its existing asset-name parser
-verbatim — only the source URL changed. The backend **archives themselves**
-are still downloaded from the ggml-org CDN
-(`github.com/ggml-org/llama.cpp/releases/download`); this manifest is only
-the index of *what exists*.
+verbatim — only the source URL changed.
+
+The archives themselves are served from **this repository's own releases**,
+where the Windows and macOS binaries carry Atomic Chat's signatures — see
+[Signed mirror](#signed-mirror) below. `download_base` names that stream;
+drop the field and the client falls back to the upstream ggml-org CDN, which
+is what a tag we have not mirrored has to do.
 
 ```json
 {
   "$schema": "./schema.json",
   "updated_at": "2026-06-17T00:00:00Z",
   "tag_name": "b9691",
+  "download_base": "https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download",
   "assets": [
-    { "name": "llama-b9691-bin-win-cpu-x64.zip" },
-    { "name": "llama-b9691-bin-win-cuda-12.4-x64.zip" },
-    { "name": "llama-b9691-bin-win-cuda-13.3-x64.zip" },
-    { "name": "llama-b9691-bin-win-vulkan-x64.zip" },
-    { "name": "llama-b9691-bin-ubuntu-x64.tar.gz" },
-    { "name": "llama-b9691-bin-ubuntu-vulkan-x64.tar.gz" },
-    { "name": "llama-b9691-bin-macos-arm64.tar.gz" },
-    { "name": "cudart-llama-bin-win-cuda-12.4-x64.zip" },
-    { "name": "cudart-llama-bin-win-cuda-13.3-x64.zip" }
+    {
+      "name": "llama-b9691-bin-win-cpu-x64.zip",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "size": 18468077
+    },
+    { "name": "cudart-llama-bin-win-cuda-12.4-x64.zip" }
   ]
 }
 ```
 
-- `$schema` / `updated_at` are advisory; the client reads only `tag_name`
-  and `assets[].name`, so the GitHub-mirror shape is preserved.
+- `$schema` / `updated_at` are advisory; the client reads `tag_name`,
+  `download_base` and `assets[]`, so the GitHub-mirror shape is preserved.
+- `sha256` and `size` are verified by the client after download and always
+  travel together. An asset **without** them is one we do not host: the
+  `cudart-*` companions stay on the upstream CDN (their DLLs are NVIDIA's
+  own, already signed by NVIDIA, and mirroring them would triple the size of
+  every release for no gain).
 - Windows x64, Linux x64 and `macos-arm64` assets are listed. macOS used to be
   bundled-only and was deliberately omitted; it now resolves from this
   manifest like the other platforms, so an engine update reaches macOS users
@@ -333,21 +344,49 @@ the index of *what exists*.
   backend regex ignores them (it matches only `llama-<tag>-bin-...`), so
   they are harmless.
 
+### Signed mirror
+
+Upstream ships its macOS binaries ad-hoc-signed and its Windows binaries
+unsigned. Atomic Chat both downloads these archives at runtime and bundles one
+in its installer, so before this pipeline existed the app either shipped an
+unsigned binary or re-signed it on each developer's machine. Now one CI run
+per tag produces a single artifact that serves both paths.
+
+```bash
+make mirror TAG=b10405          # run the pipeline and wait for it
+make mirror-select TAG=b10405   # dry run: show which assets that tag would mirror
+make verify-release TAG=b10405  # check the published macOS asset's signature
+```
+
+[`.github/workflows/mirror-upstream.yml`](.github/workflows/mirror-upstream.yml)
+downloads the whitelisted assets from ggml-org, signs the Windows binaries
+with DigiCert KeyLocker and the macOS binaries with our Developer ID
+(hardened runtime, secure timestamp), repacks each archive with its original
+layout, publishes them under the upstream tag, then regenerates this manifest
+with a `sha256` per asset and commits it. Linux archives pass through
+byte-for-byte: there is no Linux signing mechanism here.
+
+The manifest moves **after** the upload succeeds, never before — clients
+resolve download URLs from it, so the reverse order would hand them 404s.
+Older mirrored releases are pruned (`RETAIN=3` by default).
+
+Required secrets: `SM_API_KEY`, `SM_CLIENT_CERT_FILE_B64`,
+`SM_CLIENT_CERT_PASSWORD` (Windows), `APPLE_CERTIFICATE`,
+`APPLE_CERTIFICATE_PASSWORD` (macOS). The temporary keychain the macOS job
+creates gets a password generated on the runner, so that one is not a secret.
+
 ### How to update the backends manifest
 
-> The manifest is **static and hand-maintained** for now. Automated
-> generation from the ggml-org release stream is a planned follow-up.
+Run `make mirror TAG=<tag>`. Pick the newest **complete** ggml-org release:
+releases publish their tag before every asset finishes uploading, so do not
+blindly grab `latest`. The pipeline fails loudly if a required asset is
+missing from the tag, which is the check that used to be manual.
 
-1. Pick the newest **complete** ggml-org release — one that has finished
-   uploading *all* whitelisted assets (`win-cpu-x64`, `win-cuda-12.4-x64`,
-   `win-cuda-13.x-x64`, `win-vulkan-x64`, `ubuntu-x64`, `ubuntu-vulkan-x64`,
-   `macos-arm64`, plus the two `cudart-*` companions). Releases publish their
-   tag before every asset finishes uploading, so do not blindly grab `latest`.
-2. Edit [`backends/manifest.json`](backends/manifest.json): set `tag_name`
-   to the new tag, rewrite each `assets[].name` to carry that tag, and bump
-   `updated_at`.
-3. Commit to a branch, open a PR, wait for CI ("Validate registry") to pass,
-   get a review, merge. All clients pick up the change within an hour.
+Editing `backends/manifest.json` by hand still works and still points clients
+at a new engine within the hour, but a hand-written tag has no mirrored
+release behind it: drop `download_base` and the `sha256` fields in that case
+so the client falls back to the upstream CDN instead of resolving URLs into a
+release that does not exist.
 
 ## TurboQuant backends manifest
 
@@ -430,6 +469,9 @@ every push and pull request. It performs the following checks:
 - `ajv` validates `backends/manifest.json` against `backends/schema.json`.
 - Every `llama-*` asset name must carry the declared `tag_name`, and asset
   names must be unique.
+- `sha256` and `size` must appear together on an asset, and when
+  `download_base` is set every `llama-*` asset must carry a `sha256` — an
+  archive we host but do not hash would be downloaded unverified.
 - `ajv` validates `backends/turboquant-manifest.json` against
   `backends/turboquant-schema.json`.
 - Every TurboQuant `tag` must look like `b<build>-<semver>` and all entries must

@@ -1,0 +1,345 @@
+name: Mirror upstream llama.cpp
+
+# Takes a ggml-org/llama.cpp release tag, re-signs the Windows and macOS
+# binaries with Atomic Chat's certificates, publishes them as a release here,
+# and points backends/manifest.json at them.
+#
+# Why mirror at all: the client downloads these archives at runtime and also
+# bundles one in the installer. Upstream ships them ad-hoc-signed (macOS) or
+# unsigned (Windows), which meant the app either shipped an unsigned binary or
+# re-signed it on each developer's machine. See the ADR
+# "Mirror signed upstream llama.cpp builds" in the Atomic Chat repository.
+#
+# Linux archives pass through untouched: we have no Linux signing mechanism.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Upstream release tag to mirror (e.g. b10405)"
+        required: true
+        type: string
+      retain:
+        description: "How many mirrored releases to keep (older ones are deleted)"
+        required: false
+        default: "3"
+        type: string
+      publish_manifest:
+        description: "Commit backends/manifest.json so clients pick the tag up"
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: mirror-upstream
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  select:
+    name: Select assets
+    runs-on: ubuntu-latest
+    outputs:
+      windows: ${{ steps.pick.outputs.windows }}
+      macos: ${{ steps.pick.outputs.macos }}
+      linux: ${{ steps.pick.outputs.linux }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate tag
+        run: |
+          if ! [[ "${{ inputs.tag }}" =~ ^b[0-9]+$ ]]; then
+            echo "::error::tag must look like a ggml-org release tag (e.g. b10405)"
+            exit 1
+          fi
+
+      - name: Resolve mirrored assets
+        id: pick
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node .github/scripts/mirror.mjs select --tag "${{ inputs.tag }}" --out assets.json
+          for platform in windows macos linux; do
+            list="$(jq -c "[.assets[] | select(.platform == \"$platform\")]" assets.json)"
+            echo "$platform=$list" >> "$GITHUB_OUTPUT"
+          done
+
+  sign-macos:
+    name: Sign macOS (${{ matrix.asset.name }})
+    needs: select
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        asset: ${{ fromJSON(needs.select.outputs.macos) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Import code signing certificate
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          # The keychain lives and dies with this job, so its password is
+          # generated here rather than kept as a secret.
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 24)
+
+          echo -n "$APPLE_CERTIFICATE" | base64 --decode -o "$CERTIFICATE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          if [ -z "$IDENTITY" ]; then
+            echo "::error::No Developer ID Application identity in the imported keychain"
+            exit 1
+          fi
+          echo "CODESIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+          echo "Signing identity: $IDENTITY"
+
+      - name: Download upstream archive
+        run: curl -fSL --retry 5 --retry-delay 3 -o "${{ matrix.asset.name }}" "${{ matrix.asset.url }}"
+
+      - name: Sign Mach-O binaries
+        run: |
+          set -euo pipefail
+          mkdir extract
+          tar -xzf "${{ matrix.asset.name }}" -C extract
+          # Upstream ships one top-level llama-<tag>/ directory; keep it, the
+          # client's extractor and the installer's layout both expect it.
+          root="$(cd extract && ls -1)"
+          if [ "$(printf '%s\n' "$root" | wc -l)" -ne 1 ]; then
+            echo "::error::expected exactly one top-level directory, got: $root"
+            exit 1
+          fi
+
+          signed=0
+          # -type f skips the version symlinks (libggml.dylib -> libggml.0.dylib);
+          # signing the target covers them.
+          while IFS= read -r bin; do
+            if file "$bin" | grep -q "Mach-O"; then
+              codesign --force --options runtime --timestamp \
+                --entitlements .github/entitlements.plist \
+                --sign "$CODESIGN_IDENTITY" "$bin"
+              codesign --verify --strict "$bin"
+              signed=$((signed + 1))
+            fi
+          done < <(find "extract/$root" -type f)
+
+          if [ "$signed" -eq 0 ]; then
+            echo "::error::no Mach-O binaries found in ${{ matrix.asset.name }}"
+            exit 1
+          fi
+          echo "Signed $signed Mach-O binaries"
+
+          "extract/$root/llama-server" --version 2>&1 | head -3 || true
+
+      - name: Repack
+        run: |
+          set -euo pipefail
+          root="$(cd extract && ls -1)"
+          tar -czf "${{ matrix.asset.name }}" -C extract "$root"
+          rm -rf extract
+
+      - name: Verify signatures survived the round trip
+        run: |
+          set -euo pipefail
+          mkdir verify
+          tar -xzf "${{ matrix.asset.name }}" -C verify
+          root="$(cd verify && ls -1)"
+          codesign -dv --verbose=2 "verify/$root/llama-server" 2>&1 | grep -E "Authority|TeamIdentifier|flags"
+          codesign --verify --strict "verify/$root/llama-server"
+          rm -rf verify
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-${{ matrix.asset.name }}
+          path: ${{ matrix.asset.name }}
+          retention-days: 1
+
+  sign-windows:
+    name: Sign Windows (${{ matrix.asset.name }})
+    needs: select
+    runs-on: windows-latest
+    strategy:
+      # One job per archive: the CUDA and ROCm archives are hundreds of
+      # megabytes each and signing them in sequence would blow the job timeout.
+      fail-fast: false
+      matrix:
+        asset: ${{ fromJSON(needs.select.outputs.windows) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download upstream archive
+        shell: pwsh
+        run: curl.exe -fSL --retry 5 --retry-delay 3 -o "${{ matrix.asset.name }}" "${{ matrix.asset.url }}"
+
+      - name: Extract
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path extract | Out-Null
+          7z x "${{ matrix.asset.name }}" -oextract -bso0 -bsp0
+          Remove-Item "${{ matrix.asset.name }}"
+
+      - name: Sign binaries
+        uses: ./.github/actions/windows-code-sign
+        with:
+          path: extract
+          sm-api-key: ${{ secrets.SM_API_KEY }}
+          sm-client-cert-b64: ${{ secrets.SM_CLIENT_CERT_FILE_B64 }}
+          sm-client-cert-password: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
+
+      - name: Repack
+        shell: pwsh
+        run: |
+          # 7-Zip, not Compress-Archive: the latter is single-threaded and needs
+          # double-digit minutes on the CUDA and ROCm archives.
+          Push-Location extract
+          7z a -tzip -mx=5 -mmt=on "..\${{ matrix.asset.name }}" * -bso0 -bsp0
+          if ($LASTEXITCODE -ne 0) { throw "7z failed to repack" }
+          Pop-Location
+          Remove-Item -Recurse -Force extract
+
+      - name: Verify signatures survived the round trip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path verify | Out-Null
+          7z x "${{ matrix.asset.name }}" -overify -bso0 -bsp0
+          $server = Get-ChildItem -Path verify -Recurse -Filter "llama-server.exe" | Select-Object -First 1
+          if (-not $server) { throw "llama-server.exe missing from repacked archive" }
+          signtool verify /pa $server.FullName
+          if ($LASTEXITCODE -ne 0) { throw "repacked llama-server.exe is not signed" }
+          Remove-Item -Recurse -Force verify
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-${{ matrix.asset.name }}
+          path: ${{ matrix.asset.name }}
+          retention-days: 1
+
+  passthrough-linux:
+    name: Pass through Linux (${{ matrix.asset.name }})
+    needs: select
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        asset: ${{ fromJSON(needs.select.outputs.linux) }}
+    steps:
+      # No Linux code-signing mechanism exists here, so these archives are
+      # mirrored byte-for-byte. They still gain the sha256 the client verifies.
+      - name: Download upstream archive
+        run: curl -fSL --retry 5 --retry-delay 3 -o "${{ matrix.asset.name }}" "${{ matrix.asset.url }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-${{ matrix.asset.name }}
+          path: ${{ matrix.asset.name }}
+          retention-days: 1
+
+  publish:
+    name: Publish release and manifest
+    needs: [select, sign-macos, sign-windows, passthrough-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Collect signed assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: signed-*
+          path: dist
+          merge-multiple: true
+
+      - name: Show what will be published
+        run: ls -la dist
+
+      # The release must exist and hold every asset BEFORE the manifest moves:
+      # clients resolve download URLs from the manifest, so the reverse order
+      # would hand them 404s for as long as the upload took.
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG exists; replacing its assets"
+            gh release upload "$TAG" dist/* --clobber
+            exit 0
+          fi
+          {
+            printf 'Mirror of [ggml-org/llama.cpp %s](https://github.com/ggml-org/llama.cpp/releases/tag/%s).\n\n' "$TAG" "$TAG"
+            printf 'Windows binaries are Authenticode-signed and macOS binaries carry a Developer ID signature with hardened runtime. Linux archives are mirrored byte-for-byte: there is no Linux signing mechanism here.\n\n'
+            printf 'Consumed by Atomic Chat through `backends/manifest.json`.\n'
+          } > notes.md
+          gh release create "$TAG" dist/* \
+            --title "llama.cpp $TAG (signed mirror)" \
+            --notes-file notes.md
+
+      - name: Regenerate backends/manifest.json
+        run: node .github/scripts/mirror.mjs manifest --tag "${{ inputs.tag }}" --dir dist
+
+      - name: Validate the regenerated manifest
+        run: |
+          npm install -g ajv-cli@5
+          ajv validate -s backends/schema.json -d backends/manifest.json --strict=false
+
+      - name: Commit manifest
+        if: ${{ inputs.publish_manifest }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet backends/manifest.json; then
+            echo "Manifest already points at ${{ inputs.tag }}; nothing to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backends/manifest.json
+          git commit -m "chore(manifest): mirror upstream ${{ inputs.tag }}"
+          git push
+
+      - name: Prune old mirrored releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RETAIN="${{ inputs.retain }}"
+          if ! [[ "$RETAIN" =~ ^[0-9]+$ ]] || [ "$RETAIN" -lt 1 ]; then
+            echo "::error::retain must be a positive integer"
+            exit 1
+          fi
+          # Sort by tag number, not by date: a re-run of an older tag would
+          # otherwise look like the newest release and evict a current one.
+          mapfile -t stale < <(
+            gh release list --limit 100 --json tagName --jq '.[].tagName' \
+              | grep -E '^b[0-9]+$' \
+              | sort -t b -k2 -nr \
+              | tail -n +$((RETAIN + 1))
+          )
+          if [ ${#stale[@]} -eq 0 ]; then
+            echo "Nothing to prune (retaining $RETAIN)"
+            exit 0
+          fi
+          for tag in "${stale[@]}"; do
+            echo "Deleting release $tag"
+            gh release delete "$tag" --yes --cleanup-tag
+          done

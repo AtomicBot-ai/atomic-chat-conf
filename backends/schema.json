@@ -17,6 +17,11 @@
       "pattern": "^b[0-9]+$",
       "description": "ggml-org/llama.cpp release tag the assets belong to (e.g. b9691)."
     },
+    "download_base": {
+      "type": "string",
+      "format": "uri",
+      "description": "Base URL the client prepends to '<tag_name>/<asset name>' when downloading. Normally this repository's own release stream, whose archives carry Atomic Chat's Windows Authenticode and macOS Developer ID signatures. Omit it to fall back to the upstream ggml-org CDN, which is what a tag that has not been mirrored yet must do. Written by .github/workflows/mirror-upstream.yml."
+    },
     "assets": {
       "type": "array",
       "minItems": 1,
@@ -33,6 +38,16 @@
         "name": {
           "type": "string",
           "description": "Asset filename, e.g. llama-b9691-bin-win-cuda-13.3-x64.zip."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the mirrored archive, verified by the client after download. Present only on assets this repository actually hosts; the cudart companions stay on the upstream CDN and carry no hash."
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Archive size in bytes, checked before the hash so a truncated download fails fast."
         }
       }
     }
