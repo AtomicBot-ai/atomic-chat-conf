@@ -1,8 +1,22 @@
 {
   "$schema": "./schema.staff-picks.json",
   "schema_version": 1,
-  "updated_at": "2026-08-14T18:08:00Z",
+  "updated_at": "2026-08-14T21:30:00Z",
   "picks": [
+    {
+      "model_name": "AtomicChat/Qwen3.8-27B-GGUF",
+      "title": "Qwen3.8 27B",
+      "summary": "Hybrid attention with a built-in draft head for faster replies.",
+      "description_key": "hub:recMathReasoning",
+      "icon": "qwen",
+      "format": "gguf",
+      "categories": [
+        "general",
+        "reasoning",
+        "tools"
+      ],
+      "order": 0
+    },
     {
       "model_name": "AtomicChat/Muse-Glimmer-30B-GGUF",
       "title": "Muse Glimmer 30B",
