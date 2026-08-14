@@ -1,8 +1,23 @@
 {
   "$schema": "./schema.staff-picks.json",
   "schema_version": 1,
-  "updated_at": "2026-08-14T18:08:00Z",
+  "updated_at": "2026-08-15T00:00:00Z",
   "picks": [
+    {
+      "model_name": "AtomicChat/Qwen3.8-27B-GGUF",
+      "title": "Qwen3.8 27B",
+      "summary": "Hybrid-attention Qwen3.8 with a 262K context window.",
+      "description_key": "hub:recCoding",
+      "icon": "qwen",
+      "format": "gguf",
+      "categories": [
+        "general",
+        "coding",
+        "reasoning",
+        "tools"
+      ],
+      "order": 0
+    },
     {
       "model_name": "AtomicChat/Muse-Glimmer-30B-GGUF",
       "title": "Muse Glimmer 30B",
