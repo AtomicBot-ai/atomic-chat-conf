@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.staff-picks.json",
   "schema_version": 1,
-  "updated_at": "2026-08-14T15:20:00Z",
+  "updated_at": "2026-08-14T18:08:00Z",
   "picks": [
     {
       "model_name": "AtomicChat/Muse-Glimmer-30B-GGUF",
@@ -31,21 +31,6 @@
         "tools"
       ],
       "order": 2
-    },
-    {
-      "model_name": "owao/Nanbeige4.2-3B-GGUF",
-      "title": "Nanbeige4.2 3B",
-      "summary": "Compact agentic 3B built for tool use and multi-step tasks.",
-      "description_key": "hub:recEverydayUse",
-      "icon": "owao",
-      "format": "gguf",
-      "categories": [
-        "general",
-        "compact",
-        "reasoning",
-        "tools"
-      ],
-      "order": 3
     },
     {
       "model_name": "LiquidAI/LFM2.5-2.6B-GGUF",
@@ -602,6 +587,21 @@
         "macos"
       ],
       "order": 165
+    },
+    {
+      "model_name": "owao/Nanbeige4.2-3B-GGUF",
+      "title": "Nanbeige4.2 3B",
+      "summary": "Compact agentic 3B built for tool use and multi-step tasks.",
+      "description_key": "hub:recEverydayUse",
+      "icon": "nanbeige",
+      "format": "gguf",
+      "categories": [
+        "general",
+        "compact",
+        "reasoning",
+        "tools"
+      ],
+      "order": 167
     },
     {
       "model_name": "unsloth/NVIDIA-Nemotron-3-Nano-Omni-30B-A3B-Reasoning-GGUF",
