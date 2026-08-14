@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.staff-picks.json",
   "schema_version": 1,
-  "updated_at": "2026-08-14T15:07:00Z",
+  "updated_at": "2026-08-14T15:20:00Z",
   "picks": [
     {
       "model_name": "AtomicChat/Muse-Glimmer-30B-GGUF",
@@ -37,6 +37,7 @@
       "title": "Nanbeige4.2 3B",
       "summary": "Compact agentic 3B built for tool use and multi-step tasks.",
       "description_key": "hub:recEverydayUse",
+      "icon": "owao",
       "format": "gguf",
       "categories": [
         "general",
@@ -67,6 +68,7 @@
       "title": "Ling 3.0 flash",
       "summary": "Sparse 124B with linear attention: 5.1B active per token.",
       "description_key": "hub:recMathReasoning",
+      "icon": "inclusionai",
       "format": "gguf",
       "categories": [
         "general",
