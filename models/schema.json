@@ -20,6 +20,12 @@
     "recommendations": {
       "type": "array",
       "items": { "$ref": "#/definitions/recommendation" }
+    },
+    "low_spec_recommendations": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/recommendation" },
+      "description": "Replaces (does not extend) `recommendations` on machines the client classifies as low-spec: Apple Silicon under 16 GB unified memory, or under 8 GB VRAM elsewhere. Clients built before this key existed ignore it and keep showing `recommendations` \u2014 do NOT bump schema_version for this key."
     }
   },
   "definitions": {
@@ -36,6 +42,16 @@
           "type": "string",
           "pattern": "^hub:",
           "description": "i18n key for the chip label. Must start with 'hub:' and exist in web-app/src/locales/*/hub.json."
+        },
+        "quant": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]{2,16}$",
+          "description": "Pins which quant to download, matched against the quant token parsed from the GGUF filename (e.g. \"Q8_0\", \"Q4_K_M\"). Omit to let the client pick its house default."
+        },
+        "mmproj_quant": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]{2,16}$",
+          "description": "Vision models only: pins the multimodal projector quant. Omit to let the client pick."
         },
         "platforms": {
           "type": "array",
