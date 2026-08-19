@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.staff-picks.json",
   "schema_version": 1,
-  "updated_at": "2026-08-14T21:30:00Z",
+  "updated_at": "2026-08-19T18:55:00Z",
   "picks": [
     {
       "model_name": "AtomicChat/Qwen3.8-27B-GGUF",
@@ -75,6 +75,35 @@
         "tools"
       ],
       "order": 5
+    },
+    {
+      "model_name": "AtomicChat/Ornith-1.5-9B-GGUF",
+      "title": "Ornith 1.5 9B",
+      "summary": "Ornith's agentic coding model with vision input.",
+      "description_key": "hub:recCoding",
+      "icon": "ornith",
+      "format": "gguf",
+      "categories": [
+        "coding",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "order": 6
+    },
+    {
+      "model_name": "AtomicChat/Ornith-1.5-35B-A3B-GGUF",
+      "title": "Ornith 1.5 35B A3B",
+      "summary": "Sparse Ornith 1.5: 35B total parameters, 3B active per token.",
+      "description_key": "hub:recCoding",
+      "icon": "ornith",
+      "format": "gguf",
+      "categories": [
+        "coding",
+        "reasoning",
+        "tools"
+      ],
+      "order": 7
     },
     {
       "model_name": "AtomicChat/Qwen3.6-27B-GGUF",
