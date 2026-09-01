@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-07-09T11:16:00Z",
+  "updated_at": "2026-09-01T00:00:00Z",
   "providers": [
     {
       "active": true,
@@ -655,6 +655,60 @@
           "version": "1.0",
           "description": "Lightweight Gemini 2.5 Flash for cost-sensitive use.",
           "capabilities": ["completion", "tools", "vision"]
+        }
+      ]
+    },
+    {
+      "active": true,
+      "api_key": "",
+      "base_url": "https://api.meta.ai/v1",
+      "explore_models_url": "https://dev.meta.ai/docs/models/",
+      "provider": "meta",
+      "settings": [
+        {
+          "key": "api-key",
+          "title": "API Key",
+          "description": "The Meta Model API uses API keys for authentication. Sign in at [dev.meta.ai](https://dev.meta.ai) and create a key under **API keys → Create API key**.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "Insert API Key",
+            "value": "",
+            "type": "password",
+            "input_actions": ["unobscure", "copy"]
+          }
+        },
+        {
+          "key": "base-url",
+          "title": "Base URL",
+          "description": "The base OpenAI-compatible endpoint to use. See the [Meta Model API documentation](https://dev.meta.ai/docs) for more information.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "https://api.meta.ai/v1",
+            "value": "https://api.meta.ai/v1"
+          }
+        }
+      ],
+      "models": [
+        {
+          "id": "muse-spark-1.2",
+          "name": "Muse Spark 1.2",
+          "version": "1.0",
+          "description": "Meta's flagship multimodal model and the engine behind Muse Code. 1M-token context, text/image/video/PDF input, tools and structured output.",
+          "capabilities": ["completion", "tools", "vision", "reasoning"]
+        },
+        {
+          "id": "muse-spark-1.2-contributor",
+          "name": "Muse Spark 1.2 (Contributor)",
+          "version": "1.0",
+          "description": "Same weights as Muse Spark 1.2 at roughly a twelfth of the input price, in exchange for letting Meta train on your data.",
+          "capabilities": ["completion", "tools", "vision", "reasoning"]
+        },
+        {
+          "id": "muse-spark-1.1",
+          "name": "Muse Spark 1.1",
+          "version": "1.0",
+          "description": "Previous Muse Spark generation. 1M-token context, multimodal input with tool calling.",
+          "capabilities": ["completion", "tools", "vision", "reasoning"]
         }
       ]
     },
