@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-09-01T00:00:00Z",
+  "updated_at": "2026-09-02T00:00:00Z",
   "providers": [
     {
       "active": true,
@@ -1104,6 +1104,74 @@
           "name": "Qwen Turbo",
           "version": "1.0",
           "description": "Qwen Turbo — fastest, most budget-friendly Qwen tier.",
+          "capabilities": ["completion", "tools"]
+        }
+      ]
+    },
+    {
+      "active": true,
+      "api_key": "",
+      "base_url": "https://api.deepseek.com/v1",
+      "explore_models_url": "https://api-docs.deepseek.com/quick_start/pricing",
+      "provider": "deepseek",
+      "settings": [
+        {
+          "key": "api-key",
+          "title": "API Key",
+          "description": "The DeepSeek API uses API keys for authentication. Visit your [API Keys](https://platform.deepseek.com/api_keys) page to retrieve the API key you'll use in your requests.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "Insert API Key",
+            "value": "",
+            "type": "password",
+            "input_actions": ["unobscure", "copy"]
+          }
+        },
+        {
+          "key": "base-url",
+          "title": "Base URL",
+          "description": "The base OpenAI-compatible endpoint to use. See the [DeepSeek API documentation](https://api-docs.deepseek.com/) for more information.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "https://api.deepseek.com/v1",
+            "value": "https://api.deepseek.com/v1"
+          }
+        }
+      ],
+      "models": [
+        {
+          "id": "deepseek-chat",
+          "name": "DeepSeek Chat",
+          "version": "1.0",
+          "description": "Stable alias for the current DeepSeek flagship in non-thinking mode. Points at V4 Pro today and follows the platform default as it moves.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "deepseek-reasoner",
+          "name": "DeepSeek Reasoner",
+          "version": "1.0",
+          "description": "The same flagship in thinking mode — streams its chain of thought in `reasoning_content` before the answer.",
+          "capabilities": ["completion", "tools", "reasoning"]
+        },
+        {
+          "id": "deepseek-v4-pro",
+          "name": "DeepSeek V4 Pro",
+          "version": "1.0",
+          "description": "DeepSeek flagship MoE (1.6T total / 49B active) for advanced reasoning, coding, and long-horizon agents. 1M ctx.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "deepseek-v4-flash",
+          "name": "DeepSeek V4 Flash",
+          "version": "1.0",
+          "description": "Efficiency-optimized MoE (284B total / 13B active) for fast, cost-effective reasoning and coding. 1M ctx.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "deepseek-v3.2",
+          "name": "DeepSeek V3.2",
+          "version": "1.0",
+          "description": "Previous-generation open-weight flagship with strong tool use and long-context retrieval.",
           "capabilities": ["completion", "tools"]
         }
       ]
