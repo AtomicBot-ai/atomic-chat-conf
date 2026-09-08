@@ -127,6 +127,66 @@ jobs:
             }
           }
 
+          // The low-spec list REPLACES the standard one on clients that predate
+          // `tiers`, so a model in both would be offered on hardware the other
+          // list says it is wrong for.
+          const standard = new Set(
+            (data.recommendations ?? []).map((r) => r.model_name)
+          )
+          for (const r of data.low_spec_recommendations ?? []) {
+            if (standard.has(r.model_name)) {
+              errors.push(
+                `${r.model_name} appears in both recommendation lists`
+              )
+            }
+          }
+
+          // The tier vocabulary is owned by a client release: a key the shipped
+          // client cannot name is silently dropped, leaving that machine on its
+          // bundled ladder. Keep this list in sync with `HardwareTier` in
+          // web-app/src/lib/hardware-tier.ts.
+          const TIERS = [
+            'cpu_only',
+            'vram_2',
+            'vram_4',
+            'vram_8',
+            'vram_12',
+            'vram_16',
+            'vram_16_plus',
+            'unified_8',
+            'unified_16',
+            'unified_32',
+            'unified_32_plus',
+          ]
+          const tiers = data.tiers ?? {}
+          for (const key of Object.keys(tiers)) {
+            if (!TIERS.includes(key)) errors.push(`Unknown tier: ${key}`)
+          }
+          for (const tier of TIERS) {
+            const list = tiers[tier]
+            if (list === undefined) {
+              errors.push(`Missing tier: ${tier}`)
+              continue
+            }
+            if (!Array.isArray(list) || list.length === 0) {
+              errors.push(`Tier ${tier} must be a non-empty array`)
+              continue
+            }
+            const seenInTier = new Set()
+            for (const r of list) {
+              if (seenInTier.has(r.model_name)) {
+                errors.push(`Duplicate entry in tier ${tier}: ${r.model_name}`)
+              }
+              seenInTier.add(r.model_name)
+              // These download unattended. Without a pin the client falls back
+              // to its house quant preference and fetches a different file than
+              // the ladder was measured on.
+              if (!/^[A-Za-z0-9_]{2,16}$/.test(r.quant ?? '')) {
+                errors.push(`Tier ${tier}/${r.model_name} must pin a quant`)
+              }
+            }
+          }
+
           if (errors.length > 0) {
             console.error('Recommended-models manifest validation failed:')
             for (const e of errors) console.error('  - ' + e)
@@ -135,6 +195,7 @@ jobs:
 
           console.log('Recommended-models manifest passed all integrity checks.')
           console.log(`  recommendations: ${data.recommendations.length}`)
+          console.log(`  tiers: ${Object.keys(data.tiers ?? {}).length}`)
           console.log(`  schema_version: ${data.schema_version}`)
           console.log(`  updated_at: ${data.updated_at}`)
           EOF
