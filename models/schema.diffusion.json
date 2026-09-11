@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat diffusion model catalog",
+  "description": "Curated local image/video generation families for stable-diffusion.cpp (and, later, the diffusers sidecar). Every size is the exact byte count from the Hugging Face API: the app renders bytes / 1024**3, so a hand-typed decimal GB would disagree with the progress bar beside it.",
+  "type": "object",
+  "required": ["schema_version", "updated_at", "families"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "type": "integer", "const": 1 },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "families": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/family" } }
+  },
+  "definitions": {
+    "file": {
+      "type": "object",
+      "required": ["repo", "filename", "bytes"],
+      "additionalProperties": false,
+      "properties": {
+        "repo": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+        "filename": { "type": "string", "minLength": 1 },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "field": { "type": "string", "enum": ["llm", "qwen2vl", "clip_l", "t5xxl"] }
+      }
+    },
+    "quant": {
+      "type": "object",
+      "required": ["id", "label", "filename", "bytes"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "label": { "type": "string", "pattern": "^[A-Z0-9_]+$" },
+        "filename": { "type": "string", "minLength": 1 },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "recommended": { "type": "boolean" }
+      }
+    },
+    "family": {
+      "type": "object",
+      "required": ["id", "name", "modality", "engines", "transformer", "defaults", "ranges", "capabilities"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "enum": ["z-image", "flux.2-klein", "flux.1", "qwen-image", "wan2.2-ti2v-5b", "ltx-2"] },
+        "name": { "type": "string" },
+        "developer": { "type": "string" },
+        "description": { "type": "string" },
+        "license": { "type": "string" },
+        "gated": { "type": "boolean" },
+        "modality": { "type": "string", "enum": ["image", "video"] },
+        "engines": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["sdcpp", "diffusers"] } },
+        "transformer": {
+          "type": "object",
+          "required": ["repo", "quants"],
+          "additionalProperties": false,
+          "properties": {
+            "repo": { "type": "string" },
+            "quants": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/quant" } }
+          }
+        },
+        "vae": { "$ref": "#/definitions/file" },
+        "vae_format": { "type": "string", "enum": ["flux2"] },
+        "text_encoders": { "type": "array", "items": { "$ref": "#/definitions/file" } },
+        "defaults": {
+          "type": "object",
+          "required": ["steps", "cfg_scale", "width", "height"],
+          "additionalProperties": false,
+          "properties": {
+            "steps": { "type": "integer", "minimum": 1 },
+            "cfg_scale": { "type": "number", "minimum": 0 },
+            "guidance": { "type": "number", "minimum": 0 },
+            "sampling_method": { "type": "string" },
+            "flow_shift": { "type": "number" },
+            "width": { "type": "integer", "minimum": 64 },
+            "height": { "type": "integer", "minimum": 64 }
+          }
+        },
+        "ranges": {
+          "type": "object",
+          "required": ["steps", "dims", "dim_multiple"],
+          "additionalProperties": false,
+          "properties": {
+            "steps": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+            "dims": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+            "dim_multiple": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "capabilities": {
+          "type": "object",
+          "required": ["negative_prompt", "guidance", "workflows"],
+          "additionalProperties": false,
+          "properties": {
+            "negative_prompt": { "type": "boolean" },
+            "guidance": { "type": "boolean" },
+            "workflows": { "type": "array", "items": { "type": "string", "enum": ["create", "transform"] } }
+          }
+        }
+      }
+    }
+  }
+}

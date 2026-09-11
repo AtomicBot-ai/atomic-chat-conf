@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat stable-diffusion.cpp Backends Manifest",
+  "description": "Schema for the remote stable-diffusion.cpp (sd-server / sd-cli) prebuilt manifest consumed by Atomic Chat's diffusion installer. Unlike the llama.cpp manifest, every asset carries an explicit `backend` id: upstream asset names embed the CI runner's OS version (macOS-26.6.2, Ubuntu-24.04), so the client must never derive the platform from the file name.",
+  "type": "object",
+  "required": ["tag_name", "assets"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "upstream_repo": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+      "description": "GitHub repository the tag was released from; the fallback CDN when download_base is absent."
+    },
+    "tag_name": {
+      "type": "string",
+      "pattern": "^master-[0-9]+-[0-9a-f]{7}(-a[0-9a-f]{7})?$",
+      "description": "leejet/stable-diffusion.cpp release tag (e.g. master-849-d04e895). An `-a<sha>` suffix marks an Atomic-built variant carrying local patches; the client strips it when falling back to the upstream CDN."
+    },
+    "download_base": {
+      "type": "string",
+      "format": "uri",
+      "description": "Base URL the client prepends to '<tag_name>/<asset name>'. Present once .github/workflows/mirror-sdcpp.yml has re-signed and re-hosted the archives; absent means download from the upstream GitHub release."
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/asset" }
+    }
+  },
+  "definitions": {
+    "asset": {
+      "type": "object",
+      "required": ["backend", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "type": "string",
+          "enum": [
+            "macos-arm64",
+            "win-cuda12-x64",
+            "win-rocm-7.14-x64",
+            "win-vulkan-x64",
+            "win-cpu-x64",
+            "linux-cuda12-x64",
+            "linux-vulkan-x64",
+            "linux-rocm-7.14-x64",
+            "linux-cpu-x64",
+            "win-cudart-cu12"
+          ],
+          "description": "Stable backend id the client selects on; the only field it matches against."
+        },
+        "name": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "size": { "type": "integer", "minimum": 1 },
+        "companion": {
+          "type": "boolean",
+          "description": "True for the Windows CUDA runtime archive that is unpacked next to the CUDA backend when the host has no CUDA toolkit."
+        }
+      }
+    }
+  }
+}

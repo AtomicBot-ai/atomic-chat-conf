@@ -446,3 +446,201 @@ jobs:
           console.log(`  tag: ${data.backends[0] && data.backends[0].tag}`)
           if (data.commit) console.log(`  commit: ${data.commit}`)
           EOF
+
+      - name: Validate sd.cpp backends manifest against schema
+        run: |
+          ajv validate \
+            -s backends/sdcpp-schema.json \
+            -d backends/sdcpp-manifest.json \
+            --strict=false
+
+      - name: Check sd.cpp backends manifest integrity
+        run: |
+          node <<'EOF'
+          const fs = require('fs')
+          const path = 'backends/sdcpp-manifest.json'
+          const data = JSON.parse(fs.readFileSync(path, 'utf8'))
+          const errors = []
+
+          if (typeof data.tag_name !== 'string' ||
+              !/^master-\d+-[0-9a-f]{7}(-a[0-9a-f]{7})?$/.test(data.tag_name)) {
+            errors.push('tag_name must look like a leejet release tag (e.g. master-849-d04e895)')
+          }
+
+          if (data.download_base !== undefined &&
+              !/^https:\/\/[^\s]+$/.test(data.download_base)) {
+            errors.push('download_base, if present, must be an https URL')
+          }
+
+          // The client installs these whenever the host qualifies; a tag that
+          // lacks one silently degrades every such host to the next tier.
+          const REQUIRED = [
+            'macos-arm64',
+            'win-cuda12-x64',
+            'win-vulkan-x64',
+            'win-cpu-x64',
+            'linux-vulkan-x64',
+            'linux-cpu-x64',
+          ]
+
+          if (!Array.isArray(data.assets) || data.assets.length === 0) {
+            errors.push('assets must be a non-empty array')
+          } else {
+            const backends = new Set()
+            const names = new Set()
+            for (const a of data.assets) {
+              if (typeof a.backend !== 'string' || !a.backend) {
+                errors.push('every asset must have a backend id')
+                continue
+              }
+              if (backends.has(a.backend)) errors.push(`Duplicate backend id: ${a.backend}`)
+              backends.add(a.backend)
+              if (typeof a.name !== 'string' || !/^[A-Za-z0-9._-]+\.(zip|tar\.gz)$/.test(a.name)) {
+                errors.push(`Asset "${a.backend}" has a malformed name: ${a.name}`)
+              }
+              if (names.has(a.name)) errors.push(`Duplicate asset name: ${a.name}`)
+              names.add(a.name)
+
+              // sha256 and size travel together: the client checks the size
+              // first and only then pays for the hash.
+              const hasHash = a.sha256 !== undefined
+              const hasSize = a.size !== undefined
+              if (hasHash !== hasSize) {
+                errors.push(`Asset "${a.backend}" must declare sha256 and size together`)
+              }
+              // The client only pairs the cudart archive with win-cuda12-x64.
+              if ((a.backend === 'win-cudart-cu12') !== (a.companion === true)) {
+                errors.push(`Asset "${a.backend}" companion flag does not match its id`)
+              }
+            }
+            for (const id of REQUIRED) {
+              if (!backends.has(id)) errors.push(`Missing required backend: ${id}`)
+            }
+            if (backends.has('win-cuda12-x64') && !backends.has('win-cudart-cu12')) {
+              errors.push('win-cuda12-x64 needs its win-cudart-cu12 companion')
+            }
+            // A mirrored release must hash everything it hosts, otherwise the
+            // client downloads some archives unverified without saying so.
+            if (data.download_base) {
+              for (const a of data.assets) {
+                if (a.sha256 === undefined) {
+                  errors.push(`Asset "${a.backend}" is served from download_base but carries no sha256`)
+                }
+              }
+            }
+          }
+
+          if (errors.length > 0) {
+            console.error('sd.cpp backends manifest validation failed:')
+            for (const e of errors) console.error('  - ' + e)
+            process.exit(1)
+          }
+
+          console.log('sd.cpp backends manifest passed all integrity checks.')
+          console.log(`  tag_name: ${data.tag_name}`)
+          console.log(`  assets: ${data.assets.length}`)
+          console.log(`  download_base: ${data.download_base ?? '(upstream CDN)'}`)
+          EOF
+
+      - name: Validate diffusion catalog against schema
+        run: |
+          ajv validate \
+            -s models/schema.diffusion.json \
+            -d models/diffusion.json \
+            --strict=false
+
+      - name: Check diffusion catalog integrity
+        run: |
+          node <<'EOF'
+          const fs = require('fs')
+          const path = 'models/diffusion.json'
+          const data = JSON.parse(fs.readFileSync(path, 'utf8'))
+          const errors = []
+
+          if (data.schema_version !== 1) {
+            errors.push('schema_version must be 1 (bump SUPPORTED_SCHEMA_VERSION in the client first)')
+          }
+          if (typeof data.updated_at !== 'string' || !/\d{4}-\d{2}-\d{2}T/.test(data.updated_at)) {
+            errors.push('updated_at must be an ISO-8601 timestamp')
+          }
+
+          // Mirrors the client's strict parser (web-app/src/services/
+          // diffusion-catalog-registry.ts): a name that fails here is a family
+          // the app would drop on load.
+          const QUANT_FILENAME = /^[A-Za-z0-9._-]+\.gguf$/
+          const SIDE_FILENAME = /^[A-Za-z0-9._/-]+\.(gguf|safetensors)$/
+          const safeSide = (name) =>
+            SIDE_FILENAME.test(name) && name.split('/').every((s) => s.length > 0 && s !== '..')
+
+          // Side files are de-duplicated on disk by repo + file name, so two
+          // families that name the same file must agree on what it is.
+          const sideFiles = new Map()
+          const noteSide = (family, file) => {
+            const key = `${file.repo}/${file.filename}`
+            const seen = sideFiles.get(key)
+            if (seen && (seen.bytes !== file.bytes || seen.sha256 !== file.sha256)) {
+              errors.push(`${family}: ${key} disagrees with ${seen.family} on bytes/sha256`)
+            }
+            if (!seen) sideFiles.set(key, { family, bytes: file.bytes, sha256: file.sha256 })
+          }
+
+          const ids = new Set()
+          for (const f of data.families ?? []) {
+            if (ids.has(f.id)) errors.push(`Duplicate family id: ${f.id}`)
+            ids.add(f.id)
+
+            const quantIds = new Set()
+            let recommended = 0
+            for (const q of f.transformer?.quants ?? []) {
+              if (quantIds.has(q.id)) errors.push(`${f.id}: duplicate quant id ${q.id}`)
+              quantIds.add(q.id)
+              if (!QUANT_FILENAME.test(q.filename)) {
+                errors.push(`${f.id}/${q.id}: transformer must be a flat .gguf (got ${q.filename})`)
+              }
+              if (q.recommended === true) recommended += 1
+            }
+            if (recommended !== 1) {
+              errors.push(`${f.id}: exactly one quant must be recommended (found ${recommended})`)
+            }
+
+            if (f.vae) {
+              if (!safeSide(f.vae.filename)) errors.push(`${f.id}: unsafe VAE path ${f.vae.filename}`)
+              noteSide(f.id, f.vae)
+            }
+            for (const te of f.text_encoders ?? []) {
+              if (!safeSide(te.filename)) errors.push(`${f.id}: unsafe text encoder path ${te.filename}`)
+              if (!te.field) errors.push(`${f.id}: text encoder ${te.filename} has no field`)
+              noteSide(f.id, te)
+            }
+            if (f.vae_format === 'flux2' && !f.vae) {
+              errors.push(`${f.id}: vae_format without a vae`)
+            }
+
+            const { steps, dims, dim_multiple } = f.ranges ?? {}
+            if (!Array.isArray(steps) || steps[0] > steps[1]) errors.push(`${f.id}: steps range is inverted`)
+            if (!Array.isArray(dims) || dims[0] > dims[1]) errors.push(`${f.id}: dims range is inverted`)
+            const d = f.defaults ?? {}
+            if (Array.isArray(steps) && (d.steps < steps[0] || d.steps > steps[1])) {
+              errors.push(`${f.id}: default steps ${d.steps} outside ${steps}`)
+            }
+            for (const axis of ['width', 'height']) {
+              if (Array.isArray(dims) && (d[axis] < dims[0] || d[axis] > dims[1])) {
+                errors.push(`${f.id}: default ${axis} ${d[axis]} outside ${dims}`)
+              }
+              if (dim_multiple && d[axis] % dim_multiple !== 0) {
+                errors.push(`${f.id}: default ${axis} ${d[axis]} is not a multiple of ${dim_multiple}`)
+              }
+            }
+          }
+
+          if (errors.length > 0) {
+            console.error('Diffusion catalog validation failed:')
+            for (const e of errors) console.error('  - ' + e)
+            process.exit(1)
+          }
+
+          console.log('Diffusion catalog passed all integrity checks.')
+          console.log(`  families: ${data.families.length}`)
+          console.log(`  shared side files: ${sideFiles.size}`)
+          console.log(`  updated_at: ${data.updated_at}`)
+          EOF
