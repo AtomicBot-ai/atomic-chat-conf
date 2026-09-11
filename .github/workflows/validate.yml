@@ -152,11 +152,18 @@ jobs:
             'vram_8',
             'vram_12',
             'vram_16',
-            'vram_16_plus',
+            'vram_24',
+            'vram_32',
+            'vram_48',
+            'vram_64',
+            'vram_64_plus',
             'unified_8',
             'unified_16',
+            'unified_24',
             'unified_32',
-            'unified_32_plus',
+            'unified_48',
+            'unified_64',
+            'unified_64_plus',
           ]
           const tiers = data.tiers ?? {}
           for (const key of Object.keys(tiers)) {
