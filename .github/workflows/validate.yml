@@ -96,6 +96,9 @@ jobs:
             -d models/recommended.json \
             --strict=false
 
+      - name: Check high-memory recommendations and file evidence
+        run: node --test .github/scripts/recommendation-tiers.test.mjs
+
       - name: Check recommended-models integrity
         run: |
           node <<'EOF'
@@ -157,6 +160,8 @@ jobs:
             'vram_48',
             'vram_64',
             'vram_64_plus',
+            'vram_128',
+            'vram_128_plus',
             'unified_8',
             'unified_16',
             'unified_24',
@@ -164,6 +169,8 @@ jobs:
             'unified_48',
             'unified_64',
             'unified_64_plus',
+            'unified_128',
+            'unified_128_plus',
           ]
           const tiers = data.tiers ?? {}
           for (const key of Object.keys(tiers)) {
