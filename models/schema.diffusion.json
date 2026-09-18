@@ -42,7 +42,7 @@
       "required": ["id", "name", "modality", "engines", "transformer", "defaults", "ranges", "capabilities"],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "enum": ["z-image", "flux.2-klein", "flux.1", "qwen-image", "wan2.2-ti2v-5b", "ltx-2"] },
+        "id": { "type": "string", "enum": ["z-image", "flux.2-klein", "flux.1", "flux.1-uncensored", "qwen-image", "wan2.2-ti2v-5b", "ltx-2"] },
         "name": { "type": "string" },
         "developer": { "type": "string" },
         "description": { "type": "string" },
