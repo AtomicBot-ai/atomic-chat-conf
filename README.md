@@ -217,6 +217,31 @@ clients render the entry with a neutral gray chip.
 The Atomic Chat client filters this list locally based on the host OS
 before rendering.
 
+### High-memory recommendation tiers
+
+The client and manifest distinguish `*_64`, legacy `*_64_plus` (between 64
+and nominal 128 GiB), `*_128`, and `*_128_plus`. The ids apply separately to
+`vram_` (largest single GPU) and `unified_` (Mac/ARM shared memory). Nominal
+128 allows reporting tolerance: 127–129 GiB VRAM and 127.5–128.5 GiB unified,
+with exclusive upper edges. The existing 64 edges stay at 65 and 64.5 GiB.
+Ship the client with the new vocabulary before publishing this manifest;
+schema version stays 1 because old clients ignore unknown tier keys and keep
+using `*_64_plus` and the original recommendation lists.
+
+Each high tier has an ordered lead, a Gemma 4 31B vision alternative with its
+F16 projector pinned, and another text/coding option. The larger options trade
+memory and download size for model capacity; this is not a throughput ranking.
+The AtomicChat Qwen3.6 mirrors have no projector and are offered for text.
+
+[File evidence](.github/fixtures/high-tier-files.json) records exact HF file
+sizes, revision ids, and LFS hashes checked on 2026-09-17, including every shard.
+`node --test .github/scripts/recommendation-tiers.test.mjs` checks the pins,
+complete shard sets, local catalog membership, and weight-plus-projector fit
+at each tier's lower edge. macOS's load ceiling is 85% of unified memory;
+weights within 50% are comfortable by the client rule. Other platforms use the
+whole pool before warning about spill. Neither rule guarantees runtime fit at
+arbitrary context lengths. Refresh the evidence when rotating these choices.
+
 ### How to add or update a recommendation
 
 1. Open [`models/recommended.json`](models/recommended.json) on GitHub.

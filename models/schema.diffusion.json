@@ -9,7 +9,11 @@
     "$schema": { "type": "string" },
     "schema_version": { "type": "integer", "const": 1 },
     "updated_at": { "type": "string", "format": "date-time" },
-    "families": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/family" } }
+    "families": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/family" }
+    }
   },
   "definitions": {
     "file": {
@@ -17,11 +21,17 @@
       "required": ["repo", "filename", "bytes"],
       "additionalProperties": false,
       "properties": {
-        "repo": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+        "repo": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
         "filename": { "type": "string", "minLength": 1 },
         "bytes": { "type": "integer", "minimum": 1 },
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-        "field": { "type": "string", "enum": ["llm", "qwen2vl", "clip_l", "t5xxl"] }
+        "field": {
+          "type": "string",
+          "enum": ["llm", "llm_vision", "qwen2vl", "clip_l", "t5xxl"]
+        }
       }
     },
     "quant": {
@@ -39,29 +49,65 @@
     },
     "family": {
       "type": "object",
-      "required": ["id", "name", "modality", "engines", "transformer", "defaults", "ranges", "capabilities"],
+      "required": [
+        "id",
+        "name",
+        "modality",
+        "engines",
+        "transformer",
+        "defaults",
+        "ranges",
+        "capabilities"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "enum": ["z-image", "flux.2-klein", "flux.1", "qwen-image", "wan2.2-ti2v-5b", "ltx-2"] },
+        "id": {
+          "type": "string",
+          "enum": [
+            "z-image",
+            "flux.2-klein",
+            "flux.1",
+            "flux.1-uncensored",
+            "flux.1-abliterated",
+            "flux.1-nsfw-realism",
+            "flux.1-krea",
+            "krea-2-turbo",
+            "qwen-image",
+            "qwen-image-2.1",
+            "wan2.2-ti2v-5b",
+            "ltx-2"
+          ]
+        },
         "name": { "type": "string" },
         "developer": { "type": "string" },
         "description": { "type": "string" },
         "license": { "type": "string" },
         "gated": { "type": "boolean" },
         "modality": { "type": "string", "enum": ["image", "video"] },
-        "engines": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["sdcpp", "diffusers"] } },
+        "engines": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "enum": ["sdcpp", "diffusers"] }
+        },
         "transformer": {
           "type": "object",
           "required": ["repo", "quants"],
           "additionalProperties": false,
           "properties": {
             "repo": { "type": "string" },
-            "quants": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/quant" } }
+            "quants": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/definitions/quant" }
+            }
           }
         },
         "vae": { "$ref": "#/definitions/file" },
         "vae_format": { "type": "string", "enum": ["flux2"] },
-        "text_encoders": { "type": "array", "items": { "$ref": "#/definitions/file" } },
+        "text_encoders": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/file" }
+        },
         "defaults": {
           "type": "object",
           "required": ["steps", "cfg_scale", "width", "height"],
@@ -81,8 +127,18 @@
           "required": ["steps", "dims", "dim_multiple"],
           "additionalProperties": false,
           "properties": {
-            "steps": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
-            "dims": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+            "steps": {
+              "type": "array",
+              "items": { "type": "integer" },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "dims": {
+              "type": "array",
+              "items": { "type": "integer" },
+              "minItems": 2,
+              "maxItems": 2
+            },
             "dim_multiple": { "type": "integer", "minimum": 1 }
           }
         },
@@ -93,7 +149,13 @@
           "properties": {
             "negative_prompt": { "type": "boolean" },
             "guidance": { "type": "boolean" },
-            "workflows": { "type": "array", "items": { "type": "string", "enum": ["create", "transform"] } }
+            "workflows": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["create", "transform", "reference", "edit"]
+              }
+            }
           }
         }
       }

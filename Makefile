@@ -90,8 +90,10 @@ verify-release:
 	echo "macOS asset OK. Windows assets need 'signtool verify /pa' on a Windows host."
 
 validate:
+	node --test .github/scripts/recommendation-tiers.test.mjs
 	npx --yes ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.json -d models/recommended.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
+	npx --yes ajv-cli@5 validate -s models/schema.diffusion.json -d models/diffusion.json --strict=false
 	npx --yes ajv-cli@5 validate -s backends/schema.json -d backends/manifest.json --strict=false
 	npx --yes ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
