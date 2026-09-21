@@ -581,7 +581,7 @@ jobs:
           // Mirrors the client's strict parser (web-app/src/services/
           // diffusion-catalog-registry.ts): a name that fails here is a family
           // the app would drop on load.
-          const QUANT_FILENAME = /^[A-Za-z0-9._-]+\.gguf$/
+          const QUANT_FILENAME = /^[A-Za-z0-9._/-]+\.gguf$/
           const SIDE_FILENAME = /^[A-Za-z0-9._/-]+\.(gguf|safetensors)$/
           const safeSide = (name) =>
             SIDE_FILENAME.test(name) && name.split('/').every((s) => s.length > 0 && s !== '..')
@@ -608,8 +608,8 @@ jobs:
             for (const q of f.transformer?.quants ?? []) {
               if (quantIds.has(q.id)) errors.push(`${f.id}: duplicate quant id ${q.id}`)
               quantIds.add(q.id)
-              if (!QUANT_FILENAME.test(q.filename)) {
-                errors.push(`${f.id}/${q.id}: transformer must be a flat .gguf (got ${q.filename})`)
+              if (!QUANT_FILENAME.test(q.filename) || !q.filename.split('/').every((s) => s.length > 0 && s !== '.' && s !== '..')) {
+                errors.push(`${f.id}/${q.id}: unsafe transformer .gguf path (got ${q.filename})`)
               }
               if (q.recommended === true) recommended += 1
             }
