@@ -29,6 +29,7 @@ const invalid = [
   ['invalid-recipe-command.json', 'recipe carrying a command-like field'],
   ['invalid-malformed-probe-digest.json', 'probe_image with a malformed digest'],
   ['invalid-unknown-top-level-field.json', 'unknown top-level field'],
+  ['invalid-parser-leading-dash.json', 'parser name starting with - (would be read as a flag)'],
 ]
 
 for (const [fixture, defect] of invalid) {

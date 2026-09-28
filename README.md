@@ -527,3 +527,35 @@ npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant
 ## License
 
 See the project's primary license in the main Atomic Chat repository.
+
+### Reproducing runtime descriptor digests
+
+`runtimes/tensorrt-llm.json` pins each image by its per-platform manifest
+digest (not the multi-arch index digest), so `docker pull repo@digest` gets
+exactly that platform. These print the digests from the registry (no Docker
+daemon needed); they match the descriptor for as long as NVIDIA does not
+repoint the tags:
+
+```bash
+docker buildx imagetools inspect nvcr.io/nvidia/tensorrt-llm/release:1.2.1
+docker buildx imagetools inspect nvcr.io/nvidia/cuda:13.1.0-base-ubuntu24.04
+
+# Same without Docker: anonymous registry token, then the manifest list.
+for ref in nvidia/tensorrt-llm/release:1.2.1 nvidia/cuda:13.1.0-base-ubuntu24.04; do
+  repo=${ref%:*} tag=${ref##*:}
+  T=$(curl -s "https://nvcr.io/proxy_auth?scope=repository:$repo:pull" | jq -r .token)
+  curl -s -H "Authorization: Bearer $T" \
+    -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json" \
+    "https://nvcr.io/v2/$repo/manifests/$tag" |
+    jq -r --arg ref "$ref" '.manifests[] | "\($ref) \(.platform.os)/\(.platform.architecture) \(.digest)"'
+done
+```
+
+A curated model's `revision` is the commit `main` resolved to when it was
+curated, and its `inventory_digest` is computed from the Hugging Face file
+list at that commit with the same algorithm as atomic-chat-core:
+
+```bash
+curl -s https://huggingface.co/api/models/nvidia/Qwen3-8B-FP8/revision/main | jq -r .sha
+node .github/scripts/inventory-digest.mjs nvidia/Qwen3-8B-FP8 2cebc4c89e25abc17668c81b01dceaf3d8b914d5
+```

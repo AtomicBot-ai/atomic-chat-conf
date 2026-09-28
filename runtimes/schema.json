@@ -146,8 +146,8 @@
     },
     "parserName": {
       "type": ["string", "null"],
-      "pattern": "^[a-z0-9_]+$",
-      "description": "Bare parser name only (no flags, no paths). Null means this engine release has no parser for the family."
+      "pattern": "^[a-z0-9][a-z0-9_.-]*$",
+      "description": "Bare parser name only (no flags, no paths): no spaces, `/` or `=`, and no leading `-`, because the adapter passes it as a separate argv value. `-` and `.` are allowed because real registries use them (TensorRT-LLM's `deepseek-r1`, `nano-v3`). Null means this engine release has no parser for the family."
     },
     "nonEmptyString": {
       "type": "string",

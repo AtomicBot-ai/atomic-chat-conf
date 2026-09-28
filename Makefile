@@ -92,9 +92,11 @@ verify-release:
 validate:
 	node --test .github/scripts/recommendation-tiers.test.mjs
 	node --test .github/scripts/runtime-descriptor.test.mjs
+	node --test .github/scripts/inventory-digest.test.mjs
 	npx --yes ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.json -d models/recommended.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.diffusion.json -d models/diffusion.json --strict=false
 	npx --yes ajv-cli@5 validate -s backends/schema.json -d backends/manifest.json --strict=false
 	npx --yes ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
+	npx --yes ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
