@@ -38,6 +38,7 @@ const invalid = [
   ['invalid-unknown-top-level-field.json', 'unknown top-level field'],
   ['invalid-parser-leading-dash.json', 'parser name starting with - (would be read as a flag)'],
   ['invalid-tag-with-digest.json', 'image repository carries a tag even though a valid digest is also present'],
+  ['invalid-schema-field.json', 'descriptor carries a $schema key (core\'s ported parser rejects every unknown top-level key)'],
 ]
 
 for (const [fixture, defect] of invalid) {

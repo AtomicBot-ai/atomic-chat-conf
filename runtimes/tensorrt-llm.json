@@ -1,5 +1,4 @@
 {
-  "$schema": "./schema.json",
   "schema_version": 1,
   "descriptor_id": "tensorrt-llm-1.2.1-r1",
   "engine_id": "tensorrt-llm",
@@ -61,8 +60,8 @@
   ],
   "model_families": {
     "DeciLMForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "DeepseekV3ForCausalLM": { "tool_parser": "deepseek_v3", "reasoning_parser": null, "structured_output": true },
-    "DeepseekV32ForCausalLM": { "tool_parser": "deepseek_v32", "reasoning_parser": null, "structured_output": true },
+    "DeepseekV3ForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
+    "DeepseekV32ForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
     "Exaone4ForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
     "Gemma3ForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
     "GptOssForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },

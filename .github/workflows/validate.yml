@@ -14,6 +14,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # descriptor_id immutability (below) reads runtimes/tensorrt-llm.json
+          # at a base ref via `git show`; a shallow clone would make that ref
+          # unreachable.
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -672,4 +677,11 @@ jobs:
       # shared with `make validate`, not inlined here, so the local and CI
       # gates cannot drift apart the way a copy-pasted heredoc could.
       - name: Check runtime descriptor fixtures and integrity
-        run: node --test .github/scripts/runtime-descriptor.test.mjs .github/scripts/inventory-digest.test.mjs .github/scripts/runtime-descriptor-integrity.test.mjs
+        env:
+          # PR: compare against the target branch. Push: compare against the
+          # pre-push tip (an all-zeros `before`, on a brand-new branch, is
+          # handled as "absent" by runtime-descriptor-immutability.mjs).
+          # Any other trigger (e.g. workflow_dispatch) leaves this empty,
+          # which the same script also treats as absent.
+          RUNTIME_DESCRIPTOR_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: node --test .github/scripts/runtime-descriptor.test.mjs .github/scripts/inventory-digest.test.mjs .github/scripts/runtime-descriptor-integrity.test.mjs .github/scripts/runtime-descriptor-immutability.test.mjs

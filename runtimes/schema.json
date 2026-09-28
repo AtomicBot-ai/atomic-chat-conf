@@ -26,7 +26,6 @@
   ],
   "additionalProperties": false,
   "properties": {
-    "$schema": { "type": "string" },
     "schema_version": {
       "const": 1,
       "description": "Bump this when the shape of a descriptor changes in a backwards-incompatible way."

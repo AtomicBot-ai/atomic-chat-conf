@@ -562,6 +562,13 @@ at that point.
 
 ### Field reference (non-obvious fields)
 
+- **The descriptor has no `$schema` key**, unlike the other manifests in this
+  repository. atomic-chat-core's ported parser rejects every unknown
+  top-level key, and `$schema` is not otherwise part of the descriptor's
+  data — adding it would only be an editor affordance, at the cost of core
+  refusing every descriptor that carries it. `runtimes/schema.json` does not
+  list `$schema` among the allowed top-level properties, so `ajv --strict`
+  rejects it too (see the `invalid-schema-field.json` fixture).
 - **`image` / `probe_image` digests** are the **platform-specific manifest
   digest**, not the multi-arch index digest — so `docker pull repo@digest`
   fetches exactly the bytes for that platform, and core can compare what it
@@ -572,36 +579,66 @@ at that point.
   their nominal binary size (an RTX 4090 reports 24,564 MiB; an H100 reports
   81,559 MiB) but still above the decimal-GB figure, so the decimal value
   works as a safe floor for "does this model fit the tier" without
-  overshooting the VRAM any card in that tier actually has.
+  overshooting the VRAM any card in that tier actually has. On unified-memory
+  systems (NVIDIA GB10 / DGX Spark) `nvidia-smi` reports no dedicated card
+  memory at all, so there the tier is instead compared against the host's
+  `MemAvailable` (design D13).
 - **`quantization[].format` names** follow a fixed checkpoint-metadata →
-  format-name mapping, documented here as the conf↔core contract: if
-  `hf_quant_config.json` is present (NVIDIA ModelOpt), the format is
-  `quant_algo` lower-cased, with `fp8_pb_wo` renamed to `fp8_block_scales`
-  (matching what the engine itself calls it internally); otherwise, if
-  `config.json`'s `quantization_config.quant_method` is set, `fp8` with a
-  `weight_block_size` of `[128,128]` maps to `fp8_block_scales` and `mxfp4`
-  maps to `mxfp4` (any other `quant_method`, e.g. `awq` or `gptq`, is not
-  loadable by this engine release and must not be listed as a supported
-  format); otherwise the checkpoint is unquantized and the format is `bf16`
-  or `fp16` from `torch_dtype`. Each format also carries exactly one
-  `min_compute_capability` — but the engine's real hardware-support matrix is
-  not strictly monotone in compute capability (a format can be marked
-  supported on a newer architecture while unlisted on one immediately below
-  it), so a single floor per format is a conservative simplification, not a
-  full compatibility oracle: it can let a checkpoint through to a load that
-  then fails on that specific card. The descriptor's overall
-  `minimum_compute_capability` is always a lower bound on every format's own
-  minimum (enforced by CI, see below).
+  format-name mapping, documented here as the conf↔core contract. The inputs
+  are the checkpoint's `config.json` content, and — when the checkpoint
+  carries the file — its `hf_quant_config.json` content: a checkpoint can
+  have no `quantization_config` in `config.json` at all and still be
+  quantized (e.g. `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8` and
+  `nvidia/Llama-3.3-70B-Instruct-NVFP4` both classify entirely from
+  `hf_quant_config.json`), so `dtype`/`torch_dtype` must never be trusted
+  before `hf_quant_config.json` has been checked. Apply these steps in order,
+  stopping at the first that matches:
+  1. If `hf_quant_config.json` is present (NVIDIA ModelOpt), the format is its
+     `quantization.quant_algo` lower-cased, with `fp8_pb_wo` renamed to
+     `fp8_block_scales` (matching what the engine itself calls it
+     internally).
+  2. Otherwise, if `config.json`'s `quantization_config.quant_method` is set:
+     - `modelopt` → the format is `quantization_config.quant_algo`
+       lower-cased, with the same `fp8_pb_wo` → `fp8_block_scales` rename as
+       step 1.
+     - `fp8` **with** `quantization_config.weight_block_size` equal to
+       `[128,128]` → `fp8_block_scales`. `fp8` **without** that block size is
+       **not loadable** by this engine release (`model_config.py:323`) — it
+       must not fall through to step 3 and be reported as `bf16`/`fp16`.
+     - `mxfp4` → `mxfp4`.
+     - anything else (e.g. `awq`, `gptq`) is **not loadable** by this engine
+       release and must not be listed as a supported format.
+  3. Otherwise the checkpoint is unquantized: read `dtype` — the field
+     TensorRT-LLM itself reads (`model_config.py:471`) — falling back to the
+     legacy `torch_dtype` key only when `dtype` is absent. `bfloat16` →
+     `bf16`; `float16` → `fp16`; anything else, including `float32` or a
+     missing/unrecognized value, is **not loadable**.
+
+  Each format also carries exactly one `min_compute_capability` — but the
+  engine's real hardware-support matrix is not strictly monotone in compute
+  capability (a format can be marked supported on a newer architecture while
+  unlisted on one immediately below it), so a single floor per format is a
+  conservative simplification, not a full compatibility oracle: it can let a
+  checkpoint through to a load that then fails on that specific card. The
+  descriptor's overall `minimum_compute_capability` is always a lower bound
+  on every format's own minimum (enforced by CI, see below).
 - **`curated_models[].inventory_digest`** is computed with the **same
   algorithm as atomic-chat-core**, over **every file** in the Hugging Face
   repository at the pinned `revision` — not a filtered subset; an engine's
   own file-type selection happens later and is not part of a checkpoint's
-  identity. Files are sorted by path; for each file the digest folds in
-  `${path.length}:${path}`, then `|${bytes}|`, then its published LFS
-  `sha256` (or an empty string when the file has none), then a NUL byte; the
-  result is `sha256:<hex of the running digest>`.
-  `.github/scripts/inventory-digest.mjs` reproduces it from the live Hugging
-  Face API (see below).
+  identity. The file list itself comes from the Hugging Face API endpoint
+  `https://huggingface.co/api/models/<owner/name>/revision/<sha>?blobs=true&files_metadata=true`,
+  read for **every file in the response, not only weights**: each file's path
+  is its `rfilename`; its byte size is `lfs.size` when the file has an `lfs`
+  block, else its plain `size`; its published hash is `lfs.sha256` when
+  present, else an empty string (a non-LFS file has no published hash).
+  Files are then sorted by path; for each file the digest folds in
+  `${path.length}:${path}`, then `|${bytes}|`, then the published hash (or
+  empty string), then a NUL byte; the result is `sha256:<hex of the running
+  digest>`. `.github/scripts/inventory-digest.mjs` reproduces this from the
+  live Hugging Face API (see below). Which consumer recomputes and compares
+  this digest (atomic-chat-core, the app, or the CLI) is for the plan to
+  name — that is not decided here.
 - **`download_bytes` / `required_disk_bytes`** are estimated from the image's
   own registry manifests: `download_bytes` sums the compressed layer sizes
   (the larger of the two platforms); `required_disk_bytes` adds the
@@ -641,10 +678,12 @@ curl -s https://huggingface.co/api/models/nvidia/Qwen3-8B-FP8/revision/main | jq
 node .github/scripts/inventory-digest.mjs nvidia/Qwen3-8B-FP8 2cebc4c89e25abc17668c81b01dceaf3d8b914d5
 ```
 
-> **Note for atomic-chat-core.** `inventory_digest` hashes **all** files at
-> the pinned revision (`/revision/<sha>`), not a `.gguf`-filtered subset —
-> core must hash the full safetensors inventory at that revision the same
-> way, or a curated entry's digest will never match what core computes.
+> **Note for whichever component recomputes this.** `inventory_digest` hashes
+> **all** files at the pinned revision (`/revision/<sha>`), not a
+> `.gguf`-filtered subset. Whichever consumer recomputes and compares it —
+> atomic-chat-core, the app, or the CLI, to be named by the plan — must hash
+> the full safetensors inventory at that revision the same way, or a curated
+> entry's digest will never match.
 
 ## CI validation
 
@@ -690,7 +729,11 @@ You cannot merge a PR until CI is green.
 
 ## Local validation
 
-If you want to validate locally before pushing:
+`make validate` is the one command that runs every gate above, including all
+the `node --test` scripts (fixtures, cross-field integrity, descriptor_id
+immutability) — the same checks CI runs on a PR.
+
+If you want to run the schema checks individually before pushing:
 
 ```bash
 npx ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
