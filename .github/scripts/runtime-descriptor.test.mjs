@@ -39,6 +39,7 @@ const invalid = [
   ['invalid-parser-leading-dash.json', 'parser name starting with - (would be read as a flag)'],
   ['invalid-tag-with-digest.json', 'image repository carries a tag even though a valid digest is also present'],
   ['invalid-schema-field.json', 'descriptor carries a $schema key (core\'s ported parser rejects every unknown top-level key)'],
+  ['invalid-missing-minimum-driver-version.json', 'missing required minimum_driver_version'],
 ]
 
 for (const [fixture, defect] of invalid) {

@@ -13,6 +13,7 @@
     "probe_image",
     "minimum_core_version",
     "minimum_app_version",
+    "minimum_driver_version",
     "minimum_compute_capability",
     "supported_architectures",
     "quantization",
@@ -61,6 +62,10 @@
     "minimum_app_version": {
       "$ref": "#/definitions/semver",
       "description": "Lowest Atomic Chat app version this descriptor expects; core surfaces it in the environment snapshot so the app can prompt an update."
+    },
+    "minimum_driver_version": {
+      "$ref": "#/definitions/driverVersion",
+      "description": "Lowest NVIDIA display driver version the engine image and probe_image run on. This is the non-datacenter (e.g. GeForce) floor: some datacenter/vGPU card brands can run older drivers than this through the probe image's own CUDA-forward-compatibility exceptions, but this single field exists to block a host below it — including a datacenter host that forward compatibility would otherwise have let through — before the user consents to anything (design D16)."
     },
     "minimum_compute_capability": {
       "$ref": "#/definitions/computeCapability",
@@ -134,6 +139,11 @@
       "type": "string",
       "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
     },
+    "driverVersion": {
+      "type": "string",
+      "description": "NVIDIA display driver version, e.g. 590.44.01 or 590.44. Kept as a string (not a semver) because a component may carry leading zeros that are significant to the vendor's own numbering; core compares it against the host's reported driver version numerically, component by component.",
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
+    },
     "computeCapability": {
       "type": "string",
       "description": "NVML major.minor, e.g. 8.9 or 12.0.",
@@ -172,14 +182,20 @@
     },
     "quantizationEntry": {
       "type": "object",
-      "required": ["format", "min_compute_capability"],
+      "required": ["format", "min_compute_capability", "excluded_compute_capabilities"],
       "additionalProperties": false,
       "properties": {
         "format": {
           "type": "string",
           "pattern": "^[a-z0-9_]+$"
         },
-        "min_compute_capability": { "$ref": "#/definitions/computeCapability" }
+        "min_compute_capability": { "$ref": "#/definitions/computeCapability" },
+        "excluded_compute_capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/definitions/computeCapability" },
+          "description": "Compute capabilities strictly above min_compute_capability where the engine release does not actually support this format, per its hardware support matrix (the matrix is not monotone in compute capability). Empty when there is no such gap for this format."
+        }
       }
     },
     "modelFamilyEntry": {

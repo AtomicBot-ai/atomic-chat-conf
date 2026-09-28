@@ -121,6 +121,27 @@ function checkMinimumComputeCapabilityIsAFloor(d) {
   return errors
 }
 
+// D17 / R30: a format's excluded_compute_capabilities lists compute capabilities where the
+// engine's hardware support matrix does NOT support that format even though the capability is
+// numerically above the format's own min_compute_capability (the matrix is not monotone in CC).
+// An excluded entry at or below the minimum is nonsensical: that capability is already refused by
+// the minimum-CC check, so listing it as an "exclusion above the minimum" is a data-entry error the
+// schema itself cannot catch (it has no cross-field awareness of a sibling property).
+function checkExcludedComputeCapabilitiesAboveMinimum(d) {
+  const errors = []
+  for (const q of d.quantization ?? []) {
+    for (const excluded of q.excluded_compute_capabilities ?? []) {
+      if (computeCapabilityAtMost(excluded, q.min_compute_capability)) {
+        errors.push(
+          `quantization "${q.format}": excluded_compute_capabilities entry (${excluded}) must be ` +
+            `strictly greater than its own min_compute_capability (${q.min_compute_capability})`
+        )
+      }
+    }
+  }
+  return errors
+}
+
 const CHECKS = [
   checkUniqueSupportedArchitectures,
   checkModelFamiliesSubsetOfSupportedArchitectures,
@@ -131,6 +152,7 @@ const CHECKS = [
   checkDescriptorIdPrefix,
   checkRequiredDiskAtLeastDownload,
   checkMinimumComputeCapabilityIsAFloor,
+  checkExcludedComputeCapabilitiesAboveMinimum,
 ]
 
 function checkDescriptorIntegrity(d) {
@@ -217,4 +239,35 @@ test('rejects: minimum_compute_capability above a quantization entry\'s min_comp
   const errors = checkMinimumComputeCapabilityIsAFloor(bad)
   assert.ok(errors.length >= 1)
   assert.match(errors[0], /minimum_compute_capability/)
+})
+
+test('rejects: excluded_compute_capabilities entry at or below its own min_compute_capability', () => {
+  const bad = clone(descriptor)
+  // fp8's min_compute_capability is 8.9; excluding 8.0 (below it) is nonsensical, and
+  // excluding 8.9 itself (the boundary) is equally nonsensical ("above the minimum" means
+  // strictly above).
+  const fp8 = bad.quantization.find((q) => q.format === 'fp8')
+  fp8.excluded_compute_capabilities = ['8.0']
+  let errors = checkExcludedComputeCapabilitiesAboveMinimum(bad)
+  assert.equal(errors.length, 1)
+  assert.match(errors[0], /fp8/)
+
+  fp8.excluded_compute_capabilities = ['8.9']
+  errors = checkExcludedComputeCapabilitiesAboveMinimum(bad)
+  assert.equal(errors.length, 1)
+  assert.match(errors[0], /fp8/)
+})
+
+test('rejects: fixture invalid-excluded-cc-below-minimum.json (schema-valid, only the integrity check catches it)', () => {
+  // This fixture is deliberately NOT in runtime-descriptor.test.mjs's ajv-rejection list: the
+  // schema has no cross-field awareness, so ajv accepts it. Proving it is still rejected means
+  // running the real integrity check against it directly.
+  const fixturePath = new URL(
+    '../fixtures/runtimes/invalid-excluded-cc-below-minimum.json',
+    import.meta.url
+  )
+  const fixture = JSON.parse(readFileSync(fixturePath, 'utf8'))
+  const errors = checkDescriptorIntegrity(fixture)
+  assert.ok(errors.length >= 1, 'expected the integrity check to reject the fixture')
+  assert.match(errors.join('\n'), /excluded_compute_capabilities/)
 })

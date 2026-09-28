@@ -530,9 +530,11 @@ at that point.
    probe image (see [Reproducing runtime descriptor
    digests](#reproducing-runtime-descriptor-digests) below) — never a
    multi-arch index digest.
-3. Re-derive `supported_architectures`, `quantization`, `model_families` and
-   `minimum_compute_capability` from that tag's own source (its parser
-   registries, its hardware-support matrix), rather than carrying over the
+3. Re-derive `supported_architectures`, `quantization` (including every
+   format's `excluded_compute_capabilities`), `model_families`,
+   `minimum_compute_capability` and `minimum_driver_version` from that tag's
+   own source (its parser registries, its hardware-support matrix, its
+   engine image's `CUDA_DRIVER_VERSION` label), rather than carrying over the
    previous descriptor's values.
 4. Re-derive `curated_models`: re-check each repo is still ungated, re-resolve
    `revision` to the commit its `main` branch currently points at, and
@@ -574,6 +576,42 @@ at that point.
   fetches exactly the bytes for that platform, and core can compare what it
   actually pulled against what the descriptor promised. Pulling by the index
   digest would let the registry hand back either platform.
+- **`minimum_driver_version`** is the lowest NVIDIA display driver version
+  the `image` and `probe_image` run on. Core checks it in the probe, before
+  the user has consented to anything: a host below it gets
+  `prerequisite-blocked` with both the required and the actual driver
+  version, and no Docker install or image pull is offered (design D16). The
+  value comes from the **non-datacenter floor**: NVIDIA publishes, per CUDA
+  Toolkit release, the driver version bundled with that release (the
+  `CUDA_DRIVER_VERSION` label baked into the engine image, cross-checked
+  against the CUDA Toolkit release notes' "CUDA Toolkit and Corresponding
+  Driver Versions" table) — this is the driver a GeForce/consumer card
+  actually needs. **This is deliberately stricter than every host can
+  need**: `probe_image`'s own `NVIDIA_REQUIRE_CUDA` carries CUDA-minor-version-
+  compatibility exceptions that let specific datacenter/vGPU card brands
+  (Tesla, Quadro, GRID, vGPU profiles, …) run on several driver branches
+  older than this floor. `minimum_driver_version` is one number, not a
+  brand-conditional table, so it also blocks those datacenter hosts on an
+  older driver that forward compatibility would otherwise have let through —
+  a deliberate simplification favoring one clear blocker message over
+  modeling every brand exception. To update it for a new engine tag: read
+  the new image's `CUDA_DRIVER_VERSION` label and cross-check it against
+  that CUDA Toolkit version's release notes; if they disagree, use the
+  higher of the two.
+- **`quantization[].excluded_compute_capabilities`** lists compute
+  capabilities where this engine release does **not** support the format,
+  even though the capability is numerically above the format's own
+  `min_compute_capability` — because the engine's hardware support matrix is
+  not monotone in compute capability (see the `quantization[].format`
+  bullet below): a newer architecture can lack a format that an older one
+  has. Core's model-compatibility check treats a match here as
+  `MODEL_INCOMPATIBLE` at check time, distinct from (and in addition to) the
+  plain minimum-CC check (design D17). Empty when the matrix shows no such
+  gap for that format. To update it for a new engine tag: re-read that tag's
+  hardware support matrix and, for every format, list every row above its
+  `min_compute_capability` where the matrix does not mark the format
+  supported — the integrity check (below) then enforces that every entry
+  here is strictly above that format's own minimum.
 - **`curated_models[].vram_tier_bytes`** is the tier's nominal size in
   **decimal GB** (`× 10^9`), not binary GiB. Real cards report a little under
   their nominal binary size (an RTX 4090 reports 24,564 MiB; an H100 reports
@@ -722,8 +760,10 @@ every push and pull request. It performs the following checks:
   `curated_models` are unique by `repository@revision`, `recipes[].recipe_id`
   is unique, `distributions` are unique by `(id, version_id, arch)` within a
   recipe, `descriptor_id` starts with `engine_id + "-"`,
-  `required_disk_bytes >= download_bytes`, and `minimum_compute_capability`
-  is at or below every `quantization[].min_compute_capability`.
+  `required_disk_bytes >= download_bytes`, `minimum_compute_capability`
+  is at or below every `quantization[].min_compute_capability`, and every
+  `quantization[].excluded_compute_capabilities` entry is strictly above
+  that same entry's own `min_compute_capability`.
 
 You cannot merge a PR until CI is green.
 

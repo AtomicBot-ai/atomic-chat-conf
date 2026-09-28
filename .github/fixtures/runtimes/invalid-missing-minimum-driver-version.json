@@ -6,7 +6,7 @@
   "adapter_contract_version": 1,
   "image": {
     "linux/amd64": {
-      "repository": "nvcr.io/nvidia/tensorrt-llm/release:1.2.1",
+      "repository": "nvcr.io/nvidia/tensorrt-llm/release",
       "digest": "sha256:615028f0f0fb42fe4afc1dde130a3d0a8fb71e36dd7f714243ca0880f5154f98"
     },
     "linux/arm64": {
@@ -26,7 +26,6 @@
   },
   "minimum_core_version": "1.4.0",
   "minimum_app_version": "1.4.0",
-  "minimum_driver_version": "525.60.13",
   "minimum_compute_capability": "7.5",
   "supported_architectures": [
     "LlamaForCausalLM",

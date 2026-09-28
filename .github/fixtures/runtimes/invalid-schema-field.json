@@ -27,6 +27,7 @@
   },
   "minimum_core_version": "1.4.0",
   "minimum_app_version": "1.4.0",
+  "minimum_driver_version": "525.60.13",
   "minimum_compute_capability": "7.5",
   "supported_architectures": [
     "LlamaForCausalLM",
@@ -35,11 +36,13 @@
   "quantization": [
     {
       "format": "fp8",
-      "min_compute_capability": "8.9"
+      "min_compute_capability": "8.9",
+      "excluded_compute_capabilities": []
     },
     {
       "format": "fp16",
-      "min_compute_capability": "7.0"
+      "min_compute_capability": "7.0",
+      "excluded_compute_capabilities": []
     }
   ],
   "model_families": {

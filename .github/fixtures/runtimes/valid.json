@@ -26,14 +26,23 @@
   },
   "minimum_core_version": "1.4.0",
   "minimum_app_version": "1.4.0",
+  "minimum_driver_version": "525.60.13",
   "minimum_compute_capability": "7.5",
   "supported_architectures": [
     "LlamaForCausalLM",
     "Qwen2ForCausalLM"
   ],
   "quantization": [
-    { "format": "fp8", "min_compute_capability": "8.9" },
-    { "format": "fp16", "min_compute_capability": "7.0" }
+    {
+      "format": "fp8",
+      "min_compute_capability": "8.9",
+      "excluded_compute_capabilities": []
+    },
+    {
+      "format": "fp16",
+      "min_compute_capability": "7.0",
+      "excluded_compute_capabilities": []
+    }
   ],
   "model_families": {
     "LlamaForCausalLM": {
@@ -60,9 +69,21 @@
     {
       "recipe_id": "linux.install-container-runtime",
       "distributions": [
-        { "id": "ubuntu", "version_id": "22.04", "arch": "x86_64" },
-        { "id": "ubuntu", "version_id": "24.04", "arch": "x86_64" },
-        { "id": "ubuntu", "version_id": "24.04", "arch": "aarch64" }
+        {
+          "id": "ubuntu",
+          "version_id": "22.04",
+          "arch": "x86_64"
+        },
+        {
+          "id": "ubuntu",
+          "version_id": "24.04",
+          "arch": "x86_64"
+        },
+        {
+          "id": "ubuntu",
+          "version_id": "24.04",
+          "arch": "aarch64"
+        }
       ]
     }
   ],
