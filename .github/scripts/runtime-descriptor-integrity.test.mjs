@@ -163,6 +163,12 @@ test('the committed tensorrt-llm.json descriptor passes every integrity check', 
   assert.deepEqual(checkDescriptorIntegrity(descriptor), [])
 })
 
+test('the valid.json fixture passes every integrity check', () => {
+  const fixturePath = new URL('../fixtures/runtimes/valid.json', import.meta.url)
+  const fixture = JSON.parse(readFileSync(fixturePath, 'utf8'))
+  assert.deepEqual(checkDescriptorIntegrity(fixture), [])
+})
+
 test('rejects: duplicate supported_architectures entry', () => {
   const bad = clone(descriptor)
   bad.supported_architectures.push(bad.supported_architectures[0])
@@ -268,6 +274,9 @@ test('rejects: fixture invalid-excluded-cc-below-minimum.json (schema-valid, onl
   )
   const fixture = JSON.parse(readFileSync(fixturePath, 'utf8'))
   const errors = checkDescriptorIntegrity(fixture)
-  assert.ok(errors.length >= 1, 'expected the integrity check to reject the fixture')
-  assert.match(errors.join('\n'), /excluded_compute_capabilities/)
+  assert.equal(errors.length, 1)
+  assert.equal(
+    errors[0],
+    'quantization "fp8": excluded_compute_capabilities entry (8.0) must be strictly greater than its own min_compute_capability (8.9)'
+  )
 })

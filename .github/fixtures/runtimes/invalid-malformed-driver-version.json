@@ -1,5 +1,4 @@
 {
-  "$schema": "./schema.json",
   "schema_version": 1,
   "descriptor_id": "tensorrt-llm-linux-fixture-1",
   "engine_id": "tensorrt-llm",
@@ -27,7 +26,7 @@
   },
   "minimum_core_version": "1.4.0",
   "minimum_app_version": "1.4.0",
-  "minimum_driver_version": "525.60.13",
+  "minimum_driver_version": "v590.44.01",
   "minimum_compute_capability": "7.5",
   "supported_architectures": [
     "LlamaForCausalLM",

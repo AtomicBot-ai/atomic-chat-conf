@@ -141,7 +141,7 @@
     },
     "driverVersion": {
       "type": "string",
-      "description": "NVIDIA display driver version, e.g. 590.44.01 or 590.44. Kept as a string (not a semver) because a component may carry leading zeros that are significant to the vendor's own numbering; core compares it against the host's reported driver version numerically, component by component.",
+      "description": "NVIDIA display driver version, e.g. 590.44.01 or 590.44. Kept as a string (not a semver) because NVIDIA versions have 2 or 3 components and can carry a zero-padded component such as 01, which this repo's semver definition forbids. Core reads the host value from `nvidia-smi --query-gpu=driver_version`, splits both it and this field on '.', parses each component as a base-10 integer, pads the shorter one with zeros, and compares the two as integer tuples; the host is blocked iff its tuple is lower than this field's.",
       "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
     },
     "computeCapability": {

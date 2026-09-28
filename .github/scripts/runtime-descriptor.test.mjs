@@ -40,6 +40,9 @@ const invalid = [
   ['invalid-tag-with-digest.json', 'image repository carries a tag even though a valid digest is also present'],
   ['invalid-schema-field.json', 'descriptor carries a $schema key (core\'s ported parser rejects every unknown top-level key)'],
   ['invalid-missing-minimum-driver-version.json', 'missing required minimum_driver_version'],
+  ['invalid-quantization-missing-excluded-cc.json', 'quantization entry without excluded_compute_capabilities'],
+  ['invalid-excluded-cc-duplicate.json', 'duplicate compute capability within one excluded_compute_capabilities'],
+  ['invalid-malformed-driver-version.json', 'malformed minimum_driver_version (leading "v")'],
 ]
 
 for (const [fixture, defect] of invalid) {

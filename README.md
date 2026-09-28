@@ -531,11 +531,14 @@ at that point.
    digests](#reproducing-runtime-descriptor-digests) below) — never a
    multi-arch index digest.
 3. Re-derive `supported_architectures`, `quantization` (including every
-   format's `excluded_compute_capabilities`), `model_families`,
-   `minimum_compute_capability` and `minimum_driver_version` from that tag's
-   own source (its parser registries, its hardware-support matrix, its
-   engine image's `CUDA_DRIVER_VERSION` label), rather than carrying over the
-   previous descriptor's values.
+   format's `excluded_compute_capabilities`), `model_families` and
+   `minimum_compute_capability` from that tag's own source (its parser
+   registries, its hardware-support matrix), rather than carrying over the
+   previous descriptor's values. Re-derive `minimum_driver_version` as the
+   higher of the engine image's `CUDA_DRIVER_VERSION` label and the minimum
+   driver for the probe image's own CUDA version (from its
+   `NVIDIA_REQUIRE_CUDA` constraint / that CUDA Toolkit version's release
+   notes).
 4. Re-derive `curated_models`: re-check each repo is still ungated, re-resolve
    `revision` to the commit its `main` branch currently points at, and
    recompute `inventory_digest` (below).
@@ -580,38 +583,59 @@ at that point.
   the `image` and `probe_image` run on. Core checks it in the probe, before
   the user has consented to anything: a host below it gets
   `prerequisite-blocked` with both the required and the actual driver
-  version, and no Docker install or image pull is offered (design D16). The
-  value comes from the **non-datacenter floor**: NVIDIA publishes, per CUDA
-  Toolkit release, the driver version bundled with that release (the
-  `CUDA_DRIVER_VERSION` label baked into the engine image, cross-checked
-  against the CUDA Toolkit release notes' "CUDA Toolkit and Corresponding
-  Driver Versions" table) — this is the driver a GeForce/consumer card
-  actually needs. **This is deliberately stricter than every host can
-  need**: `probe_image`'s own `NVIDIA_REQUIRE_CUDA` carries CUDA-minor-version-
-  compatibility exceptions that let specific datacenter/vGPU card brands
-  (Tesla, Quadro, GRID, vGPU profiles, …) run on several driver branches
-  older than this floor. `minimum_driver_version` is one number, not a
-  brand-conditional table, so it also blocks those datacenter hosts on an
-  older driver that forward compatibility would otherwise have let through —
-  a deliberate simplification favoring one clear blocker message over
-  modeling every brand exception. To update it for a new engine tag: read
-  the new image's `CUDA_DRIVER_VERSION` label and cross-check it against
-  that CUDA Toolkit version's release notes; if they disagree, use the
-  higher of the two.
+  version, and no Docker install or image pull is offered (design D16). Core
+  reads the host's driver version from `nvidia-smi
+  --query-gpu=driver_version`, splits both that value and this field on
+  `.`, parses each component as a base-10 integer, pads whichever of the two
+  has fewer components with zeros, and compares them as integer tuples; the
+  host is blocked iff its tuple is lower than this field's. The value itself
+  is the **higher of**: (1) the engine image's own `CUDA_DRIVER_VERSION`
+  label (the driver NVIDIA bundled with/tested that CUDA build against), and
+  (2) the minimum driver for the `probe_image`'s own CUDA version, read from
+  that image's `NVIDIA_REQUIRE_CUDA` constraint and cross-checked against
+  that CUDA Toolkit version's release notes' "CUDA Toolkit and Corresponding
+  Driver Versions" table — this is the **non-datacenter (GeForce/consumer)
+  floor**, since `NVIDIA_REQUIRE_CUDA`'s own brand exceptions only relax it
+  for datacenter/vGPU brands. **This is deliberately stricter than some
+  hosts need**: `probe_image`'s own `NVIDIA_REQUIRE_CUDA` carries
+  CUDA-minor-version-compatibility exceptions that let specific
+  datacenter/vGPU card brands (Tesla, Quadro, GRID, vGPU profiles, …) run on
+  several driver branches older than this floor. `minimum_driver_version` is
+  one number, not a brand-conditional table, so it also blocks those
+  datacenter hosts on an older driver that forward compatibility would
+  otherwise have let through — a deliberate simplification favoring one
+  clear blocker message over modeling every brand exception. To update it
+  for a new engine tag: read the new engine image's `CUDA_DRIVER_VERSION`
+  label, separately read the new probe image's minimum driver for its own
+  CUDA version (`NVIDIA_REQUIRE_CUDA` / that CUDA Toolkit version's release
+  notes), and take the higher of the two.
 - **`quantization[].excluded_compute_capabilities`** lists compute
   capabilities where this engine release does **not** support the format,
   even though the capability is numerically above the format's own
   `min_compute_capability` — because the engine's hardware support matrix is
   not monotone in compute capability (see the `quantization[].format`
   bullet below): a newer architecture can lack a format that an older one
-  has. Core's model-compatibility check treats a match here as
-  `MODEL_INCOMPATIBLE` at check time, distinct from (and in addition to) the
-  plain minimum-CC check (design D17). Empty when the matrix shows no such
-  gap for that format. To update it for a new engine tag: re-read that tag's
-  hardware support matrix and, for every format, list every row above its
-  `min_compute_capability` where the matrix does not mark the format
-  supported — the integrity check (below) then enforces that every entry
-  here is strictly above that format's own minimum.
+  has. Together with `min_compute_capability`, this field fully encodes the
+  tag's matrix for that format: a card is compatible with the format iff its
+  compute capability is `>= min_compute_capability` **and not** in this
+  list. The list is a **deny-list, not an allow-list**, so a compute
+  capability the tag's matrix simply has no row for counts as supported once
+  it clears the minimum — unless the controller has an independent reason to
+  infer an exclusion anyway. `12.1` (sm121, NVIDIA DGX Spark) is one such
+  case: TensorRT-LLM 1.2.1's release notes say it added sm121 support, but
+  its hardware-support matrix has no sm121 row to read a verdict from, and
+  sm121 is a consumer Blackwell part in the same family as sm120 (`12.0`) —
+  so `w4a16_awq`, `w4a8_awq`, `fp8_block_scales` and
+  `fp8_per_channel_per_token`, which all already deny sm120, also list
+  `12.1` here even though the matrix never names it. Core's
+  model-compatibility check treats a match here as `MODEL_INCOMPATIBLE` at
+  check time, distinct from (and in addition to) the plain minimum-CC check
+  (design D17). Empty when the matrix shows no such gap for that format. To
+  update it for a new engine tag: re-read that tag's hardware support matrix
+  and, for every format, list every row above its `min_compute_capability`
+  where the matrix does not mark the format supported — the integrity check
+  (below) then enforces that every entry here is strictly above that
+  format's own minimum.
 - **`curated_models[].vram_tier_bytes`** is the tier's nominal size in
   **decimal GB** (`× 10^9`), not binary GiB. Real cards report a little under
   their nominal binary size (an RTX 4090 reports 24,564 MiB; an H100 reports
@@ -652,14 +676,19 @@ at that point.
      `bf16`; `float16` → `fp16`; anything else, including `float32` or a
      missing/unrecognized value, is **not loadable**.
 
-  Each format also carries exactly one `min_compute_capability` — but the
-  engine's real hardware-support matrix is not strictly monotone in compute
-  capability (a format can be marked supported on a newer architecture while
-  unlisted on one immediately below it), so a single floor per format is a
-  conservative simplification, not a full compatibility oracle: it can let a
-  checkpoint through to a load that then fails on that specific card. The
-  descriptor's overall `minimum_compute_capability` is always a lower bound
-  on every format's own minimum (enforced by CI, see below).
+  Each format also carries exactly one `min_compute_capability` and its own
+  `excluded_compute_capabilities` (above) — together the two fields are the
+  **complete** compatibility rule for that format, not merely a conservative
+  floor: the engine's real hardware-support matrix is not monotone in
+  compute capability (a format can be marked supported on a newer
+  architecture while unlisted on one immediately below it), and
+  `excluded_compute_capabilities` is exactly the set of gaps that
+  `min_compute_capability` alone would miss. Core's check rejects an
+  incompatible checkpoint for either reason at check time, so no format's
+  matrix gap can let a checkpoint through to a load that then fails on that
+  specific card. The descriptor's overall `minimum_compute_capability` is
+  always a lower bound on every format's own minimum (enforced by CI, see
+  below).
 - **`curated_models[].inventory_digest`** is computed with the **same
   algorithm as atomic-chat-core**, over **every file** in the Hugging Face
   repository at the pinned `revision` — not a filtered subset; an engine's

@@ -51,11 +51,11 @@
   "quantization": [
     { "format": "bf16", "min_compute_capability": "8.0", "excluded_compute_capabilities": [] },
     { "format": "fp16", "min_compute_capability": "8.0", "excluded_compute_capabilities": [] },
-    { "format": "w4a16_awq", "min_compute_capability": "8.0", "excluded_compute_capabilities": ["12.0"] },
+    { "format": "w4a16_awq", "min_compute_capability": "8.0", "excluded_compute_capabilities": ["12.0", "12.1"] },
     { "format": "fp8", "min_compute_capability": "8.9", "excluded_compute_capabilities": [] },
-    { "format": "w4a8_awq", "min_compute_capability": "8.9", "excluded_compute_capabilities": ["12.0"] },
-    { "format": "fp8_block_scales", "min_compute_capability": "9.0", "excluded_compute_capabilities": ["12.0"] },
-    { "format": "fp8_per_channel_per_token", "min_compute_capability": "9.0", "excluded_compute_capabilities": ["10.0", "10.3", "12.0"] },
+    { "format": "w4a8_awq", "min_compute_capability": "8.9", "excluded_compute_capabilities": ["12.0", "12.1"] },
+    { "format": "fp8_block_scales", "min_compute_capability": "9.0", "excluded_compute_capabilities": ["12.0", "12.1"] },
+    { "format": "fp8_per_channel_per_token", "min_compute_capability": "9.0", "excluded_compute_capabilities": ["10.0", "10.3", "12.0", "12.1"] },
     { "format": "nvfp4", "min_compute_capability": "10.0", "excluded_compute_capabilities": [] },
     { "format": "mxfp4", "min_compute_capability": "10.0", "excluded_compute_capabilities": [] }
   ],

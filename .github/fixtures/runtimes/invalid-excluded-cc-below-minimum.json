@@ -42,7 +42,7 @@
     },
     {
       "format": "fp16",
-      "min_compute_capability": "7.0",
+      "min_compute_capability": "7.5",
       "excluded_compute_capabilities": []
     }
   ],

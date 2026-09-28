@@ -1,5 +1,4 @@
 {
-  "$schema": "./schema.json",
   "schema_version": 1,
   "descriptor_id": "tensorrt-llm-linux-fixture-1",
   "engine_id": "tensorrt-llm",
@@ -36,8 +35,7 @@
   "quantization": [
     {
       "format": "fp8",
-      "min_compute_capability": "8.9",
-      "excluded_compute_capabilities": []
+      "min_compute_capability": "8.9"
     },
     {
       "format": "fp16",
