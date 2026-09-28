@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-09-11T00:00:00Z",
+  "updated_at": "2026-09-28T13:39:59Z",
   "providers": [
     {
       "active": true,
@@ -1332,6 +1332,75 @@
           "capabilities": ["completion", "tools", "vision"]
         }
       ]
+    },
+    {
+      "active": true,
+      "api_key": "",
+      "base_url": "https://api.edenai.run/v3",
+      "explore_models_url": "https://app.edenai.run",
+      "provider": "edenai",
+      "settings": [
+        {
+          "key": "api-key",
+          "title": "API Key",
+          "description": "The Eden AI API uses API keys for authentication. Visit your [Eden AI dashboard](https://app.edenai.run) to retrieve the API key you'll use in your requests.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "Insert API Key",
+            "value": "",
+            "type": "password",
+            "input_actions": ["unobscure", "copy"]
+          }
+        },
+        {
+          "key": "base-url",
+          "title": "Base URL",
+          "description": "The base OpenAI-compatible endpoint to use. See the [Eden AI API documentation](https://www.edenai.co/docs/v3/llms/chat-completions) for more information.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "https://api.edenai.run/v3",
+            "value": "https://api.edenai.run/v3"
+          }
+        }
+      ],
+      "models": [
+        {
+          "id": "openai/gpt-latest",
+          "name": "GPT Latest",
+          "version": "1.0",
+          "description": "Current OpenAI GPT model via Eden AI.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "anthropic/claude-sonnet-latest",
+          "name": "Claude Sonnet Latest",
+          "version": "1.0",
+          "description": "Current Anthropic Claude Sonnet model via Eden AI.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "google/gemini-flash-latest",
+          "name": "Gemini Flash Latest",
+          "version": "1.0",
+          "description": "Current Google Gemini Flash model via Eden AI.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "mistral/mistral-large-latest",
+          "name": "Mistral Large Latest",
+          "version": "1.0",
+          "description": "Current Mistral Large model via Eden AI.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "databricks/databricks-gpt-6-luna@eu",
+          "name": "GPT-6 Luna (EU)",
+          "version": "1.0",
+          "description": "GPT-6 Luna via the Databricks EU route on Eden AI.",
+          "capabilities": ["completion", "tools", "vision"]
+        }
+      ],
+      "supports_model_listing": true
     }
   ]
 }
