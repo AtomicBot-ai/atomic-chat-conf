@@ -658,3 +658,18 @@ jobs:
           console.log(`  shared side files: ${sideFiles.size}`)
           console.log(`  updated_at: ${data.updated_at}`)
           EOF
+
+      - name: Validate runtime descriptor against schema
+        run: |
+          ajv validate \
+            -s runtimes/schema.json \
+            -d runtimes/tensorrt-llm.json \
+            --strict=true
+
+      # Cross-field rules the schema cannot express (uniqueness, model_families
+      # ⊆ supported_architectures, descriptor_id prefix, disk >= download,
+      # minimum_compute_capability as a floor) live in a node:test script
+      # shared with `make validate`, not inlined here, so the local and CI
+      # gates cannot drift apart the way a copy-pasted heredoc could.
+      - name: Check runtime descriptor fixtures and integrity
+        run: node --test .github/scripts/runtime-descriptor.test.mjs .github/scripts/inventory-digest.test.mjs .github/scripts/runtime-descriptor-integrity.test.mjs

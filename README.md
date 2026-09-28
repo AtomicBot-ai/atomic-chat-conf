@@ -28,6 +28,9 @@ backends/
   schema.json              # JSON Schema (Draft-07) for the backends manifest
   turboquant-manifest.json # TurboQuant backend catalog (one unified release tag)
   turboquant-schema.json   # JSON Schema (Draft-07) for the TurboQuant manifest
+runtimes/
+  tensorrt-llm.json  # TensorRT-LLM managed-engine runtime descriptor
+  schema.json        # JSON Schema (Draft-07) for a runtime descriptor
 .github/
   workflows/validate.yml        # Validates every manifest on every PR
   workflows/mirror-upstream.yml # Mirrors + signs an upstream llama.cpp release
@@ -476,57 +479,135 @@ set stays expressible without a schema change.
 > repository, so a merge alone does not upgrade anyone — the Atomic Chat
 > client must bump its pinned revision in a deliberate compatibility change.
 
-## CI validation
+## Runtime descriptors (`runtimes/`)
 
-[`.github/workflows/validate.yml`](.github/workflows/validate.yml) runs on
-every push and pull request. It performs the following checks:
+A runtime descriptor tells atomic-chat-core which container image a
+**managed engine** (currently TensorRT-LLM) runs, pinned by digest, what host
+it needs, and what that release supports. It carries **data only** — no
+command, script or argv lives in it: the argv for a recipe (e.g. "install a
+container runtime on this Linux distro") is compiled into core itself, and a
+`recipes[]` entry is only a `recipe_id` naming argv core already has, plus the
+list of distributions that recipe is qualified to run on.
 
-- `ajv` validates `providers/registry.json` against `providers/schema.json`.
-- Every `provider` id must be unique.
-- The job fails if any `api_key` field is non-empty.
-- `ajv` validates `models/recommended.json` against `models/schema.json`.
-- Every `(model_name, description_key)` pair in the recommended-models
-  manifest must be unique.
-- `ajv` validates `models/staff-picks.json` against
-  `models/schema.staff-picks.json`.
-- Every `model_name` and every `order` in the staff-picks manifest must be
-  unique, and `description_key`, when present, must start with `hub:`.
-- `ajv` validates `backends/manifest.json` against `backends/schema.json`.
-- Every `llama-*` asset name must carry the declared `tag_name`, and asset
-  names must be unique.
-- `sha256` and `size` must appear together on an asset, and when
-  `download_base` is set every `llama-*` asset must carry a `sha256` — an
-  archive we host but do not hash would be downloaded unverified.
-- `ajv` validates `backends/turboquant-manifest.json` against
-  `backends/turboquant-schema.json`.
-- Every TurboQuant `tag` must look like `b<build>-<semver>` and all entries must
-  share one tag, every `asset` must be `llama-turboquant-<id>.zip` on Windows /
-  `.tar.gz` elsewhere, and backend ids must be unique.
+### Who reads this
 
-You cannot merge a PR until CI is green.
+Only atomic-chat-core **0.7.0 and later** reads `runtimes/`. Every
+already-released Atomic Chat app, CLI and core build — including core
+v0.6.0, which shipped before managed-engine support existed — never fetches
+or parses this directory; publishing or changing a descriptor here has no
+effect on them.
 
-## Local validation
+### `descriptor_id` is immutable
 
-If you want to validate locally before pushing:
+The content published under a given `descriptor_id` never changes. core
+caches an accepted descriptor by this id and pins an installation to it, so
+editing a published descriptor's fields in place would silently change what
+an already-installed engine is compared against. Any change — the image, the
+compute-capability/quantization/architecture matrices, `model_families`, the
+curated model list, the distro list, or the notices — ships under a **new**
+`descriptor_id` instead of editing this one.
 
-```bash
-npx ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
-npx ajv-cli@5 validate -s models/schema.json    -d models/recommended.json   --strict=false
-npx ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
-npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
-npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
-```
+The id format is `tensorrt-llm-<engine tag>-r<N>`: bump the engine tag when
+the underlying TensorRT-LLM release changes (`tensorrt-llm-1.2.1-r1` →
+`tensorrt-llm-1.3.0-r1`), or bump `N` when the tag stays the same but a
+data-only field changes (a new curated model, a widened distro list, a
+corrected notice, …).
 
-## Security
+### Installed engines stay pinned to their descriptor
 
-- API keys must never appear in this repository.
-- The registry is served via HTTPS from `raw.githubusercontent.com`.
-- Atomic Chat clients ignore the `api_key` field even if a malicious commit slips
-  through; user-supplied keys live only in the local OS keychain.
+An installation records the `descriptor_id` it was set up with and keeps
+using it. Publishing a new descriptor here therefore only affects **new**
+installs; an existing install is unaffected until the user removes the
+engine and sets it up again, which picks up whatever descriptor is current
+at that point.
 
-## License
+### How to update the engine tag
 
-See the project's primary license in the main Atomic Chat repository.
+1. Confirm the candidate tag is the latest non-rc release with the
+   platform/hardware support you need — check NVIDIA's own release notes and
+   hardware-support docs at that tag, not just the tag list.
+2. Get the **per-platform manifest digest** for both the engine image and the
+   probe image (see [Reproducing runtime descriptor
+   digests](#reproducing-runtime-descriptor-digests) below) — never a
+   multi-arch index digest.
+3. Re-derive `supported_architectures`, `quantization`, `model_families` and
+   `minimum_compute_capability` from that tag's own source (its parser
+   registries, its hardware-support matrix), rather than carrying over the
+   previous descriptor's values.
+4. Re-derive `curated_models`: re-check each repo is still ungated, re-resolve
+   `revision` to the commit its `main` branch currently points at, and
+   recompute `inventory_digest` (below).
+5. Recompute `download_bytes` and `required_disk_bytes` from the new image's
+   registry manifests (below).
+6. Update `notices` if the image's license terms changed, and `exclusions` if
+   the release's support gaps changed.
+7. Assign a new `descriptor_id` (`tensorrt-llm-<new tag>-r1`).
+8. Run `make validate` before opening a PR — it runs the schema and every
+   integrity check below against what you just wrote.
+
+### How to add a distribution
+
+1. Confirm **both** vendors publish packages for that distro/version/arch:
+   Docker CE (`download.docker.com`) and the NVIDIA Container Toolkit
+   (`nvidia.github.io/libnvidia-container`). One vendor publishing alone does
+   not qualify it.
+2. Only add the entry once core's live install test has actually passed on
+   that distribution — package availability is a precondition, not proof the
+   recipe works there.
+3. Append the `{ "id", "version_id", "arch" }` entry to the relevant
+   `recipes[].distributions`.
+4. This is a data-only change on the same engine tag, so bump the
+   `descriptor_id`'s `-r<N>` suffix.
+5. `make validate`, commit, open a PR.
+
+### Field reference (non-obvious fields)
+
+- **`image` / `probe_image` digests** are the **platform-specific manifest
+  digest**, not the multi-arch index digest — so `docker pull repo@digest`
+  fetches exactly the bytes for that platform, and core can compare what it
+  actually pulled against what the descriptor promised. Pulling by the index
+  digest would let the registry hand back either platform.
+- **`curated_models[].vram_tier_bytes`** is the tier's nominal size in
+  **decimal GB** (`× 10^9`), not binary GiB. Real cards report a little under
+  their nominal binary size (an RTX 4090 reports 24,564 MiB; an H100 reports
+  81,559 MiB) but still above the decimal-GB figure, so the decimal value
+  works as a safe floor for "does this model fit the tier" without
+  overshooting the VRAM any card in that tier actually has.
+- **`quantization[].format` names** follow a fixed checkpoint-metadata →
+  format-name mapping, documented here as the conf↔core contract: if
+  `hf_quant_config.json` is present (NVIDIA ModelOpt), the format is
+  `quant_algo` lower-cased, with `fp8_pb_wo` renamed to `fp8_block_scales`
+  (matching what the engine itself calls it internally); otherwise, if
+  `config.json`'s `quantization_config.quant_method` is set, `fp8` with a
+  `weight_block_size` of `[128,128]` maps to `fp8_block_scales` and `mxfp4`
+  maps to `mxfp4` (any other `quant_method`, e.g. `awq` or `gptq`, is not
+  loadable by this engine release and must not be listed as a supported
+  format); otherwise the checkpoint is unquantized and the format is `bf16`
+  or `fp16` from `torch_dtype`. Each format also carries exactly one
+  `min_compute_capability` — but the engine's real hardware-support matrix is
+  not strictly monotone in compute capability (a format can be marked
+  supported on a newer architecture while unlisted on one immediately below
+  it), so a single floor per format is a conservative simplification, not a
+  full compatibility oracle: it can let a checkpoint through to a load that
+  then fails on that specific card. The descriptor's overall
+  `minimum_compute_capability` is always a lower bound on every format's own
+  minimum (enforced by CI, see below).
+- **`curated_models[].inventory_digest`** is computed with the **same
+  algorithm as atomic-chat-core**, over **every file** in the Hugging Face
+  repository at the pinned `revision` — not a filtered subset; an engine's
+  own file-type selection happens later and is not part of a checkpoint's
+  identity. Files are sorted by path; for each file the digest folds in
+  `${path.length}:${path}`, then `|${bytes}|`, then its published LFS
+  `sha256` (or an empty string when the file has none), then a NUL byte; the
+  result is `sha256:<hex of the running digest>`.
+  `.github/scripts/inventory-digest.mjs` reproduces it from the live Hugging
+  Face API (see below).
+- **`download_bytes` / `required_disk_bytes`** are estimated from the image's
+  own registry manifests: `download_bytes` sums the compressed layer sizes
+  (the larger of the two platforms); `required_disk_bytes` adds the
+  estimated **extracted** size, measured by sampling each large layer's
+  compression ratio (a capped-prefix `gzip -dc`) and weighting by layer size,
+  rounded up to the next GiB.
 
 ### Reproducing runtime descriptor digests
 
@@ -559,3 +640,74 @@ list at that commit with the same algorithm as atomic-chat-core:
 curl -s https://huggingface.co/api/models/nvidia/Qwen3-8B-FP8/revision/main | jq -r .sha
 node .github/scripts/inventory-digest.mjs nvidia/Qwen3-8B-FP8 2cebc4c89e25abc17668c81b01dceaf3d8b914d5
 ```
+
+> **Note for atomic-chat-core.** `inventory_digest` hashes **all** files at
+> the pinned revision (`/revision/<sha>`), not a `.gguf`-filtered subset —
+> core must hash the full safetensors inventory at that revision the same
+> way, or a curated entry's digest will never match what core computes.
+
+## CI validation
+
+[`.github/workflows/validate.yml`](.github/workflows/validate.yml) runs on
+every push and pull request. It performs the following checks:
+
+- `ajv` validates `providers/registry.json` against `providers/schema.json`.
+- Every `provider` id must be unique.
+- The job fails if any `api_key` field is non-empty.
+- `ajv` validates `models/recommended.json` against `models/schema.json`.
+- Every `(model_name, description_key)` pair in the recommended-models
+  manifest must be unique.
+- `ajv` validates `models/staff-picks.json` against
+  `models/schema.staff-picks.json`.
+- Every `model_name` and every `order` in the staff-picks manifest must be
+  unique, and `description_key`, when present, must start with `hub:`.
+- `ajv` validates `backends/manifest.json` against `backends/schema.json`.
+- Every `llama-*` asset name must carry the declared `tag_name`, and asset
+  names must be unique.
+- `sha256` and `size` must appear together on an asset, and when
+  `download_base` is set every `llama-*` asset must carry a `sha256` — an
+  archive we host but do not hash would be downloaded unverified.
+- `ajv` validates `backends/turboquant-manifest.json` against
+  `backends/turboquant-schema.json`.
+- Every TurboQuant `tag` must look like `b<build>-<semver>` and all entries must
+  share one tag, every `asset` must be `llama-turboquant-<id>.zip` on Windows /
+  `.tar.gz` elsewhere, and backend ids must be unique.
+- `ajv` validates `runtimes/tensorrt-llm.json` against `runtimes/schema.json`.
+- Cross-field integrity that the schema cannot express is checked by
+  `node --test` over `.github/scripts/runtime-descriptor.test.mjs`,
+  `.github/scripts/inventory-digest.test.mjs` and
+  `.github/scripts/runtime-descriptor-integrity.test.mjs`: fixture
+  accept/reject against the schema, and on the real descriptor —
+  `supported_architectures` and `quantization[].format` are unique,
+  every `model_families` key is a `supported_architectures` entry,
+  `curated_models` are unique by `repository@revision`, `recipes[].recipe_id`
+  is unique, `distributions` are unique by `(id, version_id, arch)` within a
+  recipe, `descriptor_id` starts with `engine_id + "-"`,
+  `required_disk_bytes >= download_bytes`, and `minimum_compute_capability`
+  is at or below every `quantization[].min_compute_capability`.
+
+You cannot merge a PR until CI is green.
+
+## Local validation
+
+If you want to validate locally before pushing:
+
+```bash
+npx ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
+npx ajv-cli@5 validate -s models/schema.json    -d models/recommended.json   --strict=false
+npx ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
+npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
+npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
+npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
+```
+
+## Security
+
+- API keys must never appear in this repository.
+- The registry is served via HTTPS from `raw.githubusercontent.com`.
+- Atomic Chat clients ignore the `api_key` field even if a malicious commit slips
+  through; user-supplied keys live only in the local OS keychain.
+
+## License
+
+See the project's primary license in the main Atomic Chat repository.

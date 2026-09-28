@@ -9,14 +9,21 @@ const REPO_ROOT = fileURLToPath(new URL('../..', import.meta.url))
 const SCHEMA = 'runtimes/schema.json'
 const STRICT = 'true'
 
-const validate = (fixture) => {
-  const result = spawnSync(
-    'npx',
-    ['--yes', 'ajv-cli@5', 'validate', '-s', SCHEMA, '-d', `.github/fixtures/runtimes/${fixture}`, `--strict=${STRICT}`],
-    { cwd: REPO_ROOT, encoding: 'utf8' }
-  )
+// spawnSync sets `result.error` (and leaves `status` null) when the binary
+// itself could not be launched (e.g. npx missing) — distinct from the binary
+// running and exiting non-zero. Surfacing that case explicitly means a broken
+// environment fails with "could not launch npx", not a misleading assertion
+// about an empty stderr.
+const runAjv = (binary, args) => {
+  const result = spawnSync(binary, args, { cwd: REPO_ROOT, encoding: 'utf8' })
+  if (result.error) {
+    throw new Error(`Could not launch "${binary}": ${result.error.message}`)
+  }
   return result
 }
+
+const validate = (fixture) =>
+  runAjv('npx', ['--yes', 'ajv-cli@5', 'validate', '-s', SCHEMA, '-d', `.github/fixtures/runtimes/${fixture}`, `--strict=${STRICT}`])
 
 test('valid descriptor passes schema validation', () => {
   const result = validate('valid.json')
@@ -30,6 +37,7 @@ const invalid = [
   ['invalid-malformed-probe-digest.json', 'probe_image with a malformed digest'],
   ['invalid-unknown-top-level-field.json', 'unknown top-level field'],
   ['invalid-parser-leading-dash.json', 'parser name starting with - (would be read as a flag)'],
+  ['invalid-tag-with-digest.json', 'image repository carries a tag even though a valid digest is also present'],
 ]
 
 for (const [fixture, defect] of invalid) {
@@ -38,3 +46,10 @@ for (const [fixture, defect] of invalid) {
     assert.notEqual(result.status, 0, `expected ${fixture} to fail schema validation`)
   })
 }
+
+test('validate() surfaces a spawn launch failure with a clear message (e.g. npx missing)', () => {
+  assert.throws(
+    () => runAjv('this-binary-does-not-exist-xyz', ['--version']),
+    /Could not launch "this-binary-does-not-exist-xyz"/
+  )
+})
