@@ -1,0 +1,259 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat Runtime Descriptor",
+  "description": "Schema for a runtime descriptor: the metadata that says which container image a managed engine (e.g. TensorRT-LLM) runs, pinned by digest, what host it needs, and what that release supports. Consumed by atomic-chat-core, which caches an accepted descriptor by descriptor_id and pins an installation to it. A descriptor carries data only — no command, no argv, no script: the argv for a recipe is compiled into core, the descriptor only names which recipe id a distribution qualifies for.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "descriptor_id",
+    "engine_id",
+    "adapter_id",
+    "adapter_contract_version",
+    "image",
+    "probe_image",
+    "minimum_core_version",
+    "minimum_app_version",
+    "minimum_compute_capability",
+    "supported_architectures",
+    "quantization",
+    "model_families",
+    "curated_models",
+    "recipes",
+    "download_bytes",
+    "required_disk_bytes",
+    "notices",
+    "exclusions"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": {
+      "const": 1,
+      "description": "Bump this when the shape of a descriptor changes in a backwards-incompatible way."
+    },
+    "descriptor_id": {
+      "$ref": "#/definitions/id",
+      "description": "Immutable identifier for this exact published descriptor. Any change to the image, matrices, model families or recipes MUST be published under a new descriptor_id instead of editing this one in place — an installation pins the descriptor_id it was set up with, and core caches descriptors by this id."
+    },
+    "engine_id": {
+      "$ref": "#/definitions/id",
+      "description": "Identifies the managed engine this descriptor releases, e.g. tensorrt-llm."
+    },
+    "adapter_id": {
+      "$ref": "#/definitions/id",
+      "description": "Names the compiled-in core adapter that knows how to drive this engine. A core build with no matching adapter treats the runtime as unavailable rather than trying to load it."
+    },
+    "adapter_contract_version": {
+      "const": 1,
+      "description": "The adapter interface version this descriptor expects. Core refuses the descriptor if its compiled adapter implements a different contract version."
+    },
+    "image": {
+      "$ref": "#/definitions/platformImageMap",
+      "description": "The engine's container image, by platform. Pinned by digest: a tag can be repointed by whoever owns the registry, and a qualification result is about exact bytes."
+    },
+    "probe_image": {
+      "$ref": "#/definitions/platformImageMap",
+      "description": "Small CUDA base image used to verify GPU access inside a container before the (much larger) engine image is pulled. Pinned by digest for the same reason as image."
+    },
+    "minimum_core_version": {
+      "$ref": "#/definitions/semver",
+      "description": "Lowest atomic-chat-core version that can run this descriptor. Core rejects a descriptor whose minimum_core_version is above its own version and keeps using the previously accepted one."
+    },
+    "minimum_app_version": {
+      "$ref": "#/definitions/semver",
+      "description": "Lowest Atomic Chat app version this descriptor expects; core surfaces it in the environment snapshot so the app can prompt an update."
+    },
+    "minimum_compute_capability": {
+      "$ref": "#/definitions/computeCapability",
+      "description": "Lowest NVIDIA compute capability (major.minor, from nvidia-smi) this engine release supports."
+    },
+    "supported_architectures": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/definitions/architectureName" },
+      "description": "Hugging Face config.json `architectures` class names this engine release can serve, e.g. LlamaForCausalLM."
+    },
+    "quantization": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/quantizationEntry" },
+      "description": "Quantization formats this engine release supports, each with the minimum compute capability it needs."
+    },
+    "model_families": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/definitions/architectureName" },
+      "additionalProperties": { "$ref": "#/definitions/modelFamilyEntry" },
+      "description": "Maps an HF architecture class name to the tool-call/reasoning parser names and structured-output support this engine release has for it. Data, not code: the adapter passes these names through at container start rather than guessing them the way the llama.cpp provider does. An architecture with no entry here gets no tool calls or reasoning parsing."
+    },
+    "curated_models": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/curatedModel" },
+      "description": "Models this engine release has been qualified against, from small consumer cards up to datacenter tiers, each pinned to an exact revision and inventory digest."
+    },
+    "recipes": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/recipe" },
+      "description": "Install recipes this release ships, as data only: a recipe_id naming argv compiled into core, and the distributions that recipe is qualified to run on. No command, script or argv lives here."
+    },
+    "download_bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Estimated container image download size in bytes, shown to the user before they consent to the pull."
+    },
+    "required_disk_bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Estimated disk space required once the image is pulled and unpacked."
+    },
+    "notices": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/nonEmptyString" },
+      "description": "Terms-of-use and mandatory notices for the vendor's container image (e.g. the NGC container terms), shown to the user before install."
+    },
+    "exclusions": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/nonEmptyString" },
+      "description": "Capabilities this engine release explicitly does not support (e.g. vision, embeddings), stated plainly rather than left to be discovered."
+    }
+  },
+  "definitions": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]*$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "imageRepository": {
+      "type": "string",
+      "description": "A bare repository reference: no @digest, and no :tag after the last path segment (a registry host may still carry a port).",
+      "pattern": "^[a-z0-9.-]+(:[0-9]+)?(/[a-z0-9._-]+)+$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "computeCapability": {
+      "type": "string",
+      "description": "NVML major.minor, e.g. 8.9 or 12.0.",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "architectureName": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z0-9]*$"
+    },
+    "parserName": {
+      "type": ["string", "null"],
+      "pattern": "^[a-z0-9_]+$",
+      "description": "Bare parser name only (no flags, no paths). Null means this engine release has no parser for the family."
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "platformImage": {
+      "type": "object",
+      "required": ["repository", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "repository": { "$ref": "#/definitions/imageRepository" },
+        "digest": { "$ref": "#/definitions/digest" }
+      }
+    },
+    "platformImageMap": {
+      "type": "object",
+      "required": ["linux/amd64", "linux/arm64"],
+      "additionalProperties": false,
+      "properties": {
+        "linux/amd64": { "$ref": "#/definitions/platformImage" },
+        "linux/arm64": { "$ref": "#/definitions/platformImage" }
+      }
+    },
+    "quantizationEntry": {
+      "type": "object",
+      "required": ["format", "min_compute_capability"],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "min_compute_capability": { "$ref": "#/definitions/computeCapability" }
+      }
+    },
+    "modelFamilyEntry": {
+      "type": "object",
+      "required": ["tool_parser", "reasoning_parser", "structured_output"],
+      "additionalProperties": false,
+      "properties": {
+        "tool_parser": { "$ref": "#/definitions/parserName" },
+        "reasoning_parser": { "$ref": "#/definitions/parserName" },
+        "structured_output": { "type": "boolean" }
+      }
+    },
+    "curatedModel": {
+      "type": "object",
+      "required": ["repository", "revision", "inventory_digest", "vram_tier_bytes", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Hugging Face owner/name.",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "revision": {
+          "type": "string",
+          "description": "Immutable Hugging Face commit SHA the model is pinned to.",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "inventory_digest": { "$ref": "#/definitions/digest" },
+        "vram_tier_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Lowest VRAM tier (bytes) this curated model is qualified for."
+        },
+        "note": { "$ref": "#/definitions/nonEmptyString" }
+      }
+    },
+    "distribution": {
+      "type": "object",
+      "required": ["id", "version_id", "arch"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "os-release ID, e.g. ubuntu, debian, fedora.",
+          "pattern": "^[a-z0-9._-]+$"
+        },
+        "version_id": {
+          "type": "string",
+          "description": "os-release VERSION_ID, e.g. 22.04.",
+          "pattern": "^[0-9][0-9.]*$"
+        },
+        "arch": {
+          "type": "string",
+          "enum": ["x86_64", "aarch64"]
+        }
+      }
+    },
+    "recipe": {
+      "type": "object",
+      "required": ["recipe_id", "distributions"],
+      "additionalProperties": false,
+      "properties": {
+        "recipe_id": {
+          "$ref": "#/definitions/id",
+          "description": "Names argv compiled into core, e.g. linux.install-container-runtime. Never a command or script."
+        },
+        "distributions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/distribution" },
+          "description": "Distributions this recipe has been qualified to run on. Extending support to a new distribution is a data change here, not a core release."
+        }
+      }
+    }
+  }
+}
