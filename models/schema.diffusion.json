@@ -133,7 +133,7 @@
         },
         "video": {
           "type": "object",
-          "description": "Required for a video family: the frame rate, the frame lattice k*frame_step+frame_offset, the default count, the inclusive range and the sizes the model was trained for.",
+          "description": "Required for a video family: the frame rate, the frame lattice k*frame_step+frame_offset, the default count, the inclusive range and the sizes the app offers (each inside ranges.dims and a multiple of ranges.dim_multiple, else the app drops the family).",
           "required": ["fps", "frame_step", "frame_offset", "frames", "frame_range", "resolution_presets"],
           "additionalProperties": false,
           "properties": {
