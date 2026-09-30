@@ -713,6 +713,41 @@ at that point.
   compression ratio (a capped-prefix `gzip -dc`) and weighting by layer size,
   rounded up to the next GiB.
 
+### Live qualification of `tensorrt-llm-1.2.1-r1`
+
+`tensorrt-llm-1.2.1-r1` was checked against atomic-chat-core's live tests on
+2026-09-29 and stays as published — no `r2`. The rule: a curated model leaves
+the list only if it actually failed on a card it fits, a distribution or
+architecture leaves the recipe only if it failed the install test, and
+`required_disk_bytes` changes only if measured post-pull usage differs by more
+than 10%. None of these happened.
+
+- **Install recipe (core task 2.18, `test/live/managed-install.test.ts`)** —
+  clean VMs with an RTX 4070 Laptop (CC 8.9) passed through. All seven x86_64
+  versions passed: Ubuntu 22.04, 24.04, 26.04; Debian 12, 13; Fedora 43, 44
+  (with SELinux enforcing). Hosts that already ran Docker were covered on
+  Ubuntu 24.04 and Fedora 44 (restart only after consent), and Fedora 44 with
+  `moby-engine` got a toolkit-only plan. The Arch adopt path was not run.
+  Ubuntu 26.04 needed five runs: earlier runs failed on
+  `nvcr.io` 403s and once on `docker.service` start, then every step passed.
+  **aarch64 was not tested** (no arm64 host with an NVIDIA card); its entries
+  stay because nothing failed, not because they passed.
+- **Engine (core task 2.19, `test/live/tensorrt-llm.test.ts`)** — one card
+  only (Ada, 8 GB): `Qwen/Qwen3-1.7B` at the pinned revision loaded, streamed,
+  reloaded faster from the engine cache, made a tool call through the `qwen3`
+  parser and returned structured output (8 passed, 2 skipped). The other ten
+  curated entries, FP8 and NVFP4, and Ampere/Hopper/Blackwell/GB10 cards were
+  not run; they stay in the list because none of them failed.
+- **Sizes** — the pulled engine image was 20.88–20.90 GB on every VM, within
+  1.2% of `download_bytes` (the difference is the probe image and layers
+  already present). Disk space actually used after the pull was **not
+  measured**, so `required_disk_bytes` keeps its estimate.
+
+The logs live in atomic-chat-core's checkout of branch
+`change/add-tensorrt-llm-linux`, under `.superpowers/sdd/tasks/live-results/`
+(`vm-campaign/*`, `managed-install-ubuntu-26.04-x86_64-run*.log`,
+`tensorrt-llm-run2.log`).
+
 ### Reproducing runtime descriptor digests
 
 `runtimes/tensorrt-llm.json` pins each image by its per-platform manifest
