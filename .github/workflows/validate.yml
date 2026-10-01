@@ -658,3 +658,13 @@ jobs:
           console.log(`  shared side files: ${sideFiles.size}`)
           console.log(`  updated_at: ${data.updated_at}`)
           EOF
+
+      - name: Validate decision catalog against schema
+        run: |
+          ajv validate \
+            -s models/schema.decision.json \
+            -d models/decision.json \
+            --strict=false
+
+      - name: Check decision catalog integrity
+        run: node .github/scripts/decision-catalog-check.mjs
