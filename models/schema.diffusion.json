@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Atomic Chat diffusion model catalog",
-  "description": "Curated local image/video generation families for stable-diffusion.cpp (and, later, the diffusers sidecar). Every size is the exact byte count from the Hugging Face API: the app renders bytes / 1024**3, so a hand-typed decimal GB would disagree with the progress bar beside it.",
+  "description": "Curated local image/video generation families for stable-diffusion.cpp (and, later, the diffusers sidecar). Every size is the exact byte count from the Hugging Face API: the app renders bytes / 1024**3, so a hand-typed decimal GB would disagree with the progress bar beside it. A video family (modality video) also carries a video block; its side files may include audio_vae and a text_encoders entry with field embeddings_connectors.",
   "type": "object",
   "required": ["schema_version", "updated_at", "families"],
   "additionalProperties": false,
@@ -30,7 +30,7 @@
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "field": {
           "type": "string",
-          "enum": ["llm", "llm_vision", "qwen2vl", "clip_l", "t5xxl"]
+          "enum": ["llm", "llm_vision", "qwen2vl", "clip_l", "t5xxl", "embeddings_connectors"]
         }
       }
     },
@@ -59,6 +59,8 @@
         "ranges",
         "capabilities"
       ],
+      "if": { "properties": { "modality": { "const": "video" } } },
+      "then": { "required": ["video"] },
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -104,6 +106,7 @@
         },
         "vae": { "$ref": "#/definitions/file" },
         "vae_format": { "type": "string", "enum": ["flux2"] },
+        "audio_vae": { "$ref": "#/definitions/file" },
         "text_encoders": {
           "type": "array",
           "items": { "$ref": "#/definitions/file" }
@@ -119,7 +122,41 @@
             "sampling_method": { "type": "string" },
             "flow_shift": { "type": "number" },
             "width": { "type": "integer", "minimum": 64 },
-            "height": { "type": "integer", "minimum": 64 }
+            "height": { "type": "integer", "minimum": 64 },
+            "sigmas": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+              "description": "A distilled model's fixed sigma schedule; sent as custom_sigmas when steps equals its length."
+            }
+          }
+        },
+        "video": {
+          "type": "object",
+          "description": "Required for a video family: the frame rate, the frame lattice k*frame_step+frame_offset, the default count, the inclusive range and the sizes the app offers (each inside ranges.dims and a multiple of ranges.dim_multiple, else the app drops the family).",
+          "required": ["fps", "frame_step", "frame_offset", "frames", "frame_range", "resolution_presets"],
+          "additionalProperties": false,
+          "properties": {
+            "fps": { "type": "integer", "minimum": 1 },
+            "frame_step": { "type": "integer", "minimum": 1 },
+            "frame_offset": { "type": "integer", "minimum": 0 },
+            "frames": { "type": "integer", "minimum": 1 },
+            "frame_range": {
+              "type": "array",
+              "items": { "type": "integer", "minimum": 1 },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "resolution_presets": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "array",
+                "items": { "type": "integer", "minimum": 64 },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
           }
         },
         "ranges": {
