@@ -95,6 +95,7 @@ validate:
 	node --test .github/scripts/environment-manifest.test.mjs
 	node --test .github/scripts/inventory-digest.test.mjs
 	node --test .github/scripts/runtime-descriptor-integrity.test.mjs
+	node --test .github/scripts/environment-manifest-integrity.test.mjs
 	node --test .github/scripts/runtime-descriptor-immutability.test.mjs
 	npx --yes ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.json -d models/recommended.json --strict=false
@@ -103,3 +104,4 @@ validate:
 	npx --yes ajv-cli@5 validate -s backends/schema.json -d backends/manifest.json --strict=false
 	npx --yes ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 	npx --yes ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
+	npx --yes ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
