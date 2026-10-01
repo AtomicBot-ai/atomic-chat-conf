@@ -64,28 +64,6 @@
       "note": "Fits an 8 GB card with headroom for KV cache."
     }
   ],
-  "recipes": [
-    {
-      "recipe_id": "linux.install-container-runtime",
-      "distributions": [
-        {
-          "id": "ubuntu",
-          "version_id": "22.04",
-          "arch": "x86_64"
-        },
-        {
-          "id": "ubuntu",
-          "version_id": "24.04",
-          "arch": "x86_64"
-        },
-        {
-          "id": "ubuntu",
-          "version_id": "24.04",
-          "arch": "aarch64"
-        }
-      ]
-    }
-  ],
   "download_bytes": 17179869184,
   "required_disk_bytes": 34359738368,
   "notices": [

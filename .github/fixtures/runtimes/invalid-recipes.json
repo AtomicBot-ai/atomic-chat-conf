@@ -84,8 +84,7 @@
           "version_id": "24.04",
           "arch": "aarch64"
         }
-      ],
-      "command": "apt-get install -y nvidia-container-toolkit"
+      ]
     }
   ],
   "download_bytes": 17179869184,

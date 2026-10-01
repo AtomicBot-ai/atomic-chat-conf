@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "descriptor_id": "tensorrt-llm-1.2.1-r1",
+  "descriptor_id": "tensorrt-llm-1.2.1-r2",
   "engine_id": "tensorrt-llm",
   "adapter_id": "tensorrt-llm",
   "adapter_contract_version": 1,
@@ -24,7 +24,7 @@
       "digest": "sha256:f9f6d7ce4503015b0a21ff75ee2b2e1fbd28d791d860ede9a5063ecc04cca5fe"
     }
   },
-  "minimum_core_version": "0.7.0",
+  "minimum_core_version": "0.7.5",
   "minimum_app_version": "2.0.49",
   "minimum_driver_version": "590.44.01",
   "minimum_compute_capability": "8.0",
@@ -156,27 +156,6 @@
       "inventory_digest": "sha256:f677f9254246dfd3043ae8f4d528734830e0298a05a93f6032acb5f0c72cfed4",
       "vram_tier_bytes": 80000000000,
       "note": "NVIDIA ModelOpt NVFP4, 42.7 GB of weights; Blackwell cards with 80 GB or more such as the RTX PRO 6000 and B200."
-    }
-  ],
-  "recipes": [
-    {
-      "recipe_id": "linux.install-container-runtime",
-      "distributions": [
-        { "id": "ubuntu", "version_id": "22.04", "arch": "x86_64" },
-        { "id": "ubuntu", "version_id": "22.04", "arch": "aarch64" },
-        { "id": "ubuntu", "version_id": "24.04", "arch": "x86_64" },
-        { "id": "ubuntu", "version_id": "24.04", "arch": "aarch64" },
-        { "id": "ubuntu", "version_id": "26.04", "arch": "x86_64" },
-        { "id": "ubuntu", "version_id": "26.04", "arch": "aarch64" },
-        { "id": "debian", "version_id": "12", "arch": "x86_64" },
-        { "id": "debian", "version_id": "12", "arch": "aarch64" },
-        { "id": "debian", "version_id": "13", "arch": "x86_64" },
-        { "id": "debian", "version_id": "13", "arch": "aarch64" },
-        { "id": "fedora", "version_id": "43", "arch": "x86_64" },
-        { "id": "fedora", "version_id": "43", "arch": "aarch64" },
-        { "id": "fedora", "version_id": "44", "arch": "x86_64" },
-        { "id": "fedora", "version_id": "44", "arch": "aarch64" }
-      ]
     }
   ],
   "download_bytes": 21122819324,

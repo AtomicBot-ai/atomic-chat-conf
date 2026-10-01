@@ -46,14 +46,14 @@ test('immutability: same descriptor_id + canonically different content -> fail',
   const changed = { ...descriptor, download_bytes: descriptor.download_bytes + 1 }
   const result = checkDescriptorImmutability(descriptor, changed)
   assert.equal(result.ok, false)
-  assert.match(result.reason, /descriptor_id "tensorrt-llm-1\.2\.1-r1"/)
+  assert.match(result.reason, /descriptor_id "tensorrt-llm-1\.2\.1-r2"/)
   assert.match(result.reason, /new/i)
 })
 
 test('immutability: different descriptor_id -> ok even though content also differs', () => {
   const changed = {
     ...descriptor,
-    descriptor_id: 'tensorrt-llm-1.2.1-r2',
+    descriptor_id: 'tensorrt-llm-1.2.1-r3',
     download_bytes: descriptor.download_bytes + 1,
   }
   const result = checkDescriptorImmutability(descriptor, changed)

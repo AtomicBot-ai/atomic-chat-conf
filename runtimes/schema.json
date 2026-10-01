@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Atomic Chat Runtime Descriptor",
-  "description": "Schema for a runtime descriptor: the metadata that says which container image a managed engine (e.g. TensorRT-LLM) runs, pinned by digest, what host it needs, and what that release supports. Consumed by atomic-chat-core, which caches an accepted descriptor by descriptor_id and pins an installation to it. A descriptor carries data only — no command, no argv, no script: the argv for a recipe is compiled into core, the descriptor only names which recipe id a distribution qualifies for.",
+  "description": "Schema for a runtime descriptor: the metadata that says which container image a managed engine (e.g. TensorRT-LLM) runs, pinned by digest, what host it needs, and what that release supports. Consumed by atomic-chat-core, which caches an accepted descriptor by descriptor_id and pins an installation to it. A descriptor carries data only — no command, no argv, no script — and describes the engine alone: install recipes and the distributions they are qualified for are environment data, published in the per-platform environment manifest (runtimes/environments/), and core rejects a descriptor that carries recipes.",
   "type": "object",
   "required": [
     "schema_version",
@@ -19,7 +19,6 @@
     "quantization",
     "model_families",
     "curated_models",
-    "recipes",
     "download_bytes",
     "required_disk_bytes",
     "notices",
@@ -33,7 +32,7 @@
     },
     "descriptor_id": {
       "$ref": "#/definitions/id",
-      "description": "Immutable identifier for this exact published descriptor. Any change to the image, matrices, model families or recipes MUST be published under a new descriptor_id instead of editing this one in place — an installation pins the descriptor_id it was set up with, and core caches descriptors by this id."
+      "description": "Immutable identifier for this exact published descriptor. Any change to the image, matrices, model families or any other field MUST be published under a new descriptor_id instead of editing this one in place — an installation pins the descriptor_id it was set up with, and core caches descriptors by this id. Adding a distribution is not a descriptor change: it is a new manifest_id of the environment manifest."
     },
     "engine_id": {
       "$ref": "#/definitions/id",
@@ -94,11 +93,6 @@
       "type": "array",
       "items": { "$ref": "#/definitions/curatedModel" },
       "description": "Models this engine release has been qualified against, from small consumer cards up to datacenter tiers, each pinned to an exact revision and inventory digest."
-    },
-    "recipes": {
-      "type": "array",
-      "items": { "$ref": "#/definitions/recipe" },
-      "description": "Install recipes this release ships, as data only: a recipe_id naming argv compiled into core, and the distributions that recipe is qualified to run on. No command, script or argv lives here."
     },
     "download_bytes": {
       "type": "integer",
@@ -230,44 +224,6 @@
           "description": "Lowest VRAM tier (bytes) this curated model is qualified for."
         },
         "note": { "$ref": "#/definitions/nonEmptyString" }
-      }
-    },
-    "distribution": {
-      "type": "object",
-      "required": ["id", "version_id", "arch"],
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "os-release ID, e.g. ubuntu, debian, fedora.",
-          "pattern": "^[a-z0-9._-]+$"
-        },
-        "version_id": {
-          "type": "string",
-          "description": "os-release VERSION_ID, e.g. 22.04.",
-          "pattern": "^[0-9][0-9.]*$"
-        },
-        "arch": {
-          "type": "string",
-          "enum": ["x86_64", "aarch64"]
-        }
-      }
-    },
-    "recipe": {
-      "type": "object",
-      "required": ["recipe_id", "distributions"],
-      "additionalProperties": false,
-      "properties": {
-        "recipe_id": {
-          "$ref": "#/definitions/id",
-          "description": "Names argv compiled into core, e.g. linux.install-container-runtime. Never a command or script."
-        },
-        "distributions": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "$ref": "#/definitions/distribution" },
-          "description": "Distributions this recipe has been qualified to run on. Extending support to a new distribution is a data change here, not a core release."
-        }
       }
     }
   }

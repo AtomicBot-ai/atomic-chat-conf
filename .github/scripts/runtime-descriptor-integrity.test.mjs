@@ -55,31 +55,6 @@ function checkUniqueCuratedModels(d) {
   return errors
 }
 
-function checkUniqueRecipeIds(d) {
-  const errors = []
-  const seen = new Set()
-  for (const r of d.recipes ?? []) {
-    if (seen.has(r.recipe_id)) errors.push(`recipes: duplicate recipe_id "${r.recipe_id}"`)
-    seen.add(r.recipe_id)
-  }
-  return errors
-}
-
-function checkUniqueDistributionsPerRecipe(d) {
-  const errors = []
-  for (const r of d.recipes ?? []) {
-    const seen = new Set()
-    for (const dist of r.distributions ?? []) {
-      const key = `${dist.id}/${dist.version_id}/${dist.arch}`
-      if (seen.has(key)) {
-        errors.push(`recipe "${r.recipe_id}": duplicate distribution (id, version_id, arch) "${key}"`)
-      }
-      seen.add(key)
-    }
-  }
-  return errors
-}
-
 function checkDescriptorIdPrefix(d) {
   const errors = []
   const prefix = `${d.engine_id}-`
@@ -147,8 +122,6 @@ const CHECKS = [
   checkModelFamiliesSubsetOfSupportedArchitectures,
   checkUniqueQuantizationFormats,
   checkUniqueCuratedModels,
-  checkUniqueRecipeIds,
-  checkUniqueDistributionsPerRecipe,
   checkDescriptorIdPrefix,
   checkRequiredDiskAtLeastDownload,
   checkMinimumComputeCapabilityIsAFloor,
@@ -203,22 +176,6 @@ test('rejects: duplicate curated_models repository@revision', () => {
   const errors = checkUniqueCuratedModels(bad)
   assert.equal(errors.length, 1)
   assert.match(errors[0], /repository@revision|@/)
-})
-
-test('rejects: duplicate recipe_id', () => {
-  const bad = clone(descriptor)
-  bad.recipes.push({ ...bad.recipes[0] })
-  const errors = checkUniqueRecipeIds(bad)
-  assert.equal(errors.length, 1)
-  assert.match(errors[0], new RegExp(bad.recipes[0].recipe_id))
-})
-
-test('rejects: duplicate (id, version_id, arch) distribution within one recipe', () => {
-  const bad = clone(descriptor)
-  bad.recipes[0].distributions.push({ ...bad.recipes[0].distributions[0] })
-  const errors = checkUniqueDistributionsPerRecipe(bad)
-  assert.equal(errors.length, 1)
-  assert.match(errors[0], /duplicate/i)
 })
 
 test('rejects: descriptor_id not prefixed with engine_id + "-"', () => {

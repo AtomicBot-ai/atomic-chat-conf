@@ -33,7 +33,7 @@ test('valid descriptor passes schema validation', () => {
 const invalid = [
   ['invalid-missing-digest.json', 'image digest missing for one platform'],
   ['invalid-tag-instead-of-digest.json', 'image referenced by tag instead of digest'],
-  ['invalid-recipe-command.json', 'recipe carrying a command-like field'],
+  ['invalid-recipes.json', 'descriptor carrying recipes (environment data lives in runtimes/environments/, not in an engine descriptor)'],
   ['invalid-malformed-probe-digest.json', 'probe_image with a malformed digest'],
   ['invalid-unknown-top-level-field.json', 'unknown top-level field'],
   ['invalid-parser-leading-dash.json', 'parser name starting with - (would be read as a flag)'],
