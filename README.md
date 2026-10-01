@@ -34,6 +34,8 @@ runtimes/
   environments/
     linux.json        # Linux environment manifest (where core may install Docker + the NVIDIA toolkit)
     linux.schema.json # JSON Schema (Draft-07) for the Linux environment manifest
+    windows.json        # Windows environment manifest (the rootfs core imports as its own WSL2 distribution)
+    windows.schema.json # JSON Schema (Draft-07) for the Windows environment manifest
 .github/
   workflows/validate.yml        # Validates every manifest on every PR
   workflows/mirror-upstream.yml # Mirrors + signs an upstream llama.cpp release
@@ -786,30 +788,37 @@ node .github/scripts/inventory-digest.mjs nvidia/Qwen3-8B-FP8 2cebc4c89e25abc176
 ## Environment manifests (`runtimes/environments/`)
 
 An environment manifest describes the **foundation** every managed engine
-runs on, apart from any one engine: on which distributions atomic-chat-core
-may itself install a GPU container runtime (Docker CE + the NVIDIA Container
-Toolkit). Today that is `runtimes/environments/linux.json`, validated by
-`runtimes/environments/linux.schema.json`. Like a descriptor it carries
-**data only** and has no `$schema` key: a `recipes[]` entry is a `recipe_id`
-naming argv that is compiled into core (`linux.install-container-runtime`)
-plus the distributions `{ id, version_id, arch }` that recipe is qualified to
-run on. No command, script or argv lives here.
+runs on, apart from any one engine. There is one per platform:
 
-Core reads it only to decide whether it can **offer to install** Docker and
-the toolkit on this host. A host where Docker with GPU access already works
+- `runtimes/environments/linux.json` (schema `linux.schema.json`) — on which
+  distributions atomic-chat-core may itself install a GPU container runtime
+  (Docker CE + the NVIDIA Container Toolkit).
+- `runtimes/environments/windows.json` (schema `windows.schema.json`) — the
+  Ubuntu rootfs core imports as Atomic Chat's own WSL2 distribution, and the
+  recipe that prepares it; see [Windows manifest](#windows-manifest-windowsjson).
+
+Like a descriptor a manifest carries **data only** and has no `$schema` key.
+In `linux.json` a `recipes[]` entry is a `recipe_id` naming argv that is
+compiled into core (`linux.install-container-runtime`) plus the distributions
+`{ id, version_id, arch }` that recipe is qualified to run on. No command,
+script or argv lives here.
+
+Linux core reads its manifest only to decide whether it can **offer to
+install** Docker and the toolkit on this host. A host where Docker with GPU access already works
 for the current user is accepted on any distribution, with or without a
 manifest; if no manifest can be fetched or found in core's cache, only the
 automatic install is blocked.
 
 ### One file per platform
 
-Each platform has its own manifest file and its own schema (`linux.json` now,
-`windows.json` later). core's parsers are strict — an unknown key rejects the
+Each platform has its own manifest file and its own schema (`linux.json`,
+`windows.json`). core's parsers are strict — an unknown key rejects the
 whole document — so a shared file with a section per platform would turn
 adding a `windows` section into a document every already-released Linux core
 refuses; a new Linux user without a cached copy would then lose automatic
 install until they updated core. With a file per platform, Linux core reads
-only `linux.json`, and work on another platform never touches it.
+only `linux.json`, Windows core only `windows.json`, and work on one platform
+never touches the other's document.
 
 ### `manifest_id` is immutable
 
@@ -818,9 +827,10 @@ reason as `descriptor_id`: core caches an accepted manifest by this id, and an
 operation the user consented to keeps using the manifest it was planned with
 until it finishes, even if a newer one is published meanwhile. Any change —
 including adding a single distribution — ships under a **new** `manifest_id`
-of the form `<platform>-r<N>` (`linux-r1` → `linux-r2`). CI compares the
-manifest against `main` and fails when the content changed under an id that
-is already there.
+of the form `<platform>-r<N>` (`linux-r1` → `linux-r2`, `windows-r1` →
+`windows-r2`). CI compares every manifest under `runtimes/environments/`
+against `main` and fails when the content changed under an id that is
+already there.
 
 ### How to add a distribution
 
@@ -836,6 +846,62 @@ is already there.
 4. Bump the `manifest_id` (`linux-r<N>` → `linux-r<N+1>`). Do not touch the
    engine descriptor: its `descriptor_id` stays the same.
 5. `make validate`, commit, open a PR.
+
+### Windows manifest (`windows.json`)
+
+On Windows, TensorRT-LLM runs in a Linux environment inside WSL2: Atomic
+Chat's **own** distribution, which core imports from a pinned Ubuntu rootfs
+as the signed-in user, and then prepares with the same recipe Linux hosts use
+— run as root inside the guest, without Windows elevation. The manifest says
+what to import and which recipe prepares it:
+
+| Field | Meaning |
+| --- | --- |
+| `manifest_id` | `windows-r<N>`, immutable (see above). An imported environment stays pinned to the id it was imported from. |
+| `platform` | Always `windows`. |
+| `minimum_core_version` | Lowest core that understands this manifest. |
+| `minimum_windows_build` | Lowest Windows build (third part of the OS version) core offers the environment on. `22000` = the first Windows 11 build; Windows 10 is not supported. |
+| `minimum_wsl_version` | Lowest WSL package version, `MAJOR.MINOR.PATCH` as `wsl --version` prints it without the trailing build part. `2.4.4` is the first WSL that handles the `.wsl` rootfs format. |
+| `rootfs.url` | HTTPS URL of the rootfs image; `http://` is rejected by the schema. |
+| `rootfs.sha256` | Lowercase hex SHA-256 of that file. Core checks it before the file is used for anything. |
+| `rootfs.distribution` | What the rootfs is, `{ id, version_id, arch }` in os-release terms; `arch` is always `x86_64` (Windows on ARM is not supported). |
+| `guest_recipe_id` | Recipe compiled into core that prepares the guest after import (`linux.install-container-runtime`). Never a command. |
+
+**Where the rootfs comes from.** Canonical's official WSL image of Ubuntu
+24.04 LTS, published next to the ISOs on `releases.ubuntu.com`
+(`https://releases.ubuntu.com/<point release>/ubuntu-<point release>-wsl-amd64.wsl`).
+Its hash is listed in the `SHA256SUMS` file of the same directory, which is
+signed by the Ubuntu CD Image signing key (`SHA256SUMS.gpg`, key
+`843938DF228D22F7B3742BC0D94AA3F0EFE21092`).
+
+**How to update the rootfs** (a new Ubuntu point release, or the URL stopped
+resolving):
+
+1. Download `SHA256SUMS` and `SHA256SUMS.gpg` from the release directory and
+   verify the signature with the key above
+   (`gpg --verify SHA256SUMS.gpg SHA256SUMS`). Take the `*-wsl-amd64.wsl` line.
+2. Download the `.wsl` file itself and check that `shasum -a 256` matches
+   that line — the manifest must never carry a hash nobody has reproduced.
+3. Put the new `url` and `sha256` (and `version_id`, if the Ubuntu release
+   changed) into `windows.json` and bump `manifest_id`
+   (`windows-r<N>` → `windows-r<N+1>`). A new Ubuntu release (not a point
+   release) also needs the guest recipe qualified on it in core first.
+4. `make validate`, commit, open a PR.
+
+Only new imports use the new manifest: an existing distribution stays on
+the `manifest_id` it was imported from.
+
+**`windows.json` reaches `main` only after live acceptance on Windows.**
+Merging it into `main` is what switches TensorRT-LLM on for every Windows
+client within an hour, with no release: without it, core on Windows reports
+the provider as unsupported to everyone who has not imported the
+distribution yet, so app and core can ship their Windows code safely ahead of
+it. The manifest is therefore merged only after the Windows acceptance run on
+real hardware (Windows 11 x64 with an NVIDIA GPU: enabling WSL with UAC and a
+reboot, importing the rootfs, Docker and the toolkit in the guest, a model
+load and chat, localhost forwarding, removing the environment) has passed.
+Rolling back is removing `windows.json` from `main`: new installs stop being
+offered, already-imported environments keep working on their pinned manifest.
 
 ## CI validation
 
@@ -881,16 +947,19 @@ every push and pull request. It performs the following checks:
   `descriptor_id` is unchanged against the base branch but the content
   differs.
 - `ajv` validates `runtimes/environments/linux.json` against
-  `runtimes/environments/linux.schema.json`.
-- `node --test` over `.github/scripts/environment-manifest.test.mjs`
-  (fixture accept/reject against the schema),
+  `runtimes/environments/linux.schema.json`, and
+  `runtimes/environments/windows.json` against
+  `runtimes/environments/windows.schema.json`.
+- `node --test` over `.github/scripts/environment-manifest.test.mjs` and
+  `.github/scripts/environment-manifest-windows.test.mjs` (fixture
+  accept/reject against each platform's schema),
   `.github/scripts/environment-manifest-integrity.test.mjs` (on the real
-  manifest: `recipes[].recipe_id` is unique, `distributions` are unique by
-  `(id, version_id, arch)` within a recipe, `manifest_id` starts with
-  `platform + "-"`) and
-  `.github/scripts/environment-manifest-immutability.test.mjs` (fails when
-  `manifest_id` is unchanged against the base branch but the content
-  differs).
+  manifests: `manifest_id` starts with `platform + "-"`; in `linux.json`
+  `recipes[].recipe_id` is unique and `distributions` are unique by
+  `(id, version_id, arch)` within a recipe) and
+  `.github/scripts/environment-manifest-immutability.test.mjs` (fails when a
+  manifest's `manifest_id` is unchanged against the base branch but the
+  content differs).
 
 You cannot merge a PR until CI is green.
 
@@ -910,6 +979,7 @@ npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --
 npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
+npx ajv-cli@5 validate -s runtimes/environments/windows.schema.json -d runtimes/environments/windows.json --strict=true
 ```
 
 ## Security
