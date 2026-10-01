@@ -31,6 +31,9 @@ backends/
 runtimes/
   tensorrt-llm.json  # TensorRT-LLM managed-engine runtime descriptor
   schema.json        # JSON Schema (Draft-07) for a runtime descriptor
+  environments/
+    linux.json        # Linux environment manifest (where core may install Docker + the NVIDIA toolkit)
+    linux.schema.json # JSON Schema (Draft-07) for the Linux environment manifest
 .github/
   workflows/validate.yml        # Validates every manifest on every PR
   workflows/mirror-upstream.yml # Mirrors + signs an upstream llama.cpp release
@@ -484,18 +487,20 @@ set stays expressible without a schema change.
 A runtime descriptor tells atomic-chat-core which container image a
 **managed engine** (currently TensorRT-LLM) runs, pinned by digest, what host
 it needs, and what that release supports. It carries **data only** — no
-command, script or argv lives in it: the argv for a recipe (e.g. "install a
-container runtime on this Linux distro") is compiled into core itself, and a
-`recipes[]` entry is only a `recipe_id` naming argv core already has, plus the
-list of distributions that recipe is qualified to run on.
+command, script or argv lives in it — and it describes **the engine alone**.
+Where core may set up the foundation every engine runs on (which Linux
+distributions it can install a GPU container runtime on) is environment data,
+shared by all engines; it lives in the [environment
+manifest](#environment-manifests-runtimesenvironments), not here. The schema
+rejects a descriptor that carries environment install data, and so does core.
 
 ### Who reads this
 
-Only atomic-chat-core **0.7.0 and later** reads `runtimes/`. Every
-already-released Atomic Chat app, CLI and core build — including core
-v0.6.0, which shipped before managed-engine support existed — never fetches
-or parses this directory; publishing or changing a descriptor here has no
-effect on them.
+No released atomic-chat-core reads `runtimes/`: core 0.7.0–0.7.4 and every
+already-released Atomic Chat app and CLI never fetch or parse this directory,
+so publishing or changing a document here has no effect on them. The current
+descriptor and environment manifest both require core **0.7.5** or later
+(their `minimum_core_version`).
 
 ### `descriptor_id` is immutable
 
@@ -504,14 +509,18 @@ caches an accepted descriptor by this id and pins an installation to it, so
 editing a published descriptor's fields in place would silently change what
 an already-installed engine is compared against. Any change — the image, the
 compute-capability/quantization/architecture matrices, `model_families`, the
-curated model list, the distro list, or the notices — ships under a **new**
-`descriptor_id` instead of editing this one.
+curated model list, or the notices — ships under a **new** `descriptor_id`
+instead of editing this one. Adding or removing a distribution is not a
+descriptor change: it ships as a new `manifest_id` of the environment
+manifest, and the `descriptor_id` stays as it is.
 
 The id format is `tensorrt-llm-<engine tag>-r<N>`: bump the engine tag when
-the underlying TensorRT-LLM release changes (`tensorrt-llm-1.2.1-r1` →
+the underlying TensorRT-LLM release changes (`tensorrt-llm-1.2.1-r2` →
 `tensorrt-llm-1.3.0-r1`), or bump `N` when the tag stays the same but a
-data-only field changes (a new curated model, a widened distro list, a
-corrected notice, …).
+data-only field changes (a new curated model, a corrected notice, …).
+`tensorrt-llm-1.2.1-r2` is `r1` with its distribution list moved out to the
+environment manifest; `r1` was never published to `main`, and installs set
+up against it on development machines are removed and set up again.
 
 ### Installed engines stay pinned to their descriptor
 
@@ -549,21 +558,6 @@ at that point.
 7. Assign a new `descriptor_id` (`tensorrt-llm-<new tag>-r1`).
 8. Run `make validate` before opening a PR — it runs the schema and every
    integrity check below against what you just wrote.
-
-### How to add a distribution
-
-1. Confirm **both** vendors publish packages for that distro/version/arch:
-   Docker CE (`download.docker.com`) and the NVIDIA Container Toolkit
-   (`nvidia.github.io/libnvidia-container`). One vendor publishing alone does
-   not qualify it.
-2. Only add the entry once core's live install test has actually passed on
-   that distribution — package availability is a precondition, not proof the
-   recipe works there.
-3. Append the `{ "id", "version_id", "arch" }` entry to the relevant
-   `recipes[].distributions`.
-4. This is a data-only change on the same engine tag, so bump the
-   `descriptor_id`'s `-r<N>` suffix.
-5. `make validate`, commit, open a PR.
 
 ### Field reference (non-obvious fields)
 
@@ -716,13 +710,15 @@ at that point.
 ### Live qualification of `tensorrt-llm-1.2.1-r1`
 
 `tensorrt-llm-1.2.1-r1` was checked against atomic-chat-core's live tests on
-2026-09-29 and stays as published — no `r2`. The rule: a curated model leaves
-the list only if it actually failed on a card it fits, a distribution or
-architecture leaves the recipe only if it failed the install test, and
-`required_disk_bytes` changes only if measured post-pull usage differs by more
-than 10%. None of these happened.
+2026-09-29, and nothing in it changed as a result. The rule: a curated model
+leaves the list only if it actually failed on a card it fits, a distribution
+or architecture leaves the install list only if it failed the install test,
+and `required_disk_bytes` changes only if measured post-pull usage differs by
+more than 10%. None of these happened. The results carry over unchanged:
+`tensorrt-llm-1.2.1-r2` has the same image, models and sizes, and the
+environment manifest `linux-r1` has the same distribution list.
 
-- **Install recipe (core task 2.18, `test/live/managed-install.test.ts`)** —
+- **Install (core task 2.18, `test/live/managed-install.test.ts`)** —
   clean VMs with an RTX 4070 Laptop (CC 8.9) passed through. All seven x86_64
   versions passed: Ubuntu 22.04, 24.04, 26.04; Debian 12, 13; Fedora 43, 44
   (with SELinux enforcing). Hosts that already ran Docker were covered on
@@ -787,6 +783,60 @@ node .github/scripts/inventory-digest.mjs nvidia/Qwen3-8B-FP8 2cebc4c89e25abc176
 > the full safetensors inventory at that revision the same way, or a curated
 > entry's digest will never match.
 
+## Environment manifests (`runtimes/environments/`)
+
+An environment manifest describes the **foundation** every managed engine
+runs on, apart from any one engine: on which distributions atomic-chat-core
+may itself install a GPU container runtime (Docker CE + the NVIDIA Container
+Toolkit). Today that is `runtimes/environments/linux.json`, validated by
+`runtimes/environments/linux.schema.json`. Like a descriptor it carries
+**data only** and has no `$schema` key: a `recipes[]` entry is a `recipe_id`
+naming argv that is compiled into core (`linux.install-container-runtime`)
+plus the distributions `{ id, version_id, arch }` that recipe is qualified to
+run on. No command, script or argv lives here.
+
+Core reads it only to decide whether it can **offer to install** Docker and
+the toolkit on this host. A host where Docker with GPU access already works
+for the current user is accepted on any distribution, with or without a
+manifest; if no manifest can be fetched or found in core's cache, only the
+automatic install is blocked.
+
+### One file per platform
+
+Each platform has its own manifest file and its own schema (`linux.json` now,
+`windows.json` later). core's parsers are strict — an unknown key rejects the
+whole document — so a shared file with a section per platform would turn
+adding a `windows` section into a document every already-released Linux core
+refuses; a new Linux user without a cached copy would then lose automatic
+install until they updated core. With a file per platform, Linux core reads
+only `linux.json`, and work on another platform never touches it.
+
+### `manifest_id` is immutable
+
+The content published under a given `manifest_id` never changes, for the same
+reason as `descriptor_id`: core caches an accepted manifest by this id, and an
+operation the user consented to keeps using the manifest it was planned with
+until it finishes, even if a newer one is published meanwhile. Any change —
+including adding a single distribution — ships under a **new** `manifest_id`
+of the form `<platform>-r<N>` (`linux-r1` → `linux-r2`). CI compares the
+manifest against `main` and fails when the content changed under an id that
+is already there.
+
+### How to add a distribution
+
+1. Confirm **both** vendors publish packages for that distro/version/arch:
+   Docker CE (`download.docker.com`) and the NVIDIA Container Toolkit
+   (`nvidia.github.io/libnvidia-container`). One vendor publishing alone does
+   not qualify it.
+2. Only add the entry once core's live install test has actually passed on
+   that distribution — package availability is a precondition, not proof the
+   recipe works there.
+3. Append the `{ "id", "version_id", "arch" }` entry to the relevant
+   `recipes[].distributions` in `runtimes/environments/linux.json`.
+4. Bump the `manifest_id` (`linux-r<N>` → `linux-r<N+1>`). Do not touch the
+   engine descriptor: its `descriptor_id` stays the same.
+5. `make validate`, commit, open a PR.
+
 ## CI validation
 
 [`.github/workflows/validate.yml`](.github/workflows/validate.yml) runs on
@@ -821,21 +871,34 @@ every push and pull request. It performs the following checks:
   accept/reject against the schema, and on the real descriptor —
   `supported_architectures` and `quantization[].format` are unique,
   every `model_families` key is a `supported_architectures` entry,
-  `curated_models` are unique by `repository@revision`, `recipes[].recipe_id`
-  is unique, `distributions` are unique by `(id, version_id, arch)` within a
-  recipe, `descriptor_id` starts with `engine_id + "-"`,
+  `curated_models` are unique by `repository@revision`,
+  `descriptor_id` starts with `engine_id + "-"`,
   `required_disk_bytes >= download_bytes`, `minimum_compute_capability`
   is at or below every `quantization[].min_compute_capability`, and every
   `quantization[].excluded_compute_capabilities` entry is strictly above
   that same entry's own `min_compute_capability`.
+- `.github/scripts/runtime-descriptor-immutability.test.mjs` fails when
+  `descriptor_id` is unchanged against the base branch but the content
+  differs.
+- `ajv` validates `runtimes/environments/linux.json` against
+  `runtimes/environments/linux.schema.json`.
+- `node --test` over `.github/scripts/environment-manifest.test.mjs`
+  (fixture accept/reject against the schema),
+  `.github/scripts/environment-manifest-integrity.test.mjs` (on the real
+  manifest: `recipes[].recipe_id` is unique, `distributions` are unique by
+  `(id, version_id, arch)` within a recipe, `manifest_id` starts with
+  `platform + "-"`) and
+  `.github/scripts/environment-manifest-immutability.test.mjs` (fails when
+  `manifest_id` is unchanged against the base branch but the content
+  differs).
 
 You cannot merge a PR until CI is green.
 
 ## Local validation
 
 `make validate` is the one command that runs every gate above, including all
-the `node --test` scripts (fixtures, cross-field integrity, descriptor_id
-immutability) — the same checks CI runs on a PR.
+the `node --test` scripts (fixtures, cross-field integrity, `descriptor_id`
+and `manifest_id` immutability) — the same checks CI runs on a PR.
 
 If you want to run the schema checks individually before pushing:
 
@@ -846,6 +909,7 @@ npx ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.j
 npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
 npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
+npx ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
 ```
 
 ## Security
