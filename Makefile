@@ -97,6 +97,7 @@ validate:
 	node --test .github/scripts/runtime-descriptor-integrity.test.mjs
 	node --test .github/scripts/environment-manifest-integrity.test.mjs
 	node --test .github/scripts/runtime-descriptor-immutability.test.mjs
+	node --test .github/scripts/environment-manifest-immutability.test.mjs
 	npx --yes ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.json -d models/recommended.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
