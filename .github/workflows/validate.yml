@@ -16,8 +16,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           # descriptor_id and manifest_id immutability (below) read
-          # runtimes/tensorrt-llm.json and runtimes/environments/linux.json at
-          # a base ref via `git show`; a shallow clone would make that ref
+          # runtimes/tensorrt-llm.json and runtimes/environments/*.json at a
+          # base ref via `git show`; a shallow clone would make that ref
           # unreachable.
           fetch-depth: 0
 
@@ -679,6 +679,13 @@ jobs:
             -d runtimes/environments/linux.json \
             --strict=true
 
+      - name: Validate Windows environment manifest against schema
+        run: |
+          ajv validate \
+            -s runtimes/environments/windows.schema.json \
+            -d runtimes/environments/windows.json \
+            --strict=true
+
       # Cross-field rules the schema cannot express (uniqueness, model_families
       # ⊆ supported_architectures, descriptor_id and manifest_id prefixes,
       # disk >= download, minimum_compute_capability as a floor) live in
@@ -699,5 +706,6 @@ jobs:
           .github/scripts/runtime-descriptor-integrity.test.mjs
           .github/scripts/runtime-descriptor-immutability.test.mjs
           .github/scripts/environment-manifest.test.mjs
+          .github/scripts/environment-manifest-windows.test.mjs
           .github/scripts/environment-manifest-integrity.test.mjs
           .github/scripts/environment-manifest-immutability.test.mjs

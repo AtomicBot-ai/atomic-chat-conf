@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Published-id immutability for the documents under runtimes/: the engine
-// descriptor runtimes/tensorrt-llm.json (descriptor_id, R24 / F2) and the
-// environment manifest runtimes/environments/linux.json (manifest_id).
+// descriptor runtimes/tensorrt-llm.json (descriptor_id, R24 / F2) and every
+// environment manifest under runtimes/environments/ (manifest_id).
 //
 // A published id's content must never change: atomic-chat-core caches an
 // accepted document by its id and pins an installation (descriptor) or an
@@ -22,7 +22,12 @@ import { fileURLToPath } from 'node:url'
 
 const REPO_ROOT = fileURLToPath(new URL('../..', import.meta.url))
 export const DESCRIPTOR_PATH = 'runtimes/tensorrt-llm.json'
-export const ENVIRONMENT_MANIFEST_PATH = 'runtimes/environments/linux.json'
+// One file per platform; a new platform's manifest joins this list and gets
+// the same check without a new test file.
+export const ENVIRONMENT_MANIFEST_PATHS = [
+  'runtimes/environments/linux.json',
+  'runtimes/environments/windows.json',
+]
 
 // Recursively sort object keys so a base file that serializes its keys in a
 // different order is not mistaken for changed content; array order is kept
