@@ -92,6 +92,7 @@ verify-release:
 validate:
 	node --test .github/scripts/recommendation-tiers.test.mjs
 	node --test .github/scripts/runtime-descriptor.test.mjs
+	node --test .github/scripts/environment-manifest.test.mjs
 	node --test .github/scripts/inventory-digest.test.mjs
 	node --test .github/scripts/runtime-descriptor-integrity.test.mjs
 	node --test .github/scripts/runtime-descriptor-immutability.test.mjs

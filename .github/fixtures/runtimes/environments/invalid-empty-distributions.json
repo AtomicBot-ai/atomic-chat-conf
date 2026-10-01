@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "manifest_id": "linux-r1",
+  "platform": "linux",
+  "minimum_core_version": "0.7.5",
+  "recipes": [
+    {
+      "recipe_id": "linux.install-container-runtime",
+      "distributions": []
+    }
+  ]
+}
