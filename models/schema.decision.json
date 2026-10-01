@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat decision model catalog",
+  "description": "Decision models the app offers for `llama-server --decision` (TurboQuant fork). Each model is a Hugging Face checkpoint folder pinned to one commit; the app downloads every listed file into <data>/decision/models/<id>/<path>, checking bytes and sha256, and hands the folder to the core, whose engine converts it to GGUF once. Every size is the exact byte count from the Hugging Face API.",
+  "type": "object",
+  "required": ["schema_version", "updated_at", "models"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "type": "integer", "const": 1 },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "models": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/model" }
+    }
+  },
+  "definitions": {
+    "file": {
+      "type": "object",
+      "required": ["path", "bytes", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path inside the repository and inside the model folder. A root config.json is refused: the engine would read the folder as a plain transformers model.",
+          "pattern": "^(?!config\\.json$)[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*$"
+        },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "description",
+        "repo",
+        "revision",
+        "backbone",
+        "languages",
+        "context",
+        "calibrated",
+        "license",
+        "min_engine",
+        "files"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable id: the folder name under decision/models and the model id the engine answers with (-a).",
+          "pattern": "^[a-z0-9][a-z0-9.-]*$"
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "repo": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "revision": {
+          "type": "string",
+          "description": "The full commit the files are pinned to; URLs are https://huggingface.co/<repo>/resolve/<revision>/<path>.",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "backbone": { "type": "string", "minLength": 1 },
+        "params": { "type": "string" },
+        "languages": {
+          "type": "string",
+          "description": "'multilingual' or a single language code.",
+          "pattern": "^(multilingual|[a-z]{2})$"
+        },
+        "context": { "type": "integer", "minimum": 1 },
+        "calibrated": {
+          "type": "boolean",
+          "description": "Whether /v1/systemone probabilities are calibrated for this model."
+        },
+        "license": { "type": "string", "minLength": 1 },
+        "default": { "type": "boolean" },
+        "min_engine": {
+          "type": "string",
+          "description": "The oldest TurboQuant release that runs this model from a checkpoint folder.",
+          "pattern": "^b[0-9]+-[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "gguf_cache_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Approximate size of the F16 GGUF the engine converts the folder into."
+        },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/file" }
+        }
+      }
+    }
+  }
+}

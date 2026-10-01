@@ -23,6 +23,8 @@ models/
   schema.json        # JSON Schema (Draft-07) for the recommended-models manifest
   staff-picks.json   # Curated Staff Picks list shown by default in Hub
   schema.staff-picks.json # JSON Schema (Draft-07) for the staff-picks manifest
+  decision.json      # Decision models (Laya checkpoints) for llama-server --decision
+  schema.decision.json # JSON Schema (Draft-07) for the decision catalog
 backends/
   manifest.json            # llama.cpp backend catalog (mirrors a ggml-org release)
   schema.json              # JSON Schema (Draft-07) for the backends manifest
