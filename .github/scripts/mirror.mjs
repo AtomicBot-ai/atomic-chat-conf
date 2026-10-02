@@ -24,8 +24,9 @@ const MIRROR_DOWNLOAD_BASE =
 
 // What the Atomic Chat backend matrix can actually use. Everything else that
 // upstream publishes (android, xcframework, ui, s390x, sycl, openvino, arm64
-// Windows/Linux, macos-x64) is deliberately absent: mirroring a build no
-// client asks for costs release storage and buys nothing.
+// Linux, macos-x64) is deliberately absent: mirroring a build no client asks
+// for costs release storage and buys nothing. Windows arm64 is mirrored for
+// the Windows on ARM app build: CPU, OpenCL (Qualcomm Adreno) and CUDA 13.
 //
 // `required: false` marks a variant upstream only started shipping recently.
 // A tag that predates it still mirrors fine; the client's matrix simply will
@@ -41,6 +42,17 @@ const WHITELIST = [
   {
     platform: 'windows',
     pattern: 'win-rocm-[\\d.]+-x64\\.zip',
+    required: false,
+  },
+  { platform: 'windows', pattern: 'win-cpu-arm64\\.zip', required: true },
+  {
+    platform: 'windows',
+    pattern: 'win-opencl-adreno-arm64\\.zip',
+    required: false,
+  },
+  {
+    platform: 'windows',
+    pattern: 'win-cuda-\\d+\\.\\d+-arm64\\.zip',
     required: false,
   },
   { platform: 'linux', pattern: 'ubuntu-x64\\.tar\\.gz', required: true },
@@ -134,14 +146,12 @@ async function sha256File(path) {
  * which is what marks an asset as "not mirrored" for readers of this file.
  */
 function cudartCompanions(mirroredNames) {
-  const versions = new Set()
+  const companions = new Set()
   for (const name of mirroredNames) {
-    const match = /-bin-win-cuda-(\d+\.\d+)-x64\.zip$/.exec(name)
-    if (match) versions.add(match[1])
+    const match = /-bin-win-cuda-(\d+\.\d+)-(x64|arm64)\.zip$/.exec(name)
+    if (match) companions.add(`cudart-llama-bin-win-cuda-${match[1]}-${match[2]}.zip`)
   }
-  return [...versions]
-    .sort()
-    .map((v) => ({ name: `cudart-llama-bin-win-cuda-${v}-x64.zip` }))
+  return [...companions].sort().map((name) => ({ name }))
 }
 
 async function cmdSelect(args) {

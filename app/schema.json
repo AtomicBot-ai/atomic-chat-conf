@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat latest release",
+  "description": "The installers the atomic.chat landing page links to. Written by `make release-prod` in the Atomic-Chat repository.",
+  "type": "object",
+  "required": ["schema_version", "updated_at", "version", "tag", "release_url", "downloads"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "tag": { "type": "string", "pattern": "^v\\d+\\.\\d+\\.\\d+$" },
+    "release_url": {
+      "type": "string",
+      "pattern": "^https://github\\.com/AtomicBot-ai/Atomic-Chat/releases/tag/v\\d+\\.\\d+\\.\\d+$"
+    },
+    "downloads": {
+      "type": "object",
+      "required": ["macos", "windows", "linux"],
+      "additionalProperties": false,
+      "properties": {
+        "macos": { "allOf": [{ "$ref": "#/definitions/installer" }, { "pattern": "_universal\\.dmg$" }] },
+        "windows": { "allOf": [{ "$ref": "#/definitions/installer" }, { "pattern": "_x64-setup\\.exe$" }] },
+        "linux": { "allOf": [{ "$ref": "#/definitions/installer" }, { "pattern": "_amd64\\.AppImage$" }] }
+      }
+    }
+  },
+  "definitions": {
+    "installer": {
+      "type": "string",
+      "pattern": "^https://github\\.com/AtomicBot-ai/Atomic-Chat/releases/download/v\\d+\\.\\d+\\.\\d+/Atomic\\.Chat_\\d+\\.\\d+\\.\\d+_"
+    }
+  }
+}

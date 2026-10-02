@@ -709,3 +709,38 @@ jobs:
           .github/scripts/environment-manifest-windows.test.mjs
           .github/scripts/environment-manifest-integrity.test.mjs
           .github/scripts/environment-manifest-immutability.test.mjs
+
+      - name: Validate decision catalog against schema
+        run: |
+          ajv validate \
+            -s models/schema.decision.json \
+            -d models/decision.json \
+            --strict=false
+
+      - name: Check decision catalog integrity
+        run: node .github/scripts/decision-catalog-check.mjs
+
+      - name: Validate landing release manifest against schema
+        run: |
+          ajv validate \
+            -s app/schema.json \
+            -d app/latest.json \
+            --strict=false
+
+      - name: Check landing release manifest integrity
+        run: |
+          node - <<'EOF'
+          const data = require('./app/latest.json')
+          const errors = []
+          if (data.tag !== `v${data.version}`) errors.push(`tag ${data.tag} does not match version ${data.version}`)
+          for (const [platform, url] of Object.entries(data.downloads)) {
+            if (!url.includes(`/releases/download/${data.tag}/Atomic.Chat_${data.version}_`)) {
+              errors.push(`${platform} does not point at ${data.tag}: ${url}`)
+            }
+          }
+          if (errors.length > 0) {
+            for (const e of errors) console.error(`  ✗ ${e}`)
+            process.exit(1)
+          }
+          console.log(`Landing release manifest points at ${data.tag}.`)
+          EOF

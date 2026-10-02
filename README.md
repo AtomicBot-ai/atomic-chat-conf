@@ -23,6 +23,8 @@ models/
   schema.json        # JSON Schema (Draft-07) for the recommended-models manifest
   staff-picks.json   # Curated Staff Picks list shown by default in Hub
   schema.staff-picks.json # JSON Schema (Draft-07) for the staff-picks manifest
+  decision.json      # Decision models (Laya checkpoints) for llama-server --decision
+  schema.decision.json # JSON Schema (Draft-07) for the decision catalog
 backends/
   manifest.json            # llama.cpp backend catalog (mirrors a ggml-org release)
   schema.json              # JSON Schema (Draft-07) for the backends manifest
@@ -36,6 +38,10 @@ runtimes/
     linux.schema.json # JSON Schema (Draft-07) for the Linux environment manifest
     windows.json        # Windows environment manifest (the rootfs core imports as its own WSL2 distribution)
     windows.schema.json # JSON Schema (Draft-07) for the Windows environment manifest
+
+app/
+  latest.json        # Installers the atomic.chat landing page links to
+  schema.json        # JSON Schema (Draft-07) for the landing release manifest
 .github/
   workflows/validate.yml        # Validates every manifest on every PR
   workflows/mirror-upstream.yml # Mirrors + signs an upstream llama.cpp release
@@ -969,6 +975,34 @@ load and chat, localhost forwarding, removing the environment) has passed.
 Rolling back is removing `windows.json` from `main`: new installs stop being
 offered, already-imported environments keep working on their pinned manifest.
 
+## Landing release manifest
+
+[`app/latest.json`](app/latest.json) is read by the atomic.chat landing page
+(Webflow) on every page load: a site-wide script swaps the page's installer
+links for the ones listed here. It is not read by the desktop client — the
+in-app updater keeps using the `latest.json` asset of the GitHub release.
+
+```json
+{
+  "$schema": "./schema.json",
+  "schema_version": 1,
+  "updated_at": "2026-10-02T13:00:00Z",
+  "version": "2.1.2",
+  "tag": "v2.1.2",
+  "release_url": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/tag/v2.1.2",
+  "downloads": {
+    "macos": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/download/v2.1.2/Atomic.Chat_2.1.2_universal.dmg",
+    "windows": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/download/v2.1.2/Atomic.Chat_2.1.2_x64-setup.exe",
+    "linux": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/download/v2.1.2/Atomic.Chat_2.1.2_amd64.AppImage"
+  }
+}
+```
+
+Do not edit it by hand. `make release-prod` in the Atomic-Chat repository
+publishes the newest draft release, then commits this file straight to `main`
+with the URLs of that release's installers. `raw.githubusercontent.com` caches
+it for about five minutes, so the landing page follows a release within that.
+
 ## CI validation
 
 [`.github/workflows/validate.yml`](.github/workflows/validate.yml) runs on
@@ -1026,6 +1060,8 @@ every push and pull request. It performs the following checks:
   `.github/scripts/environment-manifest-immutability.test.mjs` (fails when a
   manifest's `manifest_id` is unchanged against the base branch but the
   content differs).
+- `ajv` validates `app/latest.json` against `app/schema.json`, and every
+  download URL must sit under the manifest's own `tag` and `version`.
 
 You cannot merge a PR until CI is green.
 
@@ -1046,6 +1082,7 @@ npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
 npx ajv-cli@5 validate -s runtimes/environments/windows.schema.json -d runtimes/environments/windows.json --strict=true
+npx ajv-cli@5 validate -s app/schema.json -d app/latest.json --strict=false
 ```
 
 ## Security
