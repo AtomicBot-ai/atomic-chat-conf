@@ -502,7 +502,7 @@ No released atomic-chat-core reads `runtimes/`: core 0.7.0–0.7.4 and every
 already-released Atomic Chat app and CLI never fetch or parse this directory,
 so publishing or changing a document here has no effect on them. The
 environment manifests require core **0.7.5** or later; the current descriptor
-`tensorrt-llm-1.3.0rc29-r1` requires core **0.7.6** (its
+`tensorrt-llm-1.3.0rc29-r2` requires core **0.7.6** (its
 `minimum_core_version`): 0.7.5 refuses its architecture names with an
 underscore and cannot read mixed-precision checkpoints, so it keeps whatever
 descriptor it accepted before.
@@ -528,7 +528,18 @@ environment manifest; `r1` was never published to `main`, and installs set
 up against it on development machines are removed and set up again. The same
 holds for `r2`: `tensorrt-llm-1.3.0rc29-r1` replaced it before either reached
 `main`, and an engine installed from `r2` is removed and set up again (there
-is no update operation yet).
+is no update operation yet). `tensorrt-llm-1.3.0rc29-r2` is `rc29-r1` without
+its two dense Nemotron-H checkpoints (`NVIDIA-Nemotron-3-Nano-4B-FP8` and
+`-BF16`): in the Windows live acceptance (2026-10-02) `trtllm-serve` 1.3.0rc29
+failed to load `Nemotron-3-Nano-4B-FP8` with `KeyError: '-'`. The image bundles
+`transformers` 5.5.4, whose `NemotronHConfig` maps `hybrid_override_pattern`
+through `{"M": "mamba", "E": "moe", "*": "attention"}` only, so any checkpoint
+with dense MLP layers (`-`) fails before TensorRT-LLM's own model code, which
+does handle `-`, is reached. Mamba/MoE checkpoints (`M`, `E`, `*`) and those
+that already ship `layers_block_type` are not affected, so
+`NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4` stays listed. The NemotronH
+architectures stay listed; the dense checkpoints come back once an image's
+`transformers` parses `-`.
 
 ### Installed engines stay pinned to their descriptor
 
@@ -543,8 +554,8 @@ at that point.
 1. Confirm the candidate tag is the latest non-rc release with the
    platform/hardware support you need — check NVIDIA's own release notes and
    hardware-support docs at that tag, not just the tag list. **Exception, by
-   owner decision of 2026-10-02:** `tensorrt-llm-1.3.0rc29-r1` pins the
-   pre-release `1.3.0rc29`, because the model families the Hub offers (Qwen3.5
+   owner decision of 2026-10-02:** the `tensorrt-llm-1.3.0rc29-*` descriptors pin
+   the pre-release `1.3.0rc29`, because the model families the Hub offers (Qwen3.5
    and later, Gemma 4, Nemotron 3.5) do not load on 1.2.1 and 1.3.0 had no
    final release yet. The next descriptor moves to the `1.3.0` final release
    once NVIDIA publishes it; it does not move to a later rc.
