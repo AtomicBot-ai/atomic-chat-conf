@@ -99,3 +99,4 @@ validate:
 	node .github/scripts/decision-catalog-check.mjs
 	npx --yes ajv-cli@5 validate -s backends/schema.json -d backends/manifest.json --strict=false
 	npx --yes ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
+	npx --yes ajv-cli@5 validate -s app/schema.json -d app/latest.json --strict=false

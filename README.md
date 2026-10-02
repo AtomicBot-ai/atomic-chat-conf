@@ -30,6 +30,9 @@ backends/
   schema.json              # JSON Schema (Draft-07) for the backends manifest
   turboquant-manifest.json # TurboQuant backend catalog (one unified release tag)
   turboquant-schema.json   # JSON Schema (Draft-07) for the TurboQuant manifest
+app/
+  latest.json        # Installers the atomic.chat landing page links to
+  schema.json        # JSON Schema (Draft-07) for the landing release manifest
 .github/
   workflows/validate.yml        # Validates every manifest on every PR
   workflows/mirror-upstream.yml # Mirrors + signs an upstream llama.cpp release
@@ -478,6 +481,34 @@ set stays expressible without a schema change.
 > repository, so a merge alone does not upgrade anyone — the Atomic Chat
 > client must bump its pinned revision in a deliberate compatibility change.
 
+## Landing release manifest
+
+[`app/latest.json`](app/latest.json) is read by the atomic.chat landing page
+(Webflow) on every page load: a site-wide script swaps the page's installer
+links for the ones listed here. It is not read by the desktop client — the
+in-app updater keeps using the `latest.json` asset of the GitHub release.
+
+```json
+{
+  "$schema": "./schema.json",
+  "schema_version": 1,
+  "updated_at": "2026-10-02T13:00:00Z",
+  "version": "2.1.2",
+  "tag": "v2.1.2",
+  "release_url": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/tag/v2.1.2",
+  "downloads": {
+    "macos": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/download/v2.1.2/Atomic.Chat_2.1.2_universal.dmg",
+    "windows": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/download/v2.1.2/Atomic.Chat_2.1.2_x64-setup.exe",
+    "linux": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/download/v2.1.2/Atomic.Chat_2.1.2_amd64.AppImage"
+  }
+}
+```
+
+Do not edit it by hand. `make release-prod` in the Atomic-Chat repository
+publishes the newest draft release, then commits this file straight to `main`
+with the URLs of that release's installers. `raw.githubusercontent.com` caches
+it for about five minutes, so the landing page follows a release within that.
+
 ## CI validation
 
 [`.github/workflows/validate.yml`](.github/workflows/validate.yml) runs on
@@ -504,6 +535,8 @@ every push and pull request. It performs the following checks:
 - Every TurboQuant `tag` must look like `b<build>-<semver>` and all entries must
   share one tag, every `asset` must be `llama-turboquant-<id>.zip` on Windows /
   `.tar.gz` elsewhere, and backend ids must be unique.
+- `ajv` validates `app/latest.json` against `app/schema.json`, and every
+  download URL must sit under the manifest's own `tag` and `version`.
 
 You cannot merge a PR until CI is green.
 
@@ -517,6 +550,7 @@ npx ajv-cli@5 validate -s models/schema.json    -d models/recommended.json   --s
 npx ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
 npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
 npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
+npx ajv-cli@5 validate -s app/schema.json -d app/latest.json --strict=false
 ```
 
 ## Security
