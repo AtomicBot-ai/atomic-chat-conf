@@ -1,173 +1,486 @@
 {
   "schema_version": 1,
-  "descriptor_id": "tensorrt-llm-1.2.1-r2",
+  "descriptor_id": "tensorrt-llm-1.3.0rc29-r1",
   "engine_id": "tensorrt-llm",
   "adapter_id": "tensorrt-llm",
   "adapter_contract_version": 1,
   "image": {
     "linux/amd64": {
       "repository": "nvcr.io/nvidia/tensorrt-llm/release",
-      "digest": "sha256:cb4d8af81c586a90235ae3739b6d4ddc5d8336f2174c8a1c6b573d2e13faf5d7"
+      "digest": "sha256:e9dab9fccc550dcc04356962ff152908d692e0e47ba143f57402a24a4ad64b77"
     },
     "linux/arm64": {
       "repository": "nvcr.io/nvidia/tensorrt-llm/release",
-      "digest": "sha256:297c9c04055e142d53976cb8e7e7b314b0df148bbbaeb178494a80eddd885ecf"
+      "digest": "sha256:e0d013b7bd8ba11fe6360c08179370cbb29b47ca3c9612c688c8bde25f161b56"
     }
   },
   "probe_image": {
     "linux/amd64": {
       "repository": "nvcr.io/nvidia/cuda",
-      "digest": "sha256:0f4abb216c6d33bc4932a59d8157f9ad75b818ec17e283a401d9c7ce27efb49f"
+      "digest": "sha256:277a8d73fee9d8c592c9b1b6bc915b745d03eec82033bcbbebfb32c8686cd139"
     },
     "linux/arm64": {
       "repository": "nvcr.io/nvidia/cuda",
-      "digest": "sha256:f9f6d7ce4503015b0a21ff75ee2b2e1fbd28d791d860ede9a5063ecc04cca5fe"
+      "digest": "sha256:89ed8c7b096fafeb3dce13159e7a397c6c56c2e96705d529c2c765d5c79f8236"
     }
   },
-  "minimum_core_version": "0.7.5",
+  "minimum_core_version": "0.7.6",
   "minimum_app_version": "2.0.49",
-  "minimum_driver_version": "590.44.01",
+  "minimum_driver_version": "615.65.02",
   "minimum_compute_capability": "8.0",
   "supported_architectures": [
+    "AfmoeForCausalLM",
+    "Cohere2ForCausalLM",
     "DeciLMForCausalLM",
-    "DeepseekV3ForCausalLM",
     "DeepseekV32ForCausalLM",
+    "DeepseekV3ForCausalLM",
     "Exaone4ForCausalLM",
+    "ExaoneMoEForCausalLM",
     "Gemma3ForCausalLM",
+    "Gemma3ForConditionalGeneration",
+    "Gemma4ForCausalLM",
+    "Gemma4ForConditionalGeneration",
+    "Gemma4UnifiedForConditionalGeneration",
+    "Glm4MoeForCausalLM",
+    "GlmMoeDsaForCausalLM",
     "GptOssForCausalLM",
+    "HunYuanDenseV1ForCausalLM",
+    "HunYuanMoEV1ForCausalLM",
+    "KimiLinearForCausalLM",
+    "LagunaForCausalLM",
     "LlamaForCausalLM",
     "MiniMaxM2ForCausalLM",
+    "MiniMaxM3SparseForCausalLM",
+    "Mistral3ForConditionalGeneration",
     "MistralForCausalLM",
+    "MistralLarge3ForCausalLM",
     "MixtralForCausalLM",
     "NemotronForCausalLM",
     "NemotronHForCausalLM",
-    "NemotronNASForCausalLM",
+    "NemotronHPuzzleForCausalLM",
     "Phi3ForCausalLM",
     "Qwen2ForCausalLM",
+    "Qwen2MoeForCausalLM",
     "Qwen3ForCausalLM",
     "Qwen3MoeForCausalLM",
-    "Qwen3NextForCausalLM"
+    "Qwen3NextForCausalLM",
+    "Qwen3_5ForCausalLM",
+    "Qwen3_5ForConditionalGeneration",
+    "Qwen3_5MoeForCausalLM",
+    "Qwen3_5MoeForConditionalGeneration",
+    "Qwen4ExpForCausalLM",
+    "Qwen4ExpForConditionalGeneration",
+    "SeedOssForCausalLM",
+    "Starcoder2ForCausalLM",
+    "Step3p5ForCausalLM"
   ],
   "quantization": [
-    { "format": "bf16", "min_compute_capability": "8.0", "excluded_compute_capabilities": [] },
-    { "format": "fp16", "min_compute_capability": "8.0", "excluded_compute_capabilities": [] },
-    { "format": "w4a16_awq", "min_compute_capability": "8.0", "excluded_compute_capabilities": ["12.0", "12.1"] },
-    { "format": "fp8", "min_compute_capability": "8.9", "excluded_compute_capabilities": [] },
-    { "format": "w4a8_awq", "min_compute_capability": "8.9", "excluded_compute_capabilities": ["12.0", "12.1"] },
-    { "format": "fp8_block_scales", "min_compute_capability": "9.0", "excluded_compute_capabilities": ["12.0", "12.1"] },
-    { "format": "fp8_per_channel_per_token", "min_compute_capability": "9.0", "excluded_compute_capabilities": ["10.0", "10.3", "12.0", "12.1"] },
-    { "format": "nvfp4", "min_compute_capability": "10.0", "excluded_compute_capabilities": [] },
-    { "format": "mxfp4", "min_compute_capability": "10.0", "excluded_compute_capabilities": [] }
+    {
+      "format": "bf16",
+      "min_compute_capability": "8.0",
+      "excluded_compute_capabilities": []
+    },
+    {
+      "format": "fp16",
+      "min_compute_capability": "8.0",
+      "excluded_compute_capabilities": []
+    },
+    {
+      "format": "w4a16_awq",
+      "min_compute_capability": "8.0",
+      "excluded_compute_capabilities": [
+        "12.0",
+        "12.1"
+      ]
+    },
+    {
+      "format": "fp8",
+      "min_compute_capability": "8.9",
+      "excluded_compute_capabilities": []
+    },
+    {
+      "format": "w4a8_awq",
+      "min_compute_capability": "8.9",
+      "excluded_compute_capabilities": [
+        "12.0",
+        "12.1"
+      ]
+    },
+    {
+      "format": "fp8_block_scales",
+      "min_compute_capability": "9.0",
+      "excluded_compute_capabilities": [
+        "12.0",
+        "12.1"
+      ]
+    },
+    {
+      "format": "fp8_per_channel_per_token",
+      "min_compute_capability": "9.0",
+      "excluded_compute_capabilities": [
+        "10.0",
+        "10.3",
+        "10.7",
+        "12.0",
+        "12.1"
+      ]
+    },
+    {
+      "format": "nvfp4",
+      "min_compute_capability": "10.0",
+      "excluded_compute_capabilities": []
+    },
+    {
+      "format": "w4a16_nvfp4",
+      "min_compute_capability": "10.0",
+      "excluded_compute_capabilities": []
+    },
+    {
+      "format": "mxfp4",
+      "min_compute_capability": "10.0",
+      "excluded_compute_capabilities": []
+    }
   ],
   "model_families": {
-    "DeciLMForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "DeepseekV3ForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "DeepseekV32ForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "Exaone4ForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "Gemma3ForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "GptOssForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "LlamaForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "MiniMaxM2ForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "MistralForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "MixtralForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "NemotronForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "NemotronHForCausalLM": { "tool_parser": "qwen3_coder", "reasoning_parser": "nano-v3", "structured_output": true },
-    "NemotronNASForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "Phi3ForCausalLM": { "tool_parser": null, "reasoning_parser": null, "structured_output": true },
-    "Qwen2ForCausalLM": { "tool_parser": "qwen3", "reasoning_parser": null, "structured_output": true },
-    "Qwen3ForCausalLM": { "tool_parser": "qwen3", "reasoning_parser": "qwen3", "structured_output": true },
-    "Qwen3MoeForCausalLM": { "tool_parser": "qwen3", "reasoning_parser": "qwen3", "structured_output": true },
-    "Qwen3NextForCausalLM": { "tool_parser": "qwen3", "reasoning_parser": "qwen3", "structured_output": false }
+    "AfmoeForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "Cohere2ForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "DeciLMForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "DeepseekV32ForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "DeepseekV3ForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "Exaone4ForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "ExaoneMoEForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "Gemma3ForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "Gemma3ForConditionalGeneration": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "Gemma4ForCausalLM": {
+      "tool_parser": "gemma4",
+      "reasoning_parser": "gemma4",
+      "structured_output": true
+    },
+    "Gemma4ForConditionalGeneration": {
+      "tool_parser": "gemma4",
+      "reasoning_parser": "gemma4",
+      "structured_output": true
+    },
+    "Gemma4UnifiedForConditionalGeneration": {
+      "tool_parser": "gemma4",
+      "reasoning_parser": "gemma4",
+      "structured_output": true
+    },
+    "Glm4MoeForCausalLM": {
+      "tool_parser": "glm47",
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "GlmMoeDsaForCausalLM": {
+      "tool_parser": "glm47",
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "GptOssForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "HunYuanDenseV1ForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "HunYuanMoEV1ForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "KimiLinearForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "LagunaForCausalLM": {
+      "tool_parser": "poolside_v1",
+      "reasoning_parser": "poolside_v1",
+      "structured_output": true
+    },
+    "LlamaForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "MiniMaxM2ForCausalLM": {
+      "tool_parser": "minimax_m2",
+      "reasoning_parser": "minimax_m2",
+      "structured_output": true
+    },
+    "MiniMaxM3SparseForCausalLM": {
+      "tool_parser": "minimax_m3",
+      "reasoning_parser": "minimax_m3",
+      "structured_output": true
+    },
+    "Mistral3ForConditionalGeneration": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "MistralForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "MistralLarge3ForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "MixtralForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "NemotronForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "NemotronHForCausalLM": {
+      "tool_parser": "qwen3_coder",
+      "reasoning_parser": "nano-v3",
+      "structured_output": true
+    },
+    "NemotronHPuzzleForCausalLM": {
+      "tool_parser": "qwen3_coder",
+      "reasoning_parser": "nano-v3",
+      "structured_output": true
+    },
+    "Phi3ForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "Qwen2ForCausalLM": {
+      "tool_parser": "qwen3",
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "Qwen2MoeForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "Qwen3ForCausalLM": {
+      "tool_parser": "qwen3",
+      "reasoning_parser": "qwen3",
+      "structured_output": true
+    },
+    "Qwen3MoeForCausalLM": {
+      "tool_parser": "qwen3",
+      "reasoning_parser": "qwen3",
+      "structured_output": true
+    },
+    "Qwen3NextForCausalLM": {
+      "tool_parser": "qwen3",
+      "reasoning_parser": "qwen3",
+      "structured_output": true
+    },
+    "Qwen3_5ForCausalLM": {
+      "tool_parser": "qwen3",
+      "reasoning_parser": "qwen3_5",
+      "structured_output": true
+    },
+    "Qwen3_5ForConditionalGeneration": {
+      "tool_parser": "qwen3",
+      "reasoning_parser": "qwen3_5",
+      "structured_output": true
+    },
+    "Qwen3_5MoeForCausalLM": {
+      "tool_parser": "qwen3",
+      "reasoning_parser": "qwen3_5",
+      "structured_output": true
+    },
+    "Qwen3_5MoeForConditionalGeneration": {
+      "tool_parser": "qwen3",
+      "reasoning_parser": "qwen3_5",
+      "structured_output": true
+    },
+    "Qwen4ExpForCausalLM": {
+      "tool_parser": "qwen3",
+      "reasoning_parser": "qwen3_5",
+      "structured_output": true
+    },
+    "Qwen4ExpForConditionalGeneration": {
+      "tool_parser": "qwen3",
+      "reasoning_parser": "qwen3_5",
+      "structured_output": true
+    },
+    "SeedOssForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "Starcoder2ForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    },
+    "Step3p5ForCausalLM": {
+      "tool_parser": null,
+      "reasoning_parser": null,
+      "structured_output": true
+    }
   },
   "curated_models": [
     {
-      "repository": "Qwen/Qwen3-1.7B",
-      "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
-      "inventory_digest": "sha256:3b3d1df5b8945f32ccdfdbfc72db1944d88e207dfae1c5560950a6ea6b034dde",
+      "repository": "Qwen/Qwen3.5-2B",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "inventory_digest": "sha256:b74911a9cebc39af700b8a6afc77e60f82c29183ee44f8fd65b89a79a5538b7c",
       "vram_tier_bytes": 8000000000,
-      "note": "BF16, 4.1 GB of weights; any supported 8 GB card (Ampere or newer)."
+      "note": "BF16, 4.5 GB of weights; any supported 8 GB card (Ampere or newer)."
     },
     {
-      "repository": "nvidia/Qwen3-8B-NVFP4",
-      "revision": "ccd10a893cbca613259517c3efe08e151ddf2b8e",
-      "inventory_digest": "sha256:1a199e5c471504b883d8fc13d27f0f74c5bd29fa4ce8434822dfd9dd990ea5b0",
+      "repository": "nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8",
+      "revision": "3fe6dab75665a93884214ad4b1b95cf02717d081",
+      "inventory_digest": "sha256:b0f6053955d9c99ebb659bc9f759d4cddc487741a89c97bd7664b3970072074d",
+      "vram_tier_bytes": 8000000000,
+      "note": "NVIDIA ModelOpt FP8, 5.3 GB of weights; Ada or newer 8 GB cards such as the RTX 4060."
+    },
+    {
+      "repository": "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
+      "revision": "dfaf35de3e30f1867dd8dbc38a7fc9fb52d3914f",
+      "inventory_digest": "sha256:3c7cc54594274b772832ff2c9bf5aa3f0bcc0360821065d237fdbcd6c495d11b",
       "vram_tier_bytes": 12000000000,
-      "note": "NVIDIA ModelOpt NVFP4, 6.4 GB of weights; Blackwell 12 GB cards such as the RTX 5070."
+      "note": "BF16, 7.9 GB of weights; Ampere and Ada 12 GB cards such as the RTX 3060 12 GB and RTX 4070."
     },
     {
-      "repository": "Qwen/Qwen3-4B",
-      "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
-      "inventory_digest": "sha256:a5da50efadc36a49d4dda59034824dabc5356ee1d9461fed9bc707cfc11b9c04",
-      "vram_tier_bytes": 12000000000,
-      "note": "BF16, 8.0 GB of weights; Ampere and Ada 12 GB cards such as the RTX 3060 12 GB and RTX 4070."
-    },
-    {
-      "repository": "nvidia/Qwen3-8B-FP8",
-      "revision": "2cebc4c89e25abc17668c81b01dceaf3d8b914d5",
-      "inventory_digest": "sha256:c0ee42abb6780bda2e294b6d6736ff051cf586d697befabd5010af492b0c41c5",
+      "repository": "Qwen/Qwen3.5-4B",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "inventory_digest": "sha256:34b475b999d4ef4df2a219e7e47c8169ace36f23dc7ae9dec9cdd65646d7f838",
       "vram_tier_bytes": 16000000000,
-      "note": "NVIDIA ModelOpt FP8, 9.4 GB of weights; Ada or newer 16 GB cards such as the RTX 4060 Ti 16 GB and RTX 4080."
+      "note": "BF16, 9.3 GB of weights including the vision encoder; 16 GB cards such as the RTX 4060 Ti 16 GB and RTX 5060 Ti 16 GB. Runs text-only."
     },
     {
-      "repository": "nvidia/Qwen3-14B-NVFP4",
-      "revision": "bc39319a4dc265d9bbb9a9731bc52c4988d9ece7",
-      "inventory_digest": "sha256:94efd98151f648fd347ca0416460cf649d26b90e037c9a21f620c372071f07a7",
+      "repository": "google/gemma-4-E2B-it",
+      "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+      "inventory_digest": "sha256:7fce719b2035dd6c6b1cb297fcd751dcc4d0e8b132be5e6470d4ad71e1052168",
       "vram_tier_bytes": 16000000000,
-      "note": "NVIDIA ModelOpt NVFP4, 10.5 GB of weights; Blackwell 16 GB cards such as the RTX 5060 Ti 16 GB and RTX 5080."
+      "note": "BF16, 10.2 GB of weights including the vision and audio encoders; 16 GB cards such as the RTX 4080 and RTX 5080. Runs text-only."
     },
     {
-      "repository": "nvidia/Qwen3-14B-FP8",
-      "revision": "b30b0a0ff7b2f14259b859681a8e2b1c2f2b8117",
-      "inventory_digest": "sha256:51c02f01e83601e23832738940c568e7342354193995ab6d1ea07013dbe2f318",
+      "repository": "google/gemma-4-E4B-it",
+      "revision": "ee0ef6023621cff504d758262d4e04895a5af4a2",
+      "inventory_digest": "sha256:ca17c15242bc26a9a8f2bec3f9bcfe28866ba51507d94040b80041d939f06c04",
       "vram_tier_bytes": 24000000000,
-      "note": "NVIDIA ModelOpt FP8, 16.3 GB of weights; Ada or newer 24 GB cards such as the RTX 4090 and L4."
+      "note": "BF16, 16.0 GB of weights including the vision and audio encoders; 24 GB cards such as the RTX 3090 and RTX 4090. Runs text-only."
     },
     {
-      "repository": "Qwen/Qwen3-8B",
-      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
-      "inventory_digest": "sha256:7f62c6cc99d28526637a0d3ca20ce93abdc232066d8c5cd19ac175f9f2a52af8",
+      "repository": "Qwen/Qwen3.5-9B",
+      "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "inventory_digest": "sha256:902f6556b85f46e1b1878e64e5001fd85bcbb82c39f55c9a70add8d737f1ab19",
       "vram_tier_bytes": 24000000000,
-      "note": "BF16, 16.4 GB of weights; Ampere 24 GB cards such as the RTX 3090 and A10."
+      "note": "BF16, 19.3 GB of weights including the vision encoder; 24 GB cards such as the RTX 3090, RTX 4090 and A10. Runs text-only."
     },
     {
-      "repository": "nvidia/Qwen3-32B-NVFP4",
-      "revision": "16426c6eb87be9e27c14cc9fb318f9c7a5f8588c",
-      "inventory_digest": "sha256:4c3702561b9d524c3fe51a3673ceaa2c6e4ee4a3fe39b394b98555057e7ecc28",
+      "repository": "nvidia/Gemma-4-26B-A4B-NVFP4",
+      "revision": "a19cfe00be84568a6867111c9a68c9c44fdcffe6",
+      "inventory_digest": "sha256:f36550ed6d0feba6555fc235e7c0dd7e2acfb857fb8ba995869f65c557563fdf",
       "vram_tier_bytes": 32000000000,
-      "note": "NVIDIA ModelOpt NVFP4, 20.7 GB of weights; Blackwell 32 GB cards such as the RTX 5090."
+      "note": "NVIDIA ModelOpt NVFP4, 18.8 GB of weights; Blackwell 32 GB cards such as the RTX 5090. Runs text-only."
     },
     {
-      "repository": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8",
-      "revision": "9bee19446c0dfd01f356e10979d225b2a6621944",
-      "inventory_digest": "sha256:ef7fe32e77cefbc7b517e9ba14e6cc1360e2a400b2f5d7771f8b569bc4dfb827",
+      "repository": "nvidia/Qwen3.8-27B-NVFP4",
+      "revision": "482ca0f3832238542f8f5295dde86b5f22711d80",
+      "inventory_digest": "sha256:83d7489ffdbd03fa6c4fa5577da34a816a43524b6809fbe36d8bd024740b85e6",
+      "vram_tier_bytes": 32000000000,
+      "note": "NVIDIA ModelOpt mixed precision (NVFP4 + FP8), 21.9 GB of weights; Blackwell 32 GB cards such as the RTX 5090. Runs text-only."
+    },
+    {
+      "repository": "nvidia/Qwen3.6-35B-A3B-NVFP4",
+      "revision": "1355db6a052410cfd62085d94b58866fd0f2c3c5",
+      "inventory_digest": "sha256:4ac3b5515ddf4778e25acfa4aad62a8e6694ade43ec5922157a3db1c11a51b78",
+      "vram_tier_bytes": 32000000000,
+      "note": "NVIDIA ModelOpt mixed precision (W4A16 NVFP4 + FP8), 23.4 GB of weights; Blackwell 32 GB cards such as the RTX 5090. Runs text-only."
+    },
+    {
+      "repository": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+      "revision": "bee7596271d1495f6992ae224aefde4410e816b8",
+      "inventory_digest": "sha256:bcf3dbc20fbf4b337e5d759bc6a8b13e2e9ae0d703f113d28685a9aef3f9e606",
+      "vram_tier_bytes": 32000000000,
+      "note": "NVIDIA ModelOpt mixed precision (W4A16 NVFP4 + FP8), 21.6 GB of weights; Blackwell 32 GB cards such as the RTX 5090."
+    },
+    {
+      "repository": "google/gemma-4-12B-it",
+      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+      "inventory_digest": "sha256:795d2ad05285bc1d795c9addd3c835495b41739cf2f401b8b8f99ddb18c6dc24",
       "vram_tier_bytes": 48000000000,
-      "note": "NVIDIA ModelOpt FP8, 32.7 GB of weights; Ada or newer 48 GB cards such as the L40S and RTX 6000 Ada (beta support in TensorRT-LLM 1.2)."
+      "note": "BF16, 23.9 GB of weights including the vision encoder; Ampere and Ada 48 GB cards such as the RTX A6000, L40S and RTX 6000 Ada. Runs text-only."
     },
     {
-      "repository": "Qwen/Qwen3-14B",
-      "revision": "40c069824f4251a91eefaf281ebe4c544efd3e18",
-      "inventory_digest": "sha256:592ec57ac6d7ff7941d86d1489e816958592454d473eba557c015d4884c0361e",
+      "repository": "nvidia/Gemma-4-31B-IT-NVFP4",
+      "revision": "4135a98a9b728a548947683219633b25682223ac",
+      "inventory_digest": "sha256:a960cebea068c237fb6f51004aa0cd3d2f59873385daf9fda18ebc89f932076f",
       "vram_tier_bytes": 48000000000,
-      "note": "BF16, 29.5 GB of weights; Ampere 48 GB cards such as the RTX A6000 and A40."
+      "note": "NVIDIA ModelOpt NVFP4, 32.6 GB of weights; Blackwell 48 GB cards such as the RTX PRO 5000. Runs text-only."
     },
     {
-      "repository": "nvidia/Llama-3.3-70B-Instruct-NVFP4",
-      "revision": "f792b707002f2c613e0729c6b37bbcedc4efa94e",
-      "inventory_digest": "sha256:f677f9254246dfd3043ae8f4d528734830e0298a05a93f6032acb5f0c72cfed4",
+      "repository": "Qwen/Qwen3.6-35B-A3B-FP8",
+      "revision": "95a723d08a9490559dae23d0cff1d9466213d989",
+      "inventory_digest": "sha256:83b0c698494bee9cac596bab76a95636a01b25b4f3793a8ee95958d1d4a81bef",
       "vram_tier_bytes": 80000000000,
-      "note": "NVIDIA ModelOpt NVFP4, 42.7 GB of weights; Blackwell cards with 80 GB or more such as the RTX PRO 6000 and B200."
+      "note": "FP8 with 128x128 block scales, 37.5 GB of weights; Hopper cards such as the H100 (block-scaled FP8 is not supported on RTX 50-series or RTX PRO Blackwell). Runs text-only."
+    },
+    {
+      "repository": "Qwen/Qwen3.8-27B",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "inventory_digest": "sha256:3b4bd9436558f562324fd19590559ad722bfbd5fe7e841618d3e965849333315",
+      "vram_tier_bytes": 80000000000,
+      "note": "BF16, 55.6 GB of weights including the vision encoder; 80 GB cards such as the A100 80 GB and H100. Runs text-only."
     }
   ],
-  "download_bytes": 21122819324,
-  "required_disk_bytes": 67645734912,
+  "download_bytes": 17443475794,
+  "required_disk_bytes": 60129542144,
   "notices": [
     "By pulling and using the TensorRT-LLM container image you accept the NVIDIA Software License Agreement (https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-software-license-agreement/) and the Product-Specific Terms for AI Products (https://www.nvidia.com/en-us/agreements/enterprise-software/product-specific-terms-for-ai-products/), as stated on its NGC catalog page.",
     "By pulling and using the CUDA base image used for the GPU check you accept the NVIDIA Deep Learning Container License (https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license).",
-    "Both images bundle third-party and open-source software, such as PyTorch in the TensorRT-LLM image, under its own licenses; TensorRT-LLM lists these components in its ATTRIBUTIONS files at https://github.com/NVIDIA/TensorRT-LLM/tree/v1.2.1.",
-    "TensorRT-LLM 1.2 support for DGX Spark is beta: NVIDIA validated only single-node configurations and the models listed in its release notes."
+    "Both images bundle third-party and open-source software, such as PyTorch in the TensorRT-LLM image, under its own licenses; TensorRT-LLM lists these components in its ATTRIBUTIONS files at https://github.com/NVIDIA/TensorRT-LLM/tree/v1.3.0rc29.",
+    "TensorRT-LLM 1.3.0rc29 is a pre-release build of TensorRT-LLM 1.3, not a final release.",
+    "This TensorRT-LLM release needs NVIDIA driver 615.65.02 or newer (the R615 branch, CUDA 13.4)."
   ],
   "exclusions": [
-    "Vision and other multimodal models are not supported in this release of the integration.",
+    "Vision and other multimodal input is not supported in this release of the integration; models that ship a vision or audio encoder (Qwen3.5 and later, Gemma 4) run text-only.",
     "Embedding, classification and reward models are not supported; only text-generation models are offered.",
     "Checkpoints quantized with AutoAWQ or GPTQ (quantization_config.quant_method awq or gptq) are not loaded by this TensorRT-LLM release; use NVIDIA ModelOpt checkpoints instead."
   ]

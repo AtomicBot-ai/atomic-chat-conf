@@ -500,9 +500,12 @@ rejects a descriptor that carries environment install data, and so does core.
 
 No released atomic-chat-core reads `runtimes/`: core 0.7.0–0.7.4 and every
 already-released Atomic Chat app and CLI never fetch or parse this directory,
-so publishing or changing a document here has no effect on them. The current
-descriptor and environment manifest both require core **0.7.5** or later
-(their `minimum_core_version`).
+so publishing or changing a document here has no effect on them. The
+environment manifests require core **0.7.5** or later; the current descriptor
+`tensorrt-llm-1.3.0rc29-r1` requires core **0.7.6** (its
+`minimum_core_version`): 0.7.5 refuses its architecture names with an
+underscore and cannot read mixed-precision checkpoints, so it keeps whatever
+descriptor it accepted before.
 
 ### `descriptor_id` is immutable
 
@@ -522,7 +525,10 @@ the underlying TensorRT-LLM release changes (`tensorrt-llm-1.2.1-r2` →
 data-only field changes (a new curated model, a corrected notice, …).
 `tensorrt-llm-1.2.1-r2` is `r1` with its distribution list moved out to the
 environment manifest; `r1` was never published to `main`, and installs set
-up against it on development machines are removed and set up again.
+up against it on development machines are removed and set up again. The same
+holds for `r2`: `tensorrt-llm-1.3.0rc29-r1` replaced it before either reached
+`main`, and an engine installed from `r2` is removed and set up again (there
+is no update operation yet).
 
 ### Installed engines stay pinned to their descriptor
 
@@ -536,7 +542,12 @@ at that point.
 
 1. Confirm the candidate tag is the latest non-rc release with the
    platform/hardware support you need — check NVIDIA's own release notes and
-   hardware-support docs at that tag, not just the tag list.
+   hardware-support docs at that tag, not just the tag list. **Exception, by
+   owner decision of 2026-10-02:** `tensorrt-llm-1.3.0rc29-r1` pins the
+   pre-release `1.3.0rc29`, because the model families the Hub offers (Qwen3.5
+   and later, Gemma 4, Nemotron 3.5) do not load on 1.2.1 and 1.3.0 had no
+   final release yet. The next descriptor moves to the `1.3.0` final release
+   once NVIDIA publishes it; it does not move to a later rc.
 2. Get the **per-platform manifest digest** for both the engine image and the
    probe image (see [Reproducing runtime descriptor
    digests](#reproducing-runtime-descriptor-digests) below) — never a
@@ -668,9 +679,27 @@ at that point.
        release and must not be listed as a supported format.
   3. Otherwise the checkpoint is unquantized: read `dtype` — the field
      TensorRT-LLM itself reads (`model_config.py:471`) — falling back to the
-     legacy `torch_dtype` key only when `dtype` is absent. `bfloat16` →
-     `bf16`; `float16` → `fp16`; anything else, including `float32` or a
-     missing/unrecognized value, is **not loadable**.
+     legacy `torch_dtype` key only when `dtype` is absent, and then to
+     `text_config.dtype` / `text_config.torch_dtype` (a VLM-style config such
+     as Qwen3.5's declares its dtype only there, and TensorRT-LLM 1.3 falls
+     back the same way). `bfloat16` → `bf16`; `float16` → `fp16`; anything
+     else, including `float32` or a missing/unrecognized value, is **not
+     loadable**.
+
+  A format of `mixed_precision` (ModelOpt `quant_algo: MIXED_PRECISION`, e.g.
+  `nvidia/Qwen3.8-27B-NVFP4`) is never a row of its own. Its
+  `hf_quant_config.json` lists a `quant_algo` per layer in
+  `quantization.quantized_layers`; each distinct per-layer value is named by
+  step 1's rule (`FP8` → `fp8`, `NVFP4` → `nvfp4`, `W4A16_NVFP4` →
+  `w4a16_nvfp4`, …), every one of those names must have a `quantization` row,
+  and a card must clear all of them: the highest `min_compute_capability`
+  and every listed exclusion. A mixed checkpoint whose layers name a format
+  without a row, or that names none, is not loadable.
+
+  `w4a16_nvfp4` has no row in NVIDIA's hardware-support matrix at
+  `1.3.0rc29`; its row copies `nvfp4` (10.0, no exclusions) as the
+  conservative choice, although the engine also has a Marlin path for it on
+  8.9–9.x and 12.x that nobody has run here yet.
 
   Each format also carries exactly one `min_compute_capability` and its own
   `excluded_compute_capabilities` (above) — together the two fields are the
@@ -708,6 +737,32 @@ at that point.
   estimated **extracted** size, measured by sampling each large layer's
   compression ratio (a capped-prefix `gzip -dc`) and weighting by layer size,
   rounded up to the next GiB.
+
+### Status of `tensorrt-llm-1.3.0rc29-r1`
+
+**Not live-qualified.** Every value comes from the image's registry manifests,
+the TensorRT-LLM source at tag `v1.3.0rc29` and the Hugging Face API on
+2026-10-02, and core's own algorithm reproduces every curated
+`inventory_digest`; nothing has run on a card yet. What changed from
+`tensorrt-llm-1.2.1-r2`:
+
+- **Driver:** the image is CUDA 13.4 with `CUDA_DRIVER_VERSION` 615.65.02,
+  and CUDA 13.4 needs the R615 branch on consumer cards, so
+  `minimum_driver_version` is `615.65.02`. Hosts on R580–R610 are blocked at
+  the probe until they update the driver (615.71.09 is public).
+- **Architectures:** re-derived from `_arch_index.py`. The vision-language
+  architectures whose text path serves chat are listed for the families the
+  curated list carries (Qwen3.5/3.6/3.8, Gemma 4, Gemma 3, Mistral 3,
+  Qwen4Exp); they run text-only. `NemotronNASForCausalLM` is gone (it was a
+  class name, never a registered key; `DeciLMForCausalLM` is the key), and
+  `DeepseekV4ForCausalLM` is left out because it needs sm100+ and the
+  descriptor has no per-architecture capability.
+- **Curated models:** a new list of 15 across the 8–80 GB tiers, including
+  three mixed-precision NVIDIA checkpoints. Mistral and gpt-oss repositories
+  ship a second copy of their weights and are left out, since the client
+  downloads every file of a curated repository.
+- **Telemetry:** `trtllm-serve` 1.3 reports anonymous usage to NVIDIA by
+  default; core 0.7.6 turns it off with `TRTLLM_NO_USAGE_STATS=1`.
 
 ### Live qualification of `tensorrt-llm-1.2.1-r1`
 
@@ -755,11 +810,11 @@ daemon needed); they match the descriptor for as long as NVIDIA does not
 repoint the tags:
 
 ```bash
-docker buildx imagetools inspect nvcr.io/nvidia/tensorrt-llm/release:1.2.1
-docker buildx imagetools inspect nvcr.io/nvidia/cuda:13.1.0-base-ubuntu24.04
+docker buildx imagetools inspect nvcr.io/nvidia/tensorrt-llm/release:1.3.0rc29
+docker buildx imagetools inspect nvcr.io/nvidia/cuda:13.4.1-base-ubuntu24.04
 
 # Same without Docker: anonymous registry token, then the manifest list.
-for ref in nvidia/tensorrt-llm/release:1.2.1 nvidia/cuda:13.1.0-base-ubuntu24.04; do
+for ref in nvidia/tensorrt-llm/release:1.3.0rc29 nvidia/cuda:13.4.1-base-ubuntu24.04; do
   repo=${ref%:*} tag=${ref##*:}
   T=$(curl -s "https://nvcr.io/proxy_auth?scope=repository:$repo:pull" | jq -r .token)
   curl -s -H "Authorization: Bearer $T" \
@@ -774,8 +829,8 @@ curated, and its `inventory_digest` is computed from the Hugging Face file
 list at that commit with the same algorithm as atomic-chat-core:
 
 ```bash
-curl -s https://huggingface.co/api/models/nvidia/Qwen3-8B-FP8/revision/main | jq -r .sha
-node .github/scripts/inventory-digest.mjs nvidia/Qwen3-8B-FP8 2cebc4c89e25abc17668c81b01dceaf3d8b914d5
+curl -s https://huggingface.co/api/models/nvidia/Qwen3.8-27B-NVFP4/revision/main | jq -r .sha
+node .github/scripts/inventory-digest.mjs nvidia/Qwen3.8-27B-NVFP4 482ca0f3832238542f8f5295dde86b5f22711d80
 ```
 
 > **Note for whichever component recomputes this.** `inventory_digest` hashes
