@@ -707,6 +707,7 @@ jobs:
           .github/scripts/runtime-descriptor-immutability.test.mjs
           .github/scripts/environment-manifest.test.mjs
           .github/scripts/environment-manifest-windows.test.mjs
+          .github/scripts/environment-manifest-windows-arm64.test.mjs
           .github/scripts/environment-manifest-integrity.test.mjs
           .github/scripts/environment-manifest-immutability.test.mjs
 

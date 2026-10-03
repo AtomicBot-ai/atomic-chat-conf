@@ -94,6 +94,7 @@ validate:
 	node --test .github/scripts/runtime-descriptor.test.mjs
 	node --test .github/scripts/environment-manifest.test.mjs
 	node --test .github/scripts/environment-manifest-windows.test.mjs
+	node --test .github/scripts/environment-manifest-windows-arm64.test.mjs
 	node --test .github/scripts/inventory-digest.test.mjs
 	node --test .github/scripts/runtime-descriptor-integrity.test.mjs
 	node --test .github/scripts/environment-manifest-integrity.test.mjs

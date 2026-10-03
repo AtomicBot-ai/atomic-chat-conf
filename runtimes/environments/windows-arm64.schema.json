@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat Windows on Arm Environment Manifest",
+  "description": "Schema for runtimes/environments/windows-arm64.json, the Windows on Arm (arm64) environment manifest: the same shape as windows.json, with its own manifest_id prefix (windows-arm64-r<N>) and an aarch64 rootfs. Read only by an arm64 Windows core (atomic-chat-core 0.9.2 and later on the branch fix/tensorrt-llm-windows-arm64); kept in its own file because every released core parses windows.json strictly and would refuse an arm64 rootfs there, hiding TensorRT-LLM from every x64 user. Schema for the Windows environment manifest: the data about the foundation every managed engine runs on under Windows — Atomic Chat's own WSL2 distribution, which atomic-chat-core imports from a pinned Ubuntu rootfs and prepares with a recipe compiled into core. Consumed by atomic-chat-core on Windows only, which caches an accepted manifest by manifest_id and pins the environment to the id it was imported from. One file and one schema per platform: a manifest for another platform never changes the document Windows core reads, and Windows core never reads linux.json. A manifest carries data only — no command, no argv, no script: the argv for importing the rootfs and for the guest recipe is compiled into core, the manifest only says what to import and which recipe prepares the guest.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "manifest_id",
+    "platform",
+    "minimum_core_version",
+    "minimum_windows_build",
+    "minimum_wsl_version",
+    "rootfs",
+    "guest_recipe_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Bump this when the shape of a manifest changes in a backwards-incompatible way."
+    },
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^windows-arm64-r[0-9]+$",
+      "description": "Immutable identifier for this exact published manifest, windows-arm64-r<N>. Any change, including a new rootfs, MUST be published under a new manifest_id instead of editing this one in place — core caches manifests by this id and an imported environment stays pinned to the id it was imported from."
+    },
+    "platform": {
+      "const": "windows",
+      "description": "The platform this manifest describes. Each platform has its own file and schema."
+    },
+    "minimum_core_version": {
+      "$ref": "#/definitions/semver",
+      "description": "Lowest atomic-chat-core version that understands this manifest. Core rejects a manifest whose minimum_core_version is above its own version and keeps using the previously accepted one."
+    },
+    "minimum_windows_build": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Lowest Windows build number (the third part of the OS version, e.g. 22000 for Windows 11 21H2) on which core offers the environment. Below it the host is blocked rather than offered a plan."
+    },
+    "minimum_wsl_version": {
+      "$ref": "#/definitions/semver",
+      "description": "Lowest WSL package version (MAJOR.MINOR.PATCH as `wsl --version` reports it, without the trailing build component) that can import the rootfs format and run the guest. Below it core asks to update WSL rather than importing."
+    },
+    "rootfs": {
+      "$ref": "#/definitions/rootfs"
+    },
+    "guest_recipe_id": {
+      "$ref": "#/definitions/id",
+      "description": "Names the recipe compiled into core that prepares the guest after import (e.g. linux.install-container-runtime, the same one Linux hosts use), run as root inside the guest. Never a command or script."
+    }
+  },
+  "definitions": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]*$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "rootfs": {
+      "type": "object",
+      "required": [
+        "url",
+        "sha256",
+        "distribution"
+      ],
+      "additionalProperties": false,
+      "description": "The guest root filesystem core downloads and imports as Atomic Chat's own WSL distribution. Core checks sha256 before the file is used for anything.",
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^\\s]+$",
+          "description": "HTTPS URL of the rootfs image (e.g. Ubuntu's .wsl image on releases.ubuntu.com). Plain http is rejected."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Lowercase hex SHA-256 of the file at url, checked against the publisher's signed SHA256SUMS when the manifest is written."
+        },
+        "distribution": {
+          "type": "object",
+          "required": [
+            "id",
+            "version_id",
+            "arch"
+          ],
+          "additionalProperties": false,
+          "description": "What the rootfs is, in the same terms as a Linux manifest's distributions: the guest recipe must be qualified for it.",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "os-release ID inside the guest, e.g. ubuntu.",
+              "pattern": "^[a-z0-9._-]+$"
+            },
+            "version_id": {
+              "type": "string",
+              "description": "os-release VERSION_ID inside the guest, e.g. 24.04.",
+              "pattern": "^[0-9][0-9.]*$"
+            },
+            "arch": {
+              "const": "aarch64",
+              "description": "Windows on Arm: the guest is aarch64, the machine's own architecture (x64 PCs read windows.json)."
+            }
+          }
+        }
+      }
+    }
+  }
+}
