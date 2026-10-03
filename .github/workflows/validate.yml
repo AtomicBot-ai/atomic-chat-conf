@@ -686,6 +686,13 @@ jobs:
             -d runtimes/environments/windows.json \
             --strict=true
 
+      - name: Validate Windows on Arm environment manifest against schema
+        run: |
+          ajv validate \
+            -s runtimes/environments/windows-arm64.schema.json \
+            -d runtimes/environments/windows-arm64.json \
+            --strict=true
+
       # Cross-field rules the schema cannot express (uniqueness, model_families
       # ⊆ supported_architectures, descriptor_id and manifest_id prefixes,
       # disk >= download, minimum_compute_capability as a floor) live in

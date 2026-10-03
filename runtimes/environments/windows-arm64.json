@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "manifest_id": "windows-arm64-r1",
+  "platform": "windows",
+  "minimum_core_version": "0.9.2",
+  "minimum_windows_build": 22000,
+  "minimum_wsl_version": "2.4.4",
+  "rootfs": {
+    "url": "https://cdimage.ubuntu.com/ubuntu/releases/24.04.5/release/ubuntu-24.04.5-wsl-arm64.wsl",
+    "sha256": "74478b5024d9047397ba79d17c27f73caf85ada4988f88cffc2892d65e6a806b",
+    "distribution": { "id": "ubuntu", "version_id": "24.04", "arch": "aarch64" }
+  },
+  "guest_recipe_id": "linux.install-container-runtime"
+}

@@ -111,4 +111,5 @@ validate:
 	npx --yes ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
 	npx --yes ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
 	npx --yes ajv-cli@5 validate -s runtimes/environments/windows.schema.json -d runtimes/environments/windows.json --strict=true
+	npx --yes ajv-cli@5 validate -s runtimes/environments/windows-arm64.schema.json -d runtimes/environments/windows-arm64.json --strict=true
 	npx --yes ajv-cli@5 validate -s app/schema.json -d app/latest.json --strict=false

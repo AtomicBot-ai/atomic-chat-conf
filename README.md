@@ -38,6 +38,8 @@ runtimes/
     linux.schema.json # JSON Schema (Draft-07) for the Linux environment manifest
     windows.json        # Windows environment manifest (the rootfs core imports as its own WSL2 distribution)
     windows.schema.json # JSON Schema (Draft-07) for the Windows environment manifest
+    windows-arm64.json        # Windows on Arm environment manifest (an aarch64 rootfs; read only by an arm64 core)
+    windows-arm64.schema.json # JSON Schema (Draft-07) for the Windows on Arm environment manifest
 
 app/
   latest.json        # Installers the atomic.chat landing page links to
@@ -936,7 +938,7 @@ what to import and which recipe prepares it:
 | `minimum_wsl_version` | Lowest WSL package version, `MAJOR.MINOR.PATCH` as `wsl --version` prints it without the trailing build part. `2.4.4` is the first WSL that handles the `.wsl` rootfs format. |
 | `rootfs.url` | HTTPS URL of the rootfs image; `http://` is rejected by the schema. |
 | `rootfs.sha256` | Lowercase hex SHA-256 of that file. Core checks it before the file is used for anything. |
-| `rootfs.distribution` | What the rootfs is, `{ id, version_id, arch }` in os-release terms; `arch` is always `x86_64` (Windows on ARM is not supported). |
+| `rootfs.distribution` | What the rootfs is, `{ id, version_id, arch }` in os-release terms; `arch` is `x86_64` in `windows.json`; Windows on Arm has its own file, below. |
 | `guest_recipe_id` | Recipe compiled into core that prepares the guest after import (`linux.install-container-runtime`). Never a command. |
 
 **Where the rootfs comes from.** Canonical's official WSL image of Ubuntu
@@ -962,6 +964,21 @@ resolving):
 
 Only new imports use the new manifest: an existing distribution stays on
 the `manifest_id` it was imported from.
+
+### Windows on Arm manifest (`windows-arm64.json`)
+
+The same shape as `windows.json`, schema `windows-arm64.schema.json`:
+`manifest_id` is `windows-arm64-r<N>` and `rootfs.distribution.arch` is
+`aarch64` (Ubuntu's arm64 `.wsl` image, published on `cdimage.ubuntu.com`).
+An arm64 Windows core (atomic-chat-core 0.9.2 and later, branch
+`fix/tensorrt-llm-windows-arm64`) reads this file and an x64 core reads
+`windows.json`. It is a separate file, not a second rootfs in `windows.json`,
+because every released core parses `windows.json` strictly: an unknown or
+`aarch64` field there would refuse the whole manifest and hide TensorRT-LLM
+from every x64 user. Its rules are `windows.json`'s: a new rootfs is a new
+`manifest_id`, the sha256 is checked against Ubuntu's signed `SHA256SUMS`,
+and it reaches `main` only after live acceptance on a Windows on Arm machine
+with an NVIDIA GPU (RTX Spark N1X).
 
 **`windows.json` reaches `main` only after live acceptance on Windows.**
 Merging it into `main` is what switches TensorRT-LLM on for every Windows

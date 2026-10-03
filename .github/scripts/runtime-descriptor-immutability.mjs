@@ -27,6 +27,7 @@ export const DESCRIPTOR_PATH = 'runtimes/tensorrt-llm.json'
 export const ENVIRONMENT_MANIFEST_PATHS = [
   'runtimes/environments/linux.json',
   'runtimes/environments/windows.json',
+  'runtimes/environments/windows-arm64.json',
 ]
 
 // Recursively sort object keys so a base file that serializes its keys in a

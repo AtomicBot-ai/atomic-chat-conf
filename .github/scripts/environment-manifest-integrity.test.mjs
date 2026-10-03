@@ -13,6 +13,7 @@ import { test } from 'node:test'
 const readJson = (relative) => JSON.parse(readFileSync(new URL(relative, import.meta.url), 'utf8'))
 const manifest = readJson('../../runtimes/environments/linux.json')
 const windowsManifest = readJson('../../runtimes/environments/windows.json')
+const windowsArm64Manifest = readJson('../../runtimes/environments/windows-arm64.json')
 const clone = (value) => JSON.parse(JSON.stringify(value))
 
 function checkUniqueRecipeIds(m) {
@@ -107,6 +108,10 @@ test('rejects: manifest_id not prefixed with platform + "-"', () => {
 
 test('the committed windows.json environment manifest passes every integrity check', () => {
   assert.deepEqual(checkManifestIntegrity(windowsManifest), [])
+})
+
+test('the committed windows-arm64.json environment manifest passes every integrity check', () => {
+  assert.deepEqual(checkManifestIntegrity(windowsArm64Manifest), [])
 })
 
 test('the windows-valid.json fixture passes every integrity check', () => {

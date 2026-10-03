@@ -24,24 +24,28 @@ const BASE_REF = process.env.RUNTIME_DESCRIPTOR_BASE_REF || 'origin/main'
 
 // A content change that keeps the manifest valid, per platform: what an
 // editor would most plausibly try to slip in under the same manifest_id.
+const swapRootfs = (m) => {
+  m.rootfs.url = m.rootfs.url.replace('24.04.5', '24.04.6')
+  m.rootfs.sha256 = '0'.repeat(64)
+}
+// Keyed by file: windows-arm64.json is a Windows manifest of its own (Windows on Arm).
 const EDITS = {
   linux: (m) => m.recipes[0].distributions.push({ id: 'ubuntu', version_id: '28.04', arch: 'x86_64' }),
-  windows: (m) => {
-    m.rootfs.url = m.rootfs.url.replace('24.04.5', '24.04.6')
-    m.rootfs.sha256 = '0'.repeat(64)
-  },
+  windows: swapRootfs,
+  'windows-arm64': swapRootfs,
 }
+const fileKey = (path) => path.match(/([a-z0-9-]+)\.json$/)[1]
 
 test('every environment manifest under runtimes/environments/ is covered', () => {
   assert.deepEqual(
-    ENVIRONMENT_MANIFEST_PATHS.map((path) => path.match(/([a-z]+)\.json$/)[1]).sort(),
+    ENVIRONMENT_MANIFEST_PATHS.map(fileKey).sort(),
     Object.keys(EDITS).sort()
   )
 })
 
 for (const path of ENVIRONMENT_MANIFEST_PATHS) {
   const manifest = JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8'))
-  const edit = EDITS[manifest.platform]
+  const edit = EDITS[fileKey(path)]
   const id = manifest.manifest_id
 
   test(`${path} immutability: same manifest_id + same content -> ok`, () => {
