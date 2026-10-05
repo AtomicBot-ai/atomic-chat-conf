@@ -196,6 +196,27 @@ jobs:
           7z x "${{ matrix.asset.name }}" -oextract -bso0 -bsp0
           Remove-Item "${{ matrix.asset.name }}"
 
+      # The core and the app only ever run llama-server, and every signed file
+      # costs a KeyLocker signature, so drop the other tools before signing:
+      # each extra .exe and its -impl.dll. Shared DLLs stay. Archives without
+      # llama-server.exe (the cudart companions) are left as they are.
+      - name: Drop tools the app never runs
+        shell: pwsh
+        run: |
+          if (-not (Get-ChildItem -Path extract -Recurse -Filter "llama-server.exe")) {
+            Write-Host "No llama-server.exe in this archive; nothing to drop"
+            exit 0
+          }
+          $drop = Get-ChildItem -Path extract -Recurse -File | Where-Object {
+            ($_.Extension -eq '.exe' -and $_.Name -ne 'llama-server.exe') -or
+            ($_.Name -like '*-impl.dll' -and $_.Name -ne 'llama-server-impl.dll')
+          }
+          foreach ($f in $drop) { Write-Host "Dropping: $($f.Name)"; Remove-Item -LiteralPath $f.FullName }
+          Write-Host "Dropped $(@($drop).Count) file(s)"
+          if (-not (Get-ChildItem -Path extract -Recurse -Filter "llama-server-impl.dll")) {
+            throw "llama-server-impl.dll missing from the archive"
+          }
+
       - name: Sign binaries
         uses: ./.github/actions/windows-code-sign
         with:
