@@ -692,11 +692,17 @@ at that point.
      - `fp8` **with** `quantization_config.weight_block_size` equal to
        `[128,128]` → `fp8_block_scales`. `fp8` **without** that block size is
        **not loadable** by this engine release (`model_config.py:323`) — it
-       must not fall through to step 3 and be reported as `bf16`/`fp16`.
+       must not fall through to step 4 and be reported as `bf16`/`fp16`.
      - `mxfp4` → `mxfp4`.
      - anything else (e.g. `awq`, `gptq`) is **not loadable** by this engine
        release and must not be listed as a supported format.
-  3. Otherwise the checkpoint is unquantized: read `dtype` — the field
+  3. Otherwise, if `config.json` has a top-level `quantization` object (the
+     MLX convention: `bits`, `group_size`, e.g.
+     `prism-ml/Bonsai-27B-mlx-1bit`), the checkpoint is **not loadable**: its
+     weights are MLX-packed while its `dtype` still names the unquantized
+     model, so it must not fall through to step 4 and be reported as
+     `bf16`/`fp16`.
+  4. Otherwise the checkpoint is unquantized: read `dtype` — the field
      TensorRT-LLM itself reads (`model_config.py:471`) — falling back to the
      legacy `torch_dtype` key only when `dtype` is absent, and then to
      `text_config.dtype` / `text_config.torch_dtype` (a VLM-style config such
