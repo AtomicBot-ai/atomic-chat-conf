@@ -25,11 +25,15 @@ models/
   schema.staff-picks.json # JSON Schema (Draft-07) for the staff-picks manifest
   decision.json      # Decision models (Laya checkpoints) for llama-server --decision
   schema.decision.json # JSON Schema (Draft-07) for the decision catalog
+  atomic-prism-models.json # Which Bonsai GGUF files need PrismML llama.cpp (atomic-prism)
+  schema.atomic-prism-models.json # JSON Schema (Draft-07) for the Prism model rules
 backends/
   manifest.json            # llama.cpp backend catalog (mirrors a ggml-org release)
   schema.json              # JSON Schema (Draft-07) for the backends manifest
   turboquant-manifest.json # TurboQuant backend catalog (one unified release tag)
   turboquant-schema.json   # JSON Schema (Draft-07) for the TurboQuant manifest
+  atomic-prism-manifest.json # PrismML llama.cpp releases (candidate / approved per asset)
+  atomic-prism-schema.json   # JSON Schema (Draft-07) for the PrismML manifest
 runtimes/
   tensorrt-llm.json  # TensorRT-LLM managed-engine runtime descriptor
   schema.json        # JSON Schema (Draft-07) for a runtime descriptor
@@ -47,6 +51,7 @@ app/
 .github/
   workflows/validate.yml        # Validates every manifest on every PR
   workflows/mirror-upstream.yml # Mirrors + signs an upstream llama.cpp release
+  workflows/prism-release-watch.yml # Opens a PR listing a new PrismML release as candidate
   actions/windows-code-sign/    # Authenticode signing via DigiCert KeyLocker
   scripts/mirror.mjs            # Asset whitelist + manifest generation
   entitlements.plist            # Entitlements for the signed macOS binaries

@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat PrismML llama.cpp Backends Manifest",
+  "description": "Schema for the release catalog of the `atomic-prism` provider: prebuilt PrismML-Eng/llama.cpp archives the core installs to run Bonsai models. Every release is pinned by tag, commit and per-asset sha256. A release reaches users only through an asset marked `approved`; `candidate` assets exist for maintainers and for clients that explicitly opt into unverified builds. Clients ignore releases whose `min_core_version` is newer than themselves, so a new field or backend can be published without breaking cores already installed.",
+  "type": "object",
+  "required": ["schema_version", "updated_at", "upstream_repo", "releases"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "upstream_repo": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+      "description": "GitHub repository the releases come from (PrismML-Eng/llama.cpp)."
+    },
+    "download_base": {
+      "type": "string",
+      "format": "uri",
+      "description": "Base URL the client prepends to '<tag>/<asset name>'. Absent means the upstream repository's GitHub release download URL."
+    },
+    "releases": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Newest first. The client chooses among approved, non-withdrawn releases its own version can read.",
+      "items": { "$ref": "#/definitions/release" }
+    }
+  },
+  "definitions": {
+    "release": {
+      "type": "object",
+      "required": ["tag", "commit", "published_at", "min_core_version", "notes_url", "capabilities", "assets"],
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "type": "string",
+          "pattern": "^prism-b[0-9]+-[0-9a-f]{7}$",
+          "description": "PrismML release tag, prism-b<build>-<sha7>. The build number orders releases."
+        },
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "published_at": { "type": "string", "format": "date-time" },
+        "min_core_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Oldest atomic-chat-core that understands this entry. Older cores skip it."
+        },
+        "notes_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Release notes page shown next to an update offer."
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 280,
+          "description": "Optional one-line summary shown in the update banner."
+        },
+        "supersedes": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^prism-b[0-9]+-[0-9a-f]{7}$" },
+          "description": "Releases this one replaces; installs on them are offered this release first."
+        },
+        "withdrawn": {
+          "type": "object",
+          "required": ["reason"],
+          "additionalProperties": false,
+          "description": "A release pulled from recommendations. Installed packs are kept; clients offer to move off it.",
+          "properties": {
+            "reason": { "type": "string", "minLength": 1, "maxLength": 280 }
+          }
+        },
+        "capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Model formats and transforms this release runs. Matched against the capabilities a model file needs (models/atomic-prism-models.json).",
+          "items": {
+            "type": "string",
+            "enum": ["q1_0", "q2_0_g64", "pq2_0", "ptq1_0", "hadamard", "vision"]
+          }
+        },
+        "assets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/asset" }
+        }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "required": ["backend", "name", "size", "sha256", "validation"],
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "type": "string",
+          "pattern": "^(macos-(arm64|x64)|linux-(cpu|vulkan)-x64|linux-cuda-[0-9]+\\.[0-9]+-x64|linux-rocm-[0-9]+\\.[0-9]+-x64|win-(cpu|vulkan|hip-radeon)-x64|win-cuda-[0-9]+\\.[0-9]+-x64|win-cudart-[0-9]+\\.[0-9]+-x64)$",
+          "description": "Stable backend id the client selects on; never derived from the asset name at runtime."
+        },
+        "name": { "type": "string", "pattern": "^[A-Za-z0-9._-]+\\.(zip|tar\\.gz)$" },
+        "size": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "validation": {
+          "type": "string",
+          "enum": ["candidate", "approved"],
+          "description": "approved: passed real-hardware acceptance and is recommended to users. candidate: published by the release watch, not yet verified."
+        },
+        "companion": {
+          "type": "boolean",
+          "description": "True for the Windows CUDA runtime archive unpacked into the matching CUDA pack."
+        },
+        "companion_backend": {
+          "type": "string",
+          "pattern": "^win-cudart-[0-9]+\\.[0-9]+-x64$",
+          "description": "The companion archive a Windows CUDA pack needs."
+        },
+        "min_driver": {
+          "type": "string",
+          "pattern": "^[0-9]+(\\.[0-9]+)*$",
+          "description": "Minimum NVIDIA driver for a CUDA pack."
+        },
+        "min_compute_capability": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$",
+          "description": "Lowest NVIDIA compute capability the pack carries kernels for."
+        }
+      }
+    }
+  }
+}

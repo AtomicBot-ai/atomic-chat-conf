@@ -467,6 +467,25 @@ jobs:
           if (data.commit) console.log(`  commit: ${data.commit}`)
           EOF
 
+      - name: Validate PrismML backends manifest against schema
+        run: |
+          ajv validate \
+            -s backends/atomic-prism-schema.json \
+            -d backends/atomic-prism-manifest.json \
+            --strict=false
+
+      - name: Validate PrismML model rules against schema
+        run: |
+          ajv validate \
+            -s models/schema.atomic-prism-models.json \
+            -d models/atomic-prism-models.json \
+            --strict=false
+
+      - name: Check PrismML manifests integrity
+        run: |
+          node --test .github/scripts/prism-manifest.test.mjs
+          node .github/scripts/prism-manifest.mjs check
+
       - name: Validate sd.cpp backends manifest against schema
         run: |
           ajv validate \
