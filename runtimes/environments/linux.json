@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "manifest_id": "linux-r1",
+  "platform": "linux",
+  "minimum_core_version": "0.7.5",
+  "recipes": [
+    {
+      "recipe_id": "linux.install-container-runtime",
+      "distributions": [
+        { "id": "ubuntu", "version_id": "22.04", "arch": "x86_64" },
+        { "id": "ubuntu", "version_id": "22.04", "arch": "aarch64" },
+        { "id": "ubuntu", "version_id": "24.04", "arch": "x86_64" },
+        { "id": "ubuntu", "version_id": "24.04", "arch": "aarch64" },
+        { "id": "ubuntu", "version_id": "26.04", "arch": "x86_64" },
+        { "id": "ubuntu", "version_id": "26.04", "arch": "aarch64" },
+        { "id": "debian", "version_id": "12", "arch": "x86_64" },
+        { "id": "debian", "version_id": "12", "arch": "aarch64" },
+        { "id": "debian", "version_id": "13", "arch": "x86_64" },
+        { "id": "debian", "version_id": "13", "arch": "aarch64" },
+        { "id": "fedora", "version_id": "43", "arch": "x86_64" },
+        { "id": "fedora", "version_id": "43", "arch": "aarch64" },
+        { "id": "fedora", "version_id": "44", "arch": "x86_64" },
+        { "id": "fedora", "version_id": "44", "arch": "aarch64" }
+      ]
+    }
+  ]
+}

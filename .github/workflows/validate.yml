@@ -14,6 +14,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # descriptor_id and manifest_id immutability (below) read
+          # runtimes/tensorrt-llm.json and runtimes/environments/*.json at a
+          # base ref via `git show`; a shallow clone would make that ref
+          # unreachable.
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -658,6 +664,59 @@ jobs:
           console.log(`  shared side files: ${sideFiles.size}`)
           console.log(`  updated_at: ${data.updated_at}`)
           EOF
+
+      - name: Validate runtime descriptor against schema
+        run: |
+          ajv validate \
+            -s runtimes/schema.json \
+            -d runtimes/tensorrt-llm.json \
+            --strict=true
+
+      - name: Validate Linux environment manifest against schema
+        run: |
+          ajv validate \
+            -s runtimes/environments/linux.schema.json \
+            -d runtimes/environments/linux.json \
+            --strict=true
+
+      - name: Validate Windows environment manifest against schema
+        run: |
+          ajv validate \
+            -s runtimes/environments/windows.schema.json \
+            -d runtimes/environments/windows.json \
+            --strict=true
+
+      - name: Validate Windows on Arm environment manifest against schema
+        run: |
+          ajv validate \
+            -s runtimes/environments/windows-arm64.schema.json \
+            -d runtimes/environments/windows-arm64.json \
+            --strict=true
+
+      # Cross-field rules the schema cannot express (uniqueness, model_families
+      # ⊆ supported_architectures, descriptor_id and manifest_id prefixes,
+      # disk >= download, minimum_compute_capability as a floor) live in
+      # node:test scripts shared with `make validate`, not inlined here, so the local and CI
+      # gates cannot drift apart the way a copy-pasted heredoc could.
+      - name: Check runtime descriptor and environment manifest fixtures, integrity and immutability
+        env:
+          # PR: compare against the target branch. Push: compare against the
+          # pre-push tip (an all-zeros `before`, on a brand-new branch, is
+          # handled as "absent" by runtime-descriptor-immutability.mjs).
+          # Any other trigger (e.g. workflow_dispatch) leaves this empty,
+          # which the same script also treats as absent.
+          RUNTIME_DESCRIPTOR_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: >-
+          node --test
+          .github/scripts/runtime-descriptor.test.mjs
+          .github/scripts/inventory-digest.test.mjs
+          .github/scripts/runtime-descriptor-integrity.test.mjs
+          .github/scripts/runtime-descriptor-immutability.test.mjs
+          .github/scripts/environment-manifest.test.mjs
+          .github/scripts/environment-manifest-windows.test.mjs
+          .github/scripts/environment-manifest-windows-arm64.test.mjs
+          .github/scripts/environment-manifest-integrity.test.mjs
+          .github/scripts/environment-manifest-immutability.test.mjs
 
       - name: Validate decision catalog against schema
         run: |

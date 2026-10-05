@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "descriptor_id": "tensorrt-llm-linux-fixture-1",
+  "engine_id": "tensorrt-llm",
+  "adapter_id": "tensorrt-llm",
+  "adapter_contract_version": 1,
+  "image": {
+    "linux/amd64": {
+      "repository": "nvcr.io/nvidia/tensorrt-llm/release",
+      "digest": "sha256:615028f0f0fb42fe4afc1dde130a3d0a8fb71e36dd7f714243ca0880f5154f98"
+    },
+    "linux/arm64": {
+      "repository": "nvcr.io/nvidia/tensorrt-llm/release",
+      "digest": "sha256:49dbf899b9a762c74a6ff9f2b933d9e2f705fa5773d0056e7bb8b62d27e94b3d"
+    }
+  },
+  "probe_image": {
+    "linux/amd64": {
+      "repository": "nvcr.io/nvidia/cuda",
+      "digest": "sha256:e8a5c0517db1de910bfa883adf4120719a63ec0633752176ed6593c666be26c4"
+    },
+    "linux/arm64": {
+      "repository": "nvcr.io/nvidia/cuda",
+      "digest": "sha256:aab295a37aee351555c5f63e7c3d22d81e9672b1a9f83b6dbc6e0448bcab8ff7"
+    }
+  },
+  "minimum_core_version": "1.4.0",
+  "minimum_app_version": "1.4.0",
+  "minimum_driver_version": "525.60.13",
+  "minimum_compute_capability": "7.5",
+  "supported_architectures": [
+    "LlamaForCausalLM",
+    "Qwen2ForCausalLM"
+  ],
+  "quantization": [
+    {
+      "format": "fp8",
+      "min_compute_capability": "8.9",
+      "excluded_compute_capabilities": []
+    },
+    {
+      "format": "fp16",
+      "min_compute_capability": "7.5",
+      "excluded_compute_capabilities": []
+    }
+  ],
+  "model_families": {
+    "LlamaForCausalLM": {
+      "tool_parser": "llama3_json",
+      "reasoning_parser": "-rf",
+      "structured_output": true
+    },
+    "Qwen2ForCausalLM": {
+      "tool_parser": "hermes",
+      "reasoning_parser": "qwen_reasoning",
+      "structured_output": true
+    }
+  },
+  "curated_models": [
+    {
+      "repository": "AtomicChat/Llama-3-8B-Instruct",
+      "revision": "a68228e59fec87bf4f9a848865a0fdf172baa62e",
+      "inventory_digest": "sha256:53e3b801a19074a389d7c80a23837b9578a90d8ef30e30e368461ffe7e1fe2e2",
+      "vram_tier_bytes": 8589934592,
+      "note": "Fits an 8 GB card with headroom for KV cache."
+    }
+  ],
+  "download_bytes": 17179869184,
+  "required_disk_bytes": 34359738368,
+  "notices": [
+    "Requires acceptance of the NVIDIA NGC container terms of use."
+  ],
+  "exclusions": [
+    "Vision, embeddings and the Responses API are not supported by this release."
+  ]
+}

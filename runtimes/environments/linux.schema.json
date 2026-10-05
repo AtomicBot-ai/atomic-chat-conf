@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat Linux Environment Manifest",
+  "description": "Schema for the Linux environment manifest: the data about the foundation every managed engine runs on — on which distributions atomic-chat-core may itself install a GPU container runtime — kept apart from engine descriptors. Consumed by atomic-chat-core on Linux only, which caches an accepted manifest by manifest_id and pins an operation to it. One file and one schema per platform: a manifest for another platform never changes the document Linux core reads. A manifest carries data only — no command, no argv, no script: the argv for a recipe is compiled into core, the manifest only names the recipe and where it may run.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "manifest_id",
+    "platform",
+    "minimum_core_version",
+    "recipes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Bump this when the shape of a manifest changes in a backwards-incompatible way."
+    },
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^linux-r[0-9]+$",
+      "description": "Immutable identifier for this exact published manifest, <platform>-r<N>. Any change, including adding a distribution, MUST be published under a new manifest_id instead of editing this one in place — core caches manifests by this id and pins an operation to the id the user consented to."
+    },
+    "platform": {
+      "const": "linux",
+      "description": "The platform this manifest describes. Each platform has its own file and schema."
+    },
+    "minimum_core_version": {
+      "$ref": "#/definitions/semver",
+      "description": "Lowest atomic-chat-core version that understands this manifest. Core rejects a manifest whose minimum_core_version is above its own version and keeps using the previously accepted one."
+    },
+    "recipes": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/recipe" },
+      "description": "Install recipes, as data only: a recipe_id naming argv compiled into core, and the distributions that recipe is qualified to run on. No command, script or argv lives here."
+    }
+  },
+  "definitions": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]*$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "distribution": {
+      "type": "object",
+      "required": ["id", "version_id", "arch"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "os-release ID, e.g. ubuntu, debian, fedora.",
+          "pattern": "^[a-z0-9._-]+$"
+        },
+        "version_id": {
+          "type": "string",
+          "description": "os-release VERSION_ID, e.g. 22.04.",
+          "pattern": "^[0-9][0-9.]*$"
+        },
+        "arch": {
+          "type": "string",
+          "enum": ["x86_64", "aarch64"]
+        }
+      }
+    },
+    "recipe": {
+      "type": "object",
+      "required": ["recipe_id", "distributions"],
+      "additionalProperties": false,
+      "properties": {
+        "recipe_id": {
+          "$ref": "#/definitions/id",
+          "description": "Names argv compiled into core, e.g. linux.install-container-runtime. Never a command or script."
+        },
+        "distributions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/distribution" },
+          "description": "Distributions this recipe has been qualified to run on. Extending support to a new distribution is a new manifest_id here, not a core release and not a new engine descriptor."
+        }
+      }
+    }
+  }
+}

@@ -30,6 +30,17 @@ backends/
   schema.json              # JSON Schema (Draft-07) for the backends manifest
   turboquant-manifest.json # TurboQuant backend catalog (one unified release tag)
   turboquant-schema.json   # JSON Schema (Draft-07) for the TurboQuant manifest
+runtimes/
+  tensorrt-llm.json  # TensorRT-LLM managed-engine runtime descriptor
+  schema.json        # JSON Schema (Draft-07) for a runtime descriptor
+  environments/
+    linux.json        # Linux environment manifest (where core may install Docker + the NVIDIA toolkit)
+    linux.schema.json # JSON Schema (Draft-07) for the Linux environment manifest
+    windows.json        # Windows environment manifest (the rootfs core imports as its own WSL2 distribution)
+    windows.schema.json # JSON Schema (Draft-07) for the Windows environment manifest
+    windows-arm64.json        # Windows on Arm environment manifest (an aarch64 rootfs; read only by an arm64 core)
+    windows-arm64.schema.json # JSON Schema (Draft-07) for the Windows on Arm environment manifest
+
 app/
   latest.json        # Installers the atomic.chat landing page links to
   schema.json        # JSON Schema (Draft-07) for the landing release manifest
@@ -481,6 +492,512 @@ set stays expressible without a schema change.
 > repository, so a merge alone does not upgrade anyone — the Atomic Chat
 > client must bump its pinned revision in a deliberate compatibility change.
 
+## Runtime descriptors (`runtimes/`)
+
+A runtime descriptor tells atomic-chat-core which container image a
+**managed engine** (currently TensorRT-LLM) runs, pinned by digest, what host
+it needs, and what that release supports. It carries **data only** — no
+command, script or argv lives in it — and it describes **the engine alone**.
+Where core may set up the foundation every engine runs on (which Linux
+distributions it can install a GPU container runtime on) is environment data,
+shared by all engines; it lives in the [environment
+manifest](#environment-manifests-runtimesenvironments), not here. The schema
+rejects a descriptor that carries environment install data, and so does core.
+
+### Who reads this
+
+No released atomic-chat-core reads `runtimes/`: core 0.7.0–0.7.4 and every
+already-released Atomic Chat app and CLI never fetch or parse this directory,
+so publishing or changing a document here has no effect on them. The
+environment manifests require core **0.7.5** or later; the current descriptor
+`tensorrt-llm-1.3.0rc29-r2` requires core **0.7.6** (its
+`minimum_core_version`): 0.7.5 refuses its architecture names with an
+underscore and cannot read mixed-precision checkpoints, so it keeps whatever
+descriptor it accepted before.
+
+### `descriptor_id` is immutable
+
+The content published under a given `descriptor_id` never changes. core
+caches an accepted descriptor by this id and pins an installation to it, so
+editing a published descriptor's fields in place would silently change what
+an already-installed engine is compared against. Any change — the image, the
+compute-capability/quantization/architecture matrices, `model_families`, the
+curated model list, or the notices — ships under a **new** `descriptor_id`
+instead of editing this one. Adding or removing a distribution is not a
+descriptor change: it ships as a new `manifest_id` of the environment
+manifest, and the `descriptor_id` stays as it is.
+
+The id format is `tensorrt-llm-<engine tag>-r<N>`: bump the engine tag when
+the underlying TensorRT-LLM release changes (`tensorrt-llm-1.2.1-r2` →
+`tensorrt-llm-1.3.0-r1`), or bump `N` when the tag stays the same but a
+data-only field changes (a new curated model, a corrected notice, …).
+`tensorrt-llm-1.2.1-r2` is `r1` with its distribution list moved out to the
+environment manifest; `r1` was never published to `main`, and installs set
+up against it on development machines are removed and set up again. The same
+holds for `r2`: `tensorrt-llm-1.3.0rc29-r1` replaced it before either reached
+`main`, and an engine installed from `r2` is removed and set up again (there
+is no update operation yet). `tensorrt-llm-1.3.0rc29-r2` is `rc29-r1` without
+its two dense Nemotron-H checkpoints (`NVIDIA-Nemotron-3-Nano-4B-FP8` and
+`-BF16`): in the Windows live acceptance (2026-10-02) `trtllm-serve` 1.3.0rc29
+failed to load `Nemotron-3-Nano-4B-FP8` with `KeyError: '-'`. The image bundles
+`transformers` 5.5.4, whose `NemotronHConfig` maps `hybrid_override_pattern`
+through `{"M": "mamba", "E": "moe", "*": "attention"}` only, so any checkpoint
+with dense MLP layers (`-`) fails before TensorRT-LLM's own model code, which
+does handle `-`, is reached. Mamba/MoE checkpoints (`M`, `E`, `*`) and those
+that already ship `layers_block_type` are not affected, so
+`NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4` stays listed. The NemotronH
+architectures stay listed; the dense checkpoints come back once an image's
+`transformers` parses `-`.
+
+### Installed engines stay pinned to their descriptor
+
+An installation records the `descriptor_id` it was set up with and keeps
+using it. Publishing a new descriptor here therefore only affects **new**
+installs; an existing install is unaffected until the user removes the
+engine and sets it up again, which picks up whatever descriptor is current
+at that point.
+
+### How to update the engine tag
+
+1. Confirm the candidate tag is the latest non-rc release with the
+   platform/hardware support you need — check NVIDIA's own release notes and
+   hardware-support docs at that tag, not just the tag list. **Exception, by
+   owner decision of 2026-10-02:** the `tensorrt-llm-1.3.0rc29-*` descriptors pin
+   the pre-release `1.3.0rc29`, because the model families the Hub offers (Qwen3.5
+   and later, Gemma 4, Nemotron 3.5) do not load on 1.2.1 and 1.3.0 had no
+   final release yet. The next descriptor moves to the `1.3.0` final release
+   once NVIDIA publishes it; it does not move to a later rc.
+2. Get the **per-platform manifest digest** for both the engine image and the
+   probe image (see [Reproducing runtime descriptor
+   digests](#reproducing-runtime-descriptor-digests) below) — never a
+   multi-arch index digest.
+3. Re-derive `supported_architectures`, `quantization` (including every
+   format's `excluded_compute_capabilities`), `model_families` and
+   `minimum_compute_capability` from that tag's own source (its parser
+   registries, its hardware-support matrix), rather than carrying over the
+   previous descriptor's values. Re-derive `minimum_driver_version` as the
+   higher of the engine image's `CUDA_DRIVER_VERSION` label and the minimum
+   driver for the probe image's own CUDA version (from its
+   `NVIDIA_REQUIRE_CUDA` constraint / that CUDA Toolkit version's release
+   notes).
+4. Re-derive `curated_models`: re-check each repo is still ungated, re-resolve
+   `revision` to the commit its `main` branch currently points at, and
+   recompute `inventory_digest` (below).
+5. Recompute `download_bytes` and `required_disk_bytes` from the new image's
+   registry manifests (below).
+6. Update `notices` if the image's license terms changed, and `exclusions` if
+   the release's support gaps changed.
+7. Assign a new `descriptor_id` (`tensorrt-llm-<new tag>-r1`).
+8. Run `make validate` before opening a PR — it runs the schema and every
+   integrity check below against what you just wrote.
+
+### Field reference (non-obvious fields)
+
+- **The descriptor has no `$schema` key**, unlike the other manifests in this
+  repository. atomic-chat-core's ported parser rejects every unknown
+  top-level key, and `$schema` is not otherwise part of the descriptor's
+  data — adding it would only be an editor affordance, at the cost of core
+  refusing every descriptor that carries it. `runtimes/schema.json` does not
+  list `$schema` among the allowed top-level properties, so `ajv --strict`
+  rejects it too (see the `invalid-schema-field.json` fixture).
+- **`image` / `probe_image` digests** are the **platform-specific manifest
+  digest**, not the multi-arch index digest — so `docker pull repo@digest`
+  fetches exactly the bytes for that platform, and core can compare what it
+  actually pulled against what the descriptor promised. Pulling by the index
+  digest would let the registry hand back either platform.
+- **`minimum_driver_version`** is the lowest NVIDIA display driver version
+  the `image` and `probe_image` run on. Core checks it in the probe, before
+  the user has consented to anything: a host below it gets
+  `prerequisite-blocked` with both the required and the actual driver
+  version, and no Docker install or image pull is offered (design D16). Core
+  reads the host's driver version from `nvidia-smi
+  --query-gpu=driver_version`, splits both that value and this field on
+  `.`, parses each component as a base-10 integer, pads whichever of the two
+  has fewer components with zeros, and compares them as integer tuples; the
+  host is blocked iff its tuple is lower than this field's. The value itself
+  is the **higher of**: (1) the engine image's own `CUDA_DRIVER_VERSION`
+  label (the driver NVIDIA bundled with/tested that CUDA build against), and
+  (2) the minimum driver for the `probe_image`'s own CUDA version, read from
+  that image's `NVIDIA_REQUIRE_CUDA` constraint and cross-checked against
+  that CUDA Toolkit version's release notes' "CUDA Toolkit and Corresponding
+  Driver Versions" table — this is the **non-datacenter (GeForce/consumer)
+  floor**, since `NVIDIA_REQUIRE_CUDA`'s own brand exceptions only relax it
+  for datacenter/vGPU brands. **This is deliberately stricter than some
+  hosts need**: `probe_image`'s own `NVIDIA_REQUIRE_CUDA` carries
+  CUDA-minor-version-compatibility exceptions that let specific
+  datacenter/vGPU card brands (Tesla, Quadro, GRID, vGPU profiles, …) run on
+  several driver branches older than this floor. `minimum_driver_version` is
+  one number, not a brand-conditional table, so it also blocks those
+  datacenter hosts on an older driver that forward compatibility would
+  otherwise have let through — a deliberate simplification favoring one
+  clear blocker message over modeling every brand exception. To update it
+  for a new engine tag: read the new engine image's `CUDA_DRIVER_VERSION`
+  label, separately read the new probe image's minimum driver for its own
+  CUDA version (`NVIDIA_REQUIRE_CUDA` / that CUDA Toolkit version's release
+  notes), and take the higher of the two.
+- **`quantization[].excluded_compute_capabilities`** lists compute
+  capabilities where this engine release does **not** support the format,
+  even though the capability is numerically above the format's own
+  `min_compute_capability` — because the engine's hardware support matrix is
+  not monotone in compute capability (see the `quantization[].format`
+  bullet below): a newer architecture can lack a format that an older one
+  has. Together with `min_compute_capability`, this field fully encodes the
+  tag's matrix for that format: a card is compatible with the format iff its
+  compute capability is `>= min_compute_capability` **and not** in this
+  list. The list is a **deny-list, not an allow-list**, so a compute
+  capability the tag's matrix simply has no row for counts as supported once
+  it clears the minimum — unless the controller has an independent reason to
+  infer an exclusion anyway. `12.1` (sm121, NVIDIA DGX Spark) is one such
+  case: TensorRT-LLM 1.2.1's release notes say it added sm121 support, but
+  its hardware-support matrix has no sm121 row to read a verdict from, and
+  sm121 is a consumer Blackwell part in the same family as sm120 (`12.0`) —
+  so `w4a16_awq`, `w4a8_awq`, `fp8_block_scales` and
+  `fp8_per_channel_per_token`, which all already deny sm120, also list
+  `12.1` here even though the matrix never names it. Core's
+  model-compatibility check treats a match here as `MODEL_INCOMPATIBLE` at
+  check time, distinct from (and in addition to) the plain minimum-CC check
+  (design D17). Empty when the matrix shows no such gap for that format. To
+  update it for a new engine tag: re-read that tag's hardware support matrix
+  and, for every format, list every row above its `min_compute_capability`
+  where the matrix does not mark the format supported — the integrity check
+  (below) then enforces that every entry here is strictly above that
+  format's own minimum.
+- **`curated_models[].vram_tier_bytes`** is the tier's nominal size in
+  **decimal GB** (`× 10^9`), not binary GiB. Real cards report a little under
+  their nominal binary size (an RTX 4090 reports 24,564 MiB; an H100 reports
+  81,559 MiB) but still above the decimal-GB figure, so the decimal value
+  works as a safe floor for "does this model fit the tier" without
+  overshooting the VRAM any card in that tier actually has. On unified-memory
+  systems (NVIDIA GB10 / DGX Spark) `nvidia-smi` reports no dedicated card
+  memory at all, so there the tier is instead compared against the host's
+  `MemAvailable` (design D13).
+- **`quantization[].format` names** follow a fixed checkpoint-metadata →
+  format-name mapping, documented here as the conf↔core contract. The inputs
+  are the checkpoint's `config.json` content, and — when the checkpoint
+  carries the file — its `hf_quant_config.json` content: a checkpoint can
+  have no `quantization_config` in `config.json` at all and still be
+  quantized (e.g. `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8` and
+  `nvidia/Llama-3.3-70B-Instruct-NVFP4` both classify entirely from
+  `hf_quant_config.json`), so `dtype`/`torch_dtype` must never be trusted
+  before `hf_quant_config.json` has been checked. Apply these steps in order,
+  stopping at the first that matches:
+  1. If `hf_quant_config.json` is present (NVIDIA ModelOpt), the format is its
+     `quantization.quant_algo` lower-cased, with `fp8_pb_wo` renamed to
+     `fp8_block_scales` (matching what the engine itself calls it
+     internally).
+  2. Otherwise, if `config.json`'s `quantization_config.quant_method` is set:
+     - `modelopt` → the format is `quantization_config.quant_algo`
+       lower-cased, with the same `fp8_pb_wo` → `fp8_block_scales` rename as
+       step 1.
+     - `fp8` **with** `quantization_config.weight_block_size` equal to
+       `[128,128]` → `fp8_block_scales`. `fp8` **without** that block size is
+       **not loadable** by this engine release (`model_config.py:323`) — it
+       must not fall through to step 4 and be reported as `bf16`/`fp16`.
+     - `mxfp4` → `mxfp4`.
+     - anything else (e.g. `awq`, `gptq`) is **not loadable** by this engine
+       release and must not be listed as a supported format.
+  3. Otherwise, if `config.json` has a top-level `quantization` object (the
+     MLX convention: `bits`, `group_size`, e.g.
+     `prism-ml/Bonsai-27B-mlx-1bit`), the checkpoint is **not loadable**: its
+     weights are MLX-packed while its `dtype` still names the unquantized
+     model, so it must not fall through to step 4 and be reported as
+     `bf16`/`fp16`.
+  4. Otherwise the checkpoint is unquantized: read `dtype` — the field
+     TensorRT-LLM itself reads (`model_config.py:471`) — falling back to the
+     legacy `torch_dtype` key only when `dtype` is absent, and then to
+     `text_config.dtype` / `text_config.torch_dtype` (a VLM-style config such
+     as Qwen3.5's declares its dtype only there, and TensorRT-LLM 1.3 falls
+     back the same way). `bfloat16` → `bf16`; `float16` → `fp16`; anything
+     else, including `float32` or a missing/unrecognized value, is **not
+     loadable**.
+
+  A format of `mixed_precision` (ModelOpt `quant_algo: MIXED_PRECISION`, e.g.
+  `nvidia/Qwen3.8-27B-NVFP4`) is never a row of its own. Its
+  `hf_quant_config.json` lists a `quant_algo` per layer in
+  `quantization.quantized_layers`; each distinct per-layer value is named by
+  step 1's rule (`FP8` → `fp8`, `NVFP4` → `nvfp4`, `W4A16_NVFP4` →
+  `w4a16_nvfp4`, …), every one of those names must have a `quantization` row,
+  and a card must clear all of them: the highest `min_compute_capability`
+  and every listed exclusion. A mixed checkpoint whose layers name a format
+  without a row, or that names none, is not loadable.
+
+  `w4a16_nvfp4` has no row in NVIDIA's hardware-support matrix at
+  `1.3.0rc29`; its row copies `nvfp4` (10.0, no exclusions) as the
+  conservative choice, although the engine also has a Marlin path for it on
+  8.9–9.x and 12.x that nobody has run here yet.
+
+  Each format also carries exactly one `min_compute_capability` and its own
+  `excluded_compute_capabilities` (above) — together the two fields are the
+  **complete** compatibility rule for that format, not merely a conservative
+  floor: the engine's real hardware-support matrix is not monotone in
+  compute capability (a format can be marked supported on a newer
+  architecture while unlisted on one immediately below it), and
+  `excluded_compute_capabilities` is exactly the set of gaps that
+  `min_compute_capability` alone would miss. Core's check rejects an
+  incompatible checkpoint for either reason at check time, so no format's
+  matrix gap can let a checkpoint through to a load that then fails on that
+  specific card. The descriptor's overall `minimum_compute_capability` is
+  always a lower bound on every format's own minimum (enforced by CI, see
+  below).
+- **`curated_models[].inventory_digest`** is computed with the **same
+  algorithm as atomic-chat-core**, over **every file** in the Hugging Face
+  repository at the pinned `revision` — not a filtered subset; an engine's
+  own file-type selection happens later and is not part of a checkpoint's
+  identity. The file list itself comes from the Hugging Face API endpoint
+  `https://huggingface.co/api/models/<owner/name>/revision/<sha>?blobs=true&files_metadata=true`,
+  read for **every file in the response, not only weights**: each file's path
+  is its `rfilename`; its byte size is `lfs.size` when the file has an `lfs`
+  block, else its plain `size`; its published hash is `lfs.sha256` when
+  present, else an empty string (a non-LFS file has no published hash).
+  Files are then sorted by path; for each file the digest folds in
+  `${path.length}:${path}`, then `|${bytes}|`, then the published hash (or
+  empty string), then a NUL byte; the result is `sha256:<hex of the running
+  digest>`. `.github/scripts/inventory-digest.mjs` reproduces this from the
+  live Hugging Face API (see below). Which consumer recomputes and compares
+  this digest (atomic-chat-core, the app, or the CLI) is for the plan to
+  name — that is not decided here.
+- **`download_bytes` / `required_disk_bytes`** are estimated from the image's
+  own registry manifests: `download_bytes` sums the compressed layer sizes
+  (the larger of the two platforms); `required_disk_bytes` adds the
+  estimated **extracted** size, measured by sampling each large layer's
+  compression ratio (a capped-prefix `gzip -dc`) and weighting by layer size,
+  rounded up to the next GiB.
+
+### Status of `tensorrt-llm-1.3.0rc29-r1`
+
+**Not live-qualified.** Every value comes from the image's registry manifests,
+the TensorRT-LLM source at tag `v1.3.0rc29` and the Hugging Face API on
+2026-10-02, and core's own algorithm reproduces every curated
+`inventory_digest`; nothing has run on a card yet. What changed from
+`tensorrt-llm-1.2.1-r2`:
+
+- **Driver:** the image is CUDA 13.4 with `CUDA_DRIVER_VERSION` 615.65.02,
+  and CUDA 13.4 needs the R615 branch on consumer cards, so
+  `minimum_driver_version` is `615.65.02`. Hosts on R580–R610 are blocked at
+  the probe until they update the driver (615.71.09 is public).
+- **Architectures:** re-derived from `_arch_index.py`. The vision-language
+  architectures whose text path serves chat are listed for the families the
+  curated list carries (Qwen3.5/3.6/3.8, Gemma 4, Gemma 3, Mistral 3,
+  Qwen4Exp); they run text-only. `NemotronNASForCausalLM` is gone (it was a
+  class name, never a registered key; `DeciLMForCausalLM` is the key), and
+  `DeepseekV4ForCausalLM` is left out because it needs sm100+ and the
+  descriptor has no per-architecture capability.
+- **Curated models:** a new list of 15 across the 8–80 GB tiers, including
+  three mixed-precision NVIDIA checkpoints. Mistral and gpt-oss repositories
+  ship a second copy of their weights and are left out, since the client
+  downloads every file of a curated repository.
+- **Telemetry:** `trtllm-serve` 1.3 reports anonymous usage to NVIDIA by
+  default; core 0.7.6 turns it off with `TRTLLM_NO_USAGE_STATS=1`.
+
+### Live qualification of `tensorrt-llm-1.2.1-r1`
+
+`tensorrt-llm-1.2.1-r1` was checked against atomic-chat-core's live tests on
+2026-09-29, and nothing in it changed as a result. The rule: a curated model
+leaves the list only if it actually failed on a card it fits, a distribution
+or architecture leaves the install list only if it failed the install test,
+and `required_disk_bytes` changes only if measured post-pull usage differs by
+more than 10%. None of these happened. The results carry over unchanged:
+`tensorrt-llm-1.2.1-r2` has the same image, models and sizes, and the
+environment manifest `linux-r1` has the same distribution list.
+
+- **Install (core task 2.18, `test/live/managed-install.test.ts`)** —
+  clean VMs with an RTX 4070 Laptop (CC 8.9) passed through. All seven x86_64
+  versions passed: Ubuntu 22.04, 24.04, 26.04; Debian 12, 13; Fedora 43, 44
+  (with SELinux enforcing). Hosts that already ran Docker were covered on
+  Ubuntu 24.04 and Fedora 44 (restart only after consent), and Fedora 44 with
+  `moby-engine` got a toolkit-only plan. The Arch adopt path was not run.
+  Ubuntu 26.04 needed five runs: earlier runs failed on
+  `nvcr.io` 403s and once on `docker.service` start, then every step passed.
+  **aarch64 was not tested** (no arm64 host with an NVIDIA card); its entries
+  stay because nothing failed, not because they passed.
+- **Engine (core task 2.19, `test/live/tensorrt-llm.test.ts`)** — one card
+  only (Ada, 8 GB): `Qwen/Qwen3-1.7B` at the pinned revision loaded, streamed,
+  reloaded faster from the engine cache, made a tool call through the `qwen3`
+  parser and returned structured output (8 passed, 2 skipped). The other ten
+  curated entries, FP8 and NVFP4, and Ampere/Hopper/Blackwell/GB10 cards were
+  not run; they stay in the list because none of them failed.
+- **Sizes** — the pulled engine image was 20.88–20.90 GB on every VM, within
+  1.2% of `download_bytes` (the difference is the probe image and layers
+  already present). Disk space actually used after the pull was **not
+  measured**, so `required_disk_bytes` keeps its estimate.
+
+The logs live in atomic-chat-core's checkout of branch
+`change/add-tensorrt-llm-linux`, under `.superpowers/sdd/tasks/live-results/`
+(`vm-campaign/*`, `managed-install-ubuntu-26.04-x86_64-run*.log`,
+`tensorrt-llm-run2.log`).
+
+### Reproducing runtime descriptor digests
+
+`runtimes/tensorrt-llm.json` pins each image by its per-platform manifest
+digest (not the multi-arch index digest), so `docker pull repo@digest` gets
+exactly that platform. These print the digests from the registry (no Docker
+daemon needed); they match the descriptor for as long as NVIDIA does not
+repoint the tags:
+
+```bash
+docker buildx imagetools inspect nvcr.io/nvidia/tensorrt-llm/release:1.3.0rc29
+docker buildx imagetools inspect nvcr.io/nvidia/cuda:13.4.1-base-ubuntu24.04
+
+# Same without Docker: anonymous registry token, then the manifest list.
+for ref in nvidia/tensorrt-llm/release:1.3.0rc29 nvidia/cuda:13.4.1-base-ubuntu24.04; do
+  repo=${ref%:*} tag=${ref##*:}
+  T=$(curl -s "https://nvcr.io/proxy_auth?scope=repository:$repo:pull" | jq -r .token)
+  curl -s -H "Authorization: Bearer $T" \
+    -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json" \
+    "https://nvcr.io/v2/$repo/manifests/$tag" |
+    jq -r --arg ref "$ref" '.manifests[] | "\($ref) \(.platform.os)/\(.platform.architecture) \(.digest)"'
+done
+```
+
+A curated model's `revision` is the commit `main` resolved to when it was
+curated, and its `inventory_digest` is computed from the Hugging Face file
+list at that commit with the same algorithm as atomic-chat-core:
+
+```bash
+curl -s https://huggingface.co/api/models/nvidia/Qwen3.8-27B-NVFP4/revision/main | jq -r .sha
+node .github/scripts/inventory-digest.mjs nvidia/Qwen3.8-27B-NVFP4 482ca0f3832238542f8f5295dde86b5f22711d80
+```
+
+> **Note for whichever component recomputes this.** `inventory_digest` hashes
+> **all** files at the pinned revision (`/revision/<sha>`), not a
+> `.gguf`-filtered subset. Whichever consumer recomputes and compares it —
+> atomic-chat-core, the app, or the CLI, to be named by the plan — must hash
+> the full safetensors inventory at that revision the same way, or a curated
+> entry's digest will never match.
+
+## Environment manifests (`runtimes/environments/`)
+
+An environment manifest describes the **foundation** every managed engine
+runs on, apart from any one engine. There is one per platform:
+
+- `runtimes/environments/linux.json` (schema `linux.schema.json`) — on which
+  distributions atomic-chat-core may itself install a GPU container runtime
+  (Docker CE + the NVIDIA Container Toolkit).
+- `runtimes/environments/windows.json` (schema `windows.schema.json`) — the
+  Ubuntu rootfs core imports as Atomic Chat's own WSL2 distribution, and the
+  recipe that prepares it; see [Windows manifest](#windows-manifest-windowsjson).
+
+Like a descriptor a manifest carries **data only** and has no `$schema` key.
+In `linux.json` a `recipes[]` entry is a `recipe_id` naming argv that is
+compiled into core (`linux.install-container-runtime`) plus the distributions
+`{ id, version_id, arch }` that recipe is qualified to run on. No command,
+script or argv lives here.
+
+Linux core reads its manifest only to decide whether it can **offer to
+install** Docker and the toolkit on this host. A host where Docker with GPU access already works
+for the current user is accepted on any distribution, with or without a
+manifest; if no manifest can be fetched or found in core's cache, only the
+automatic install is blocked.
+
+### One file per platform
+
+Each platform has its own manifest file and its own schema (`linux.json`,
+`windows.json`). core's parsers are strict — an unknown key rejects the
+whole document — so a shared file with a section per platform would turn
+adding a `windows` section into a document every already-released Linux core
+refuses; a new Linux user without a cached copy would then lose automatic
+install until they updated core. With a file per platform, Linux core reads
+only `linux.json`, Windows core only `windows.json`, and work on one platform
+never touches the other's document.
+
+### `manifest_id` is immutable
+
+The content published under a given `manifest_id` never changes, for the same
+reason as `descriptor_id`: core caches an accepted manifest by this id, and an
+operation the user consented to keeps using the manifest it was planned with
+until it finishes, even if a newer one is published meanwhile. Any change —
+including adding a single distribution — ships under a **new** `manifest_id`
+of the form `<platform>-r<N>` (`linux-r1` → `linux-r2`, `windows-r1` →
+`windows-r2`). CI compares every manifest under `runtimes/environments/`
+against `main` and fails when the content changed under an id that is
+already there.
+
+### How to add a distribution
+
+1. Confirm **both** vendors publish packages for that distro/version/arch:
+   Docker CE (`download.docker.com`) and the NVIDIA Container Toolkit
+   (`nvidia.github.io/libnvidia-container`). One vendor publishing alone does
+   not qualify it.
+2. Only add the entry once core's live install test has actually passed on
+   that distribution — package availability is a precondition, not proof the
+   recipe works there.
+3. Append the `{ "id", "version_id", "arch" }` entry to the relevant
+   `recipes[].distributions` in `runtimes/environments/linux.json`.
+4. Bump the `manifest_id` (`linux-r<N>` → `linux-r<N+1>`). Do not touch the
+   engine descriptor: its `descriptor_id` stays the same.
+5. `make validate`, commit, open a PR.
+
+### Windows manifest (`windows.json`)
+
+On Windows, TensorRT-LLM runs in a Linux environment inside WSL2: Atomic
+Chat's **own** distribution, which core imports from a pinned Ubuntu rootfs
+as the signed-in user, and then prepares with the same recipe Linux hosts use
+— run as root inside the guest, without Windows elevation. The manifest says
+what to import and which recipe prepares it:
+
+| Field | Meaning |
+| --- | --- |
+| `manifest_id` | `windows-r<N>`, immutable (see above). An imported environment stays pinned to the id it was imported from. |
+| `platform` | Always `windows`. |
+| `minimum_core_version` | Lowest core that understands this manifest. |
+| `minimum_windows_build` | Lowest Windows build (third part of the OS version) core offers the environment on. `22000` = the first Windows 11 build; Windows 10 is not supported. |
+| `minimum_wsl_version` | Lowest WSL package version, `MAJOR.MINOR.PATCH` as `wsl --version` prints it without the trailing build part. `2.4.4` is the first WSL that handles the `.wsl` rootfs format. |
+| `rootfs.url` | HTTPS URL of the rootfs image; `http://` is rejected by the schema. |
+| `rootfs.sha256` | Lowercase hex SHA-256 of that file. Core checks it before the file is used for anything. |
+| `rootfs.distribution` | What the rootfs is, `{ id, version_id, arch }` in os-release terms; `arch` is `x86_64` in `windows.json`; Windows on Arm has its own file, below. |
+| `guest_recipe_id` | Recipe compiled into core that prepares the guest after import (`linux.install-container-runtime`). Never a command. |
+
+**Where the rootfs comes from.** Canonical's official WSL image of Ubuntu
+24.04 LTS, published next to the ISOs on `releases.ubuntu.com`
+(`https://releases.ubuntu.com/<point release>/ubuntu-<point release>-wsl-amd64.wsl`).
+Its hash is listed in the `SHA256SUMS` file of the same directory, which is
+signed by the Ubuntu CD Image signing key (`SHA256SUMS.gpg`, key
+`843938DF228D22F7B3742BC0D94AA3F0EFE21092`).
+
+**How to update the rootfs** (a new Ubuntu point release, or the URL stopped
+resolving):
+
+1. Download `SHA256SUMS` and `SHA256SUMS.gpg` from the release directory and
+   verify the signature with the key above
+   (`gpg --verify SHA256SUMS.gpg SHA256SUMS`). Take the `*-wsl-amd64.wsl` line.
+2. Download the `.wsl` file itself and check that `shasum -a 256` matches
+   that line — the manifest must never carry a hash nobody has reproduced.
+3. Put the new `url` and `sha256` (and `version_id`, if the Ubuntu release
+   changed) into `windows.json` and bump `manifest_id`
+   (`windows-r<N>` → `windows-r<N+1>`). A new Ubuntu release (not a point
+   release) also needs the guest recipe qualified on it in core first.
+4. `make validate`, commit, open a PR.
+
+Only new imports use the new manifest: an existing distribution stays on
+the `manifest_id` it was imported from.
+
+### Windows on Arm manifest (`windows-arm64.json`)
+
+The same shape as `windows.json`, schema `windows-arm64.schema.json`:
+`manifest_id` is `windows-arm64-r<N>` and `rootfs.distribution.arch` is
+`aarch64` (Ubuntu's arm64 `.wsl` image, published on `cdimage.ubuntu.com`).
+An arm64 Windows core (atomic-chat-core 0.9.2 and later, branch
+`fix/tensorrt-llm-windows-arm64`) reads this file and an x64 core reads
+`windows.json`. It is a separate file, not a second rootfs in `windows.json`,
+because every released core parses `windows.json` strictly: an unknown or
+`aarch64` field there would refuse the whole manifest and hide TensorRT-LLM
+from every x64 user. Its rules are `windows.json`'s: a new rootfs is a new
+`manifest_id`, the sha256 is checked against Ubuntu's signed `SHA256SUMS`,
+and it reaches `main` only after live acceptance on a Windows on Arm machine
+with an NVIDIA GPU (RTX Spark N1X).
+
+**`windows.json` reaches `main` only after live acceptance on Windows.**
+Merging it into `main` is what switches TensorRT-LLM on for every Windows
+client within an hour, with no release: without it, core on Windows reports
+the provider as unsupported to everyone who has not imported the
+distribution yet, so app and core can ship their Windows code safely ahead of
+it. The manifest is therefore merged only after the Windows acceptance run on
+real hardware (Windows 11 x64 with an NVIDIA GPU: enabling WSL with UAC and a
+reboot, importing the rootfs, Docker and the toolkit in the guest, a model
+load and chat, localhost forwarding, removing the environment) has passed.
+Rolling back is removing `windows.json` from `main`: new installs stop being
+offered, already-imported environments keep working on their pinned manifest.
+
 ## Landing release manifest
 
 [`app/latest.json`](app/latest.json) is read by the atomic.chat landing page
@@ -535,6 +1052,37 @@ every push and pull request. It performs the following checks:
 - Every TurboQuant `tag` must look like `b<build>-<semver>` and all entries must
   share one tag, every `asset` must be `llama-turboquant-<id>.zip` on Windows /
   `.tar.gz` elsewhere, and backend ids must be unique.
+- `ajv` validates `runtimes/tensorrt-llm.json` against `runtimes/schema.json`.
+- Cross-field integrity that the schema cannot express is checked by
+  `node --test` over `.github/scripts/runtime-descriptor.test.mjs`,
+  `.github/scripts/inventory-digest.test.mjs` and
+  `.github/scripts/runtime-descriptor-integrity.test.mjs`: fixture
+  accept/reject against the schema, and on the real descriptor —
+  `supported_architectures` and `quantization[].format` are unique,
+  every `model_families` key is a `supported_architectures` entry,
+  `curated_models` are unique by `repository@revision`,
+  `descriptor_id` starts with `engine_id + "-"`,
+  `required_disk_bytes >= download_bytes`, `minimum_compute_capability`
+  is at or below every `quantization[].min_compute_capability`, and every
+  `quantization[].excluded_compute_capabilities` entry is strictly above
+  that same entry's own `min_compute_capability`.
+- `.github/scripts/runtime-descriptor-immutability.test.mjs` fails when
+  `descriptor_id` is unchanged against the base branch but the content
+  differs.
+- `ajv` validates `runtimes/environments/linux.json` against
+  `runtimes/environments/linux.schema.json`, and
+  `runtimes/environments/windows.json` against
+  `runtimes/environments/windows.schema.json`.
+- `node --test` over `.github/scripts/environment-manifest.test.mjs` and
+  `.github/scripts/environment-manifest-windows.test.mjs` (fixture
+  accept/reject against each platform's schema),
+  `.github/scripts/environment-manifest-integrity.test.mjs` (on the real
+  manifests: `manifest_id` starts with `platform + "-"`; in `linux.json`
+  `recipes[].recipe_id` is unique and `distributions` are unique by
+  `(id, version_id, arch)` within a recipe) and
+  `.github/scripts/environment-manifest-immutability.test.mjs` (fails when a
+  manifest's `manifest_id` is unchanged against the base branch but the
+  content differs).
 - `ajv` validates `app/latest.json` against `app/schema.json`, and every
   download URL must sit under the manifest's own `tag` and `version`.
 
@@ -542,7 +1090,11 @@ You cannot merge a PR until CI is green.
 
 ## Local validation
 
-If you want to validate locally before pushing:
+`make validate` is the one command that runs every gate above, including all
+the `node --test` scripts (fixtures, cross-field integrity, `descriptor_id`
+and `manifest_id` immutability) — the same checks CI runs on a PR.
+
+If you want to run the schema checks individually before pushing:
 
 ```bash
 npx ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
@@ -550,6 +1102,9 @@ npx ajv-cli@5 validate -s models/schema.json    -d models/recommended.json   --s
 npx ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
 npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
 npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
+npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
+npx ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
+npx ajv-cli@5 validate -s runtimes/environments/windows.schema.json -d runtimes/environments/windows.json --strict=true
 npx ajv-cli@5 validate -s app/schema.json -d app/latest.json --strict=false
 ```
 
