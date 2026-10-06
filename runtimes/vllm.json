@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "descriptor_id": "vllm-0.31.0-cu129-r1",
+  "descriptor_id": "vllm-0.31.0-r1",
   "engine_id": "vllm",
   "adapter_id": "vllm",
   "adapter_contract_version": 1,
   "image": {
     "linux/amd64": {
       "repository": "docker.io/vllm/vllm-openai",
-      "digest": "sha256:b18abb2df97b8f798e81862bd93f872ea18613372e2c3adc0cc2ac21e66ac12f"
+      "digest": "sha256:a4a4c0437bf7240089da5f08aa370c4aee17ae5290f7a3b468825ee26c4c3a6b"
     },
     "linux/arm64": {
       "repository": "docker.io/vllm/vllm-openai",
-      "digest": "sha256:ff7c43dcb2059e8f3c3235a09b0963cc241c3a05806377f79e089ea2a8eac194"
+      "digest": "sha256:3f7dd5b777d34d1724456ce71f87385dca288c3bb23029ab27dee358f5d2b971"
     }
   },
   "probe_image": {
     "linux/amd64": {
       "repository": "nvcr.io/nvidia/cuda",
-      "digest": "sha256:5d2e53778e2180e01676aa8bac1aada242e95230ec97e21ecfb33de4e27cd1df"
+      "digest": "sha256:605fb0c8acf8674e164d822da8a8521f3a655056e569f0899e72ae940e1fe7dc"
     },
     "linux/arm64": {
       "repository": "nvcr.io/nvidia/cuda",
-      "digest": "sha256:a4efc16c2da139fd2e33dfd44d7e9ea52302f0df98aa85a6a389d21f759d4633"
+      "digest": "sha256:1ca86773be1716af6cfff3d2eb8cd10d4d9cac181931d1ee9be792d3e33c7322"
     }
   },
   "minimum_core_version": "0.9.9",
   "minimum_app_version": "2.2.0",
-  "minimum_driver_version": "575.0",
+  "minimum_driver_version": "580.0",
   "minimum_compute_capability": "8.0",
   "supported_architectures": [
     "AfmoeForCausalLM",
@@ -538,13 +538,13 @@
       "note": "AutoAWQ 4-bit (official Qwen release), 6.1 GB of weights; 12 GB cards such as the RTX 3060 12 GB and RTX 4070. Not loadable by TensorRT-LLM."
     }
   ],
-  "download_bytes": 11837033589,
-  "required_disk_bytes": 37580963840,
+  "download_bytes": 10134470647,
+  "required_disk_bytes": 30064771072,
   "notices": [
     "vLLM is open-source software under the Apache License 2.0 (https://github.com/vllm-project/vllm/blob/v0.31.0/LICENSE); the vllm/vllm-openai image is published by the vLLM project on Docker Hub.",
-    "The vLLM image is built on NVIDIA's CUDA 12.9 base image and bundles NVIDIA CUDA libraries under the NVIDIA CUDA Toolkit End User License Agreement (https://docs.nvidia.com/cuda/eula/). By pulling and using the CUDA base image used for the GPU check you accept the NVIDIA Deep Learning Container License (https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license).",
+    "The vLLM image is built on NVIDIA's CUDA 13.0 base image and bundles NVIDIA CUDA libraries under the NVIDIA CUDA Toolkit End User License Agreement (https://docs.nvidia.com/cuda/eula/). By pulling and using the CUDA base image used for the GPU check you accept the NVIDIA Deep Learning Container License (https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license).",
     "Both images bundle third-party and open-source software, such as PyTorch, FlashInfer and Hugging Face Transformers in the vLLM image, under their own licenses.",
-    "This vLLM build needs an NVIDIA driver from the R575 branch or newer (CUDA 12.9)."
+    "This vLLM build needs an NVIDIA driver from the R580 branch or newer (CUDA 13.0)."
   ],
   "exclusions": [
     "Vision and other multimodal input is not supported in this release of the integration; models that ship a vision or audio encoder (Qwen3.5 and later, Gemma 4) run text-only.",

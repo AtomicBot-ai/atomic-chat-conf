@@ -946,11 +946,11 @@ The logs live in atomic-chat-core's checkout of branch
 
 ### vLLM descriptor (`vllm.json`)
 
-`vllm-0.31.0-cu129-r1` pins the vLLM project's own image
-`docker.io/vllm/vllm-openai:v0.31.0-cu129` (build commit
+`vllm-0.31.0-r1` pins the vLLM project's own image
+`docker.io/vllm/vllm-openai:v0.31.0` (build commit
 `db9527a46873454610df6dbedf79a36d6bf1a7f6`, the `v0.31.0` tag) for
-`linux/amd64` and `linux/arm64`, and the CUDA 12.9 base image
-`nvcr.io/nvidia/cuda:12.9.1-base-ubuntu24.04` for the GPU check. **Not
+`linux/amd64` and `linux/arm64`, and the CUDA 13.0 base image
+`nvcr.io/nvidia/cuda:13.0.2-base-ubuntu24.04` for the GPU check. **Not
 live-qualified yet**: every value below comes from the registry manifests,
 the vLLM source at that commit and the Hugging Face API on 2026-10-06. The
 live acceptance on an RTX 4070 Laptop (compute capability 8.9, 8 GB) under
@@ -960,18 +960,29 @@ the matrix rows that run on 8.9, the curated list and the memory overheads
 before the file reaches `main`; its findings are recorded in that change's
 `rulings/`.
 
-- **Why the `-cu129` variant.** The default `v0.31.0` tag is built on CUDA
-  13.0 (`cuda>=13.0`, the R580 branch); the `-cu129` build runs on any driver
-  of the R575 branch or newer. A high driver floor is exactly what
-  keeps TensorRT-LLM (R615) off many desktops, and vLLM is added for them.
-  NGC's `nvcr.io/nvidia/vllm` is not used: newer CUDA (higher floor), later
-  than upstream, and NGC terms on top.
-- **`minimum_driver_version` `575.0`.** The image's `NVIDIA_REQUIRE_CUDA` is
-  `cuda>=12.9` (`CUDA_VERSION` 12.9.1), and CUDA 12.9 needs the R575 branch on
+- **Why not the `-cu129` variant.** The first descriptor,
+  `vllm-0.31.0-cu129-r1`, pinned `v0.31.0-cu129` for its lower driver floor
+  (R575). That image cannot start: next to `torch 2.13.0+cu129` it ships
+  `torchcodec 0.17.0`, built for CUDA 13, whose `libtorchcodec_image.so` needs
+  `libnvrtc.so.13`; the image has only `libnvrtc.so.12`. The `vllm` command
+  imports `torchcodec` on start and does not catch that `OSError`, so every
+  model fails with "vLLM exited with code 1 before it was ready" (Windows
+  acceptance, 2026-10-06; a bare `python3 -c "import torchcodec"` in the image
+  fails the same way, without a GPU or any of core's flags). vLLM requires
+  `torchcodec >= 0.14` with no upper bound, so the `-cu129` build picks up
+  whatever CUDA 13 wheel is current. The default tag is CUDA 13.0 throughout.
+  `vllm-0.31.0-cu129-r1` never reached `main`; an engine installed from it on
+  a development machine is removed and set up again. The cost is the driver
+  floor: R580 instead of R575, still well below TensorRT-LLM's R615, which is
+  what keeps it off many desktops and why vLLM is added. NGC's
+  `nvcr.io/nvidia/vllm` is not used: newer CUDA (higher floor), later than
+  upstream, and NGC terms on top.
+- **`minimum_driver_version` `580.0`.** The image's `NVIDIA_REQUIRE_CUDA` is
+  `cuda>=13.0` (`CUDA_VERSION` 13.0.2), and CUDA 13.0 needs the R580 branch on
   consumer cards, so the floor is that branch's first version, by the same
   rule as TensorRT-LLM (see `minimum_driver_version` above). The image's
-  datacenter brand exceptions (535, 550, 560, 565 and 570 branches) are not
-  modelled. The probe image is CUDA 12.9 as well, so the GPU check does not
+  datacenter brand exceptions (535, 550, 565, 570 and 575 branches) are not
+  modelled. The probe image is CUDA 13.0 as well, so the GPU check does not
   raise the floor.
 - **`minimum_compute_capability` `8.0`** (Ampere), the same as
   TensorRT-LLM. The amd64 image also carries Turing (7.5) kernels, but no
@@ -1027,8 +1038,8 @@ before the file reaches `main`; its findings are recorded in that change's
   left out: their unquantized embeddings and encoders keep even E2B at
   8.3 GB.
 - **`download_bytes`** is the larger platform's compressed layers (arm64,
-  11.8 GB); **`required_disk_bytes`** adds the extracted size sampled the
-  same way as for TensorRT-LLM, 35 GiB.
+  10.1 GB); **`required_disk_bytes`** adds the extracted size sampled the
+  same way as for TensorRT-LLM, 28 GiB.
 - **Privacy.** core starts the container with vLLM's usage statistics off
   (`VLLM_NO_USAGE_STATS=1`, `DO_NOT_TRACK=1`) and Hugging Face offline: the
   image itself reports usage to `stats.vllm.ai` by default
@@ -1050,11 +1061,11 @@ repoint the tags:
 ```bash
 docker buildx imagetools inspect nvcr.io/nvidia/tensorrt-llm/release:1.3.0rc29
 docker buildx imagetools inspect nvcr.io/nvidia/cuda:13.4.1-base-ubuntu24.04
-docker buildx imagetools inspect docker.io/vllm/vllm-openai:v0.31.0-cu129
-docker buildx imagetools inspect nvcr.io/nvidia/cuda:12.9.1-base-ubuntu24.04
+docker buildx imagetools inspect docker.io/vllm/vllm-openai:v0.31.0
+docker buildx imagetools inspect nvcr.io/nvidia/cuda:13.0.2-base-ubuntu24.04
 
 # Same without Docker: anonymous registry token, then the manifest list.
-for ref in nvidia/tensorrt-llm/release:1.3.0rc29 nvidia/cuda:13.4.1-base-ubuntu24.04 nvidia/cuda:12.9.1-base-ubuntu24.04; do
+for ref in nvidia/tensorrt-llm/release:1.3.0rc29 nvidia/cuda:13.4.1-base-ubuntu24.04 nvidia/cuda:13.0.2-base-ubuntu24.04; do
   repo=${ref%:*} tag=${ref##*:}
   T=$(curl -s "https://nvcr.io/proxy_auth?scope=repository:$repo:pull" | jq -r .token)
   curl -s -H "Authorization: Bearer $T" \
@@ -1067,7 +1078,7 @@ done
 T=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:vllm/vllm-openai:pull" | jq -r .token)
 curl -s -H "Authorization: Bearer $T" \
   -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json" \
-  https://registry-1.docker.io/v2/vllm/vllm-openai/manifests/v0.31.0-cu129 |
+  https://registry-1.docker.io/v2/vllm/vllm-openai/manifests/v0.31.0 |
   jq -r '.manifests[] | "\(.platform.os)/\(.platform.architecture) \(.digest)"'
 ```
 
