@@ -23,10 +23,12 @@ const MIRROR_DOWNLOAD_BASE =
   'https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download'
 
 // What the Atomic Chat backend matrix can actually use. Everything else that
-// upstream publishes (android, xcframework, ui, s390x, sycl, openvino, arm64
-// Linux, macos-x64) is deliberately absent: mirroring a build no client asks
-// for costs release storage and buys nothing. Windows arm64 is mirrored for
-// the Windows on ARM app build: CPU, OpenCL (Qualcomm Adreno) and CUDA 13.
+// upstream publishes (android, xcframework, ui, s390x, sycl, openvino, the
+// Linux Snapdragon build, x64 Linux CUDA, macos-x64) is deliberately absent:
+// mirroring a build no client asks for costs release storage and buys
+// nothing. Windows arm64 is mirrored for the Windows on ARM app build: CPU,
+// OpenCL (Qualcomm Adreno) and CUDA 13. Linux arm64 is mirrored for the
+// Linux ARM app build: CPU, Vulkan and CUDA 13.
 //
 // `required: false` marks a variant upstream only started shipping recently.
 // A tag that predates it still mirrors fine; the client's matrix simply will
@@ -60,6 +62,17 @@ const WHITELIST = [
     platform: 'linux',
     pattern: 'ubuntu-vulkan-x64\\.tar\\.gz',
     required: true,
+  },
+  { platform: 'linux', pattern: 'ubuntu-arm64\\.tar\\.gz', required: true },
+  {
+    platform: 'linux',
+    pattern: 'ubuntu-vulkan-arm64\\.tar\\.gz',
+    required: false,
+  },
+  {
+    platform: 'linux',
+    pattern: 'ubuntu-cuda-\\d+\\.\\d+-arm64\\.tar\\.gz',
+    required: false,
   },
   { platform: 'macos', pattern: 'macos-arm64\\.tar\\.gz', required: true },
 ]
@@ -140,16 +153,22 @@ async function sha256File(path) {
 }
 
 /**
- * The CUDA runtime companions stay on the ggml-org CDN: the DLLs inside are
- * NVIDIA's own, already signed by NVIDIA, and re-signing them would triple
- * the size of every mirrored tag for no gain. They carry no `sha256` here,
- * which is what marks an asset as "not mirrored" for readers of this file.
+ * The CUDA runtime companions stay on the ggml-org CDN: the libraries inside
+ * are NVIDIA's own (the Windows DLLs already signed by NVIDIA), and mirroring
+ * them would triple the size of every mirrored tag for no gain. They carry no
+ * `sha256` here, which is what marks an asset as "not mirrored" for readers
+ * of this file. The Linux companion carries the tag in its name, the Windows
+ * one does not.
  */
 function cudartCompanions(mirroredNames) {
   const companions = new Set()
   for (const name of mirroredNames) {
-    const match = /-bin-win-cuda-(\d+\.\d+)-(x64|arm64)\.zip$/.exec(name)
-    if (match) companions.add(`cudart-llama-bin-win-cuda-${match[1]}-${match[2]}.zip`)
+    const win = /-bin-win-cuda-(\d+\.\d+)-(x64|arm64)\.zip$/.exec(name)
+    if (win) companions.add(`cudart-llama-bin-win-cuda-${win[1]}-${win[2]}.zip`)
+    const linux = /^llama-(b\d+)-bin-ubuntu-cuda-(\d+\.\d+)-(x64|arm64)\.tar\.gz$/.exec(name)
+    if (linux) {
+      companions.add(`cudart-llama-${linux[1]}-bin-ubuntu-cuda-${linux[2]}-${linux[3]}.tar.gz`)
+    }
   }
   return [...companions].sort().map((name) => ({ name }))
 }

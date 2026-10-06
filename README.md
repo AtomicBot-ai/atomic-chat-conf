@@ -376,7 +376,7 @@ then the `icon` value here.
 
 [`backends/manifest.json`](backends/manifest.json) is the catalog of
 downloadable `llama.cpp` backend builds the Atomic Chat client offers on
-**Windows, Linux x64 and Apple Silicon**. It exists to dodge GitHub's unauthenticated API
+**Windows, Linux (x64 and arm64) and Apple Silicon**. It exists to dodge GitHub's unauthenticated API
 rate limit (60 req/hr/IP): the client used to resolve the backend list
 straight from `api.github.com/repos/ggml-org/llama.cpp/releases/latest`,
 which dead-ended on shared / NAT / VPN networks (see ATO-199). It now reads
@@ -416,7 +416,10 @@ is what a tag we have not mirrored has to do.
   `cudart-*` companions stay on the upstream CDN (their DLLs are NVIDIA's
   own, already signed by NVIDIA, and mirroring them would triple the size of
   every release for no gain).
-- Windows x64, Linux x64 and `macos-arm64` assets are listed. macOS used to be
+- Windows (x64 and arm64), Linux (x64 and arm64) and `macos-arm64` assets are
+  listed. Linux arm64 is CPU, Vulkan and CUDA 13; the Snapdragon build is not
+  mirrored. The Linux CUDA companion carries the tag in its name
+  (`cudart-llama-<tag>-bin-ubuntu-cuda-<toolkit>-arm64.tar.gz`). macOS used to be
   bundled-only and was deliberately omitted; it now resolves from this
   manifest like the other platforms, so an engine update reaches macOS users
   without an Atomic Chat release. The client still ships a bundled macOS build
