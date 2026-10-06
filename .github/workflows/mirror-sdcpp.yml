@@ -13,6 +13,14 @@ name: Mirror upstream stable-diffusion.cpp
 # (macOS-26.6.2, Ubuntu-24.04), so every asset is matched here by pattern and
 # written to the manifest under an explicit `backend` id. The client selects
 # on that id and never derives anything from the file name.
+#
+# Upstream publishes nothing for arm64 Linux or Windows on Arm. Those four
+# archives (linux-cuda13-arm64, linux-cpu-arm64, win-cuda13-arm64,
+# win-cpu-arm64) come from the Atomic fork's release of the SAME tag
+# (AtomicBot-ai/stable-diffusion.cpp, release-arm64.yml), built from the
+# unmodified upstream source. They are optional: a tag the fork has not built
+# mirrors as before. The manifest keeps the upstream tag name, because the
+# client matches installs on it and a new name would re-download every engine.
 
 on:
   workflow_dispatch:
@@ -27,10 +35,23 @@ on:
         default: "3"
         type: string
       publish_manifest:
-        description: "Commit backends/sdcpp-manifest.json so clients pick the tag up"
+        description: "Commit the manifest (see manifest_path) so clients pick the tag up"
         required: false
         default: true
         type: boolean
+      atomic_repo:
+        description: "Repository whose release of the same tag supplies the arm64 archives (empty: none)"
+        required: false
+        default: "AtomicBot-ai/stable-diffusion.cpp"
+        type: string
+      manifest_path:
+        description: "Manifest to write: the live one, or the staging one that only test builds read"
+        required: false
+        default: "backends/sdcpp-manifest.json"
+        type: choice
+        options:
+          - backends/sdcpp-manifest.json
+          - backends/sdcpp-manifest.staging.json
 
 concurrency:
   group: mirror-sdcpp
@@ -69,12 +90,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
+          ATOMIC_REPO: ${{ inputs.atomic_repo }}
         run: |
           set -euo pipefail
           node <<'EOF'
           const fs = require('fs')
           const tag = process.env.TAG
           const UPSTREAM = 'leejet/stable-diffusion.cpp'
+          const ATOMIC = (process.env.ATOMIC_REPO || '').trim()
+          if (ATOMIC && !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(ATOMIC)) throw new Error(`atomic_repo ${ATOMIC} is not owner/name`)
           const MATRIX = [
             { backend: 'macos-arm64', platform: 'macos', required: true,
               pattern: /^sd-master-[0-9a-f]{7}-bin-Darwin-macOS-[\d.]+-arm64\.zip$/ },
@@ -96,22 +120,45 @@ jobs:
             // applies to every asset the manifest lists.
             { backend: 'win-cudart-cu12', platform: 'passthrough', required: false, companion: true,
               pattern: /^cudart-sd-bin-win-cu12-x64\.zip$/ },
+            // Atomic-built arm64 archives. CUDA runtime DLLs/sonames are inside
+            // them, so there is no companion; Windows ones are signed like
+            // upstream's (already-signed NVIDIA and VC++ DLLs keep their own).
+            { backend: 'linux-cuda13-arm64', platform: 'passthrough', required: false, repo: ATOMIC,
+              pattern: /^sd-master-[0-9a-f]{7}-bin-Linux-Ubuntu-[\d.]+-aarch64-cuda13\.zip$/ },
+            { backend: 'linux-cpu-arm64', platform: 'passthrough', required: false, repo: ATOMIC,
+              pattern: /^sd-master-[0-9a-f]{7}-bin-Linux-Ubuntu-[\d.]+-aarch64\.zip$/ },
+            { backend: 'win-cuda13-arm64', platform: 'windows', required: false, repo: ATOMIC,
+              pattern: /^sd-master-[0-9a-f]{7}-bin-win-cuda13-arm64\.zip$/ },
+            { backend: 'win-cpu-arm64', platform: 'windows', required: false, repo: ATOMIC,
+              pattern: /^sd-master-[0-9a-f]{7}-bin-win-cpu-arm64\.zip$/ },
           ]
 
-          async function main() {
-            const resp = await fetch(`https://api.github.com/repos/${UPSTREAM}/releases/tags/${tag}`, {
+          const releases = new Map()
+          async function releaseOf(repo) {
+            if (releases.has(repo)) return releases.get(repo)
+            const resp = await fetch(`https://api.github.com/repos/${repo}/releases/tags/${tag}`, {
               headers: {
                 Accept: 'application/vnd.github+json',
                 'User-Agent': 'atomic-chat-conf-mirror-sdcpp',
                 Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
               },
             })
-            if (!resp.ok) throw new Error(`GitHub API ${resp.status} for ${UPSTREAM} tag ${tag}: ${await resp.text()}`)
-            const release = await resp.json()
+            let release = null
+            if (resp.ok) release = await resp.json()
+            else if (resp.status === 404 && repo !== UPSTREAM) console.error(`::warning::${repo} has no release ${tag}; mirroring without its arm64 archives`)
+            else throw new Error(`GitHub API ${resp.status} for ${repo} tag ${tag}: ${await resp.text()}`)
+            releases.set(repo, release)
+            return release
+          }
+
+          async function main() {
             const selected = []
             const missing = []
             for (const entry of MATRIX) {
-              const matches = (release.assets ?? []).filter((a) => entry.pattern.test(a.name))
+              const repo = entry.repo === undefined ? UPSTREAM : entry.repo
+              if (!repo) continue
+              const release = await releaseOf(repo)
+              const matches = (release?.assets ?? []).filter((a) => entry.pattern.test(a.name))
               if (matches.length === 0) {
                 if (entry.required) missing.push(entry.pattern.source)
                 continue
@@ -125,13 +172,14 @@ jobs:
                 size: asset.size,
                 platform: entry.platform,
                 companion: entry.companion === true,
-                url: `https://github.com/${UPSTREAM}/releases/download/${tag}/${asset.name}`,
+                repo,
+                url: `https://github.com/${repo}/releases/download/${tag}/${asset.name}`,
               })
             }
             if (missing.length > 0) throw new Error(`Upstream tag ${tag} is missing required assets:\n  ${missing.join('\n  ')}`)
             selected.sort((a, b) => a.backend.localeCompare(b.backend))
             fs.writeFileSync('assets.json', JSON.stringify({ tag, assets: selected }, null, 2) + '\n')
-            for (const a of selected) console.error(`  ${a.platform.padEnd(12)} ${a.backend.padEnd(20)} ${a.name} (${(a.size / 1024 ** 2).toFixed(1)} MiB)`)
+            for (const a of selected) console.error(`  ${a.platform.padEnd(12)} ${a.backend.padEnd(20)} ${a.name} (${(a.size / 1024 ** 2).toFixed(1)} MiB) from ${a.repo}`)
           }
           main().catch((err) => { console.error(err.message); process.exit(1) })
           EOF
@@ -373,15 +421,20 @@ jobs:
           {
             printf 'Mirror of [leejet/stable-diffusion.cpp %s](https://github.com/leejet/stable-diffusion.cpp/releases/tag/%s).\n\n' "$TAG" "$TAG"
             printf 'Windows binaries are Authenticode-signed and macOS binaries carry a Developer ID signature with hardened runtime. Linux archives and the CUDA runtime companion are mirrored byte-for-byte.\n\n'
+            atomic="$(jq -r --arg up leejet/stable-diffusion.cpp '[.assets[] | select(.repo != $up) | .repo] | unique | join(", ")' selection/assets.json)"
+            if [ -n "$atomic" ]; then
+              printf 'The arm64 archives (Linux and Windows on Arm) are built by [%s](https://github.com/%s/releases/tag/%s) from the same upstream tag; upstream publishes none.\n\n' "$atomic" "$atomic" "$TAG"
+            fi
             printf 'Consumed by Atomic Chat through `backends/sdcpp-manifest.json`.\n'
           } > notes.md
           gh release create "$TAG" dist/* \
             --title "stable-diffusion.cpp $TAG (signed mirror)" \
             --notes-file notes.md
 
-      - name: Regenerate backends/sdcpp-manifest.json
+      - name: Regenerate ${{ inputs.manifest_path }}
         env:
           TAG: ${{ inputs.tag }}
+          MANIFEST: ${{ inputs.manifest_path }}
         run: |
           set -euo pipefail
           node <<'EOF'
@@ -409,27 +462,31 @@ jobs:
             download_base: 'https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download',
             assets,
           }
-          fs.writeFileSync('backends/sdcpp-manifest.json', JSON.stringify(manifest, null, 2) + '\n')
-          console.error(`Wrote backends/sdcpp-manifest.json: tag ${tag}, ${assets.length} asset(s)`)
+          const out = process.env.MANIFEST
+          if (!['backends/sdcpp-manifest.json', 'backends/sdcpp-manifest.staging.json'].includes(out)) throw new Error(`refusing to write ${out}`)
+          fs.writeFileSync(out, JSON.stringify(manifest, null, 2) + '\n')
+          console.error(`Wrote ${out}: tag ${tag}, ${assets.length} asset(s)`)
           EOF
 
       - name: Validate the regenerated manifest
         run: |
           npm install -g ajv-cli@5
-          ajv validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.json --strict=false
+          ajv validate -s backends/sdcpp-schema.json -d "${{ inputs.manifest_path }}" --strict=false
 
       - name: Commit manifest
         if: ${{ inputs.publish_manifest }}
         run: |
           set -euo pipefail
-          if git diff --quiet backends/sdcpp-manifest.json; then
-            echo "Manifest already points at ${{ inputs.tag }}; nothing to commit"
+          MANIFEST="${{ inputs.manifest_path }}"
+          git add -N "$MANIFEST"
+          if git diff --quiet -- "$MANIFEST"; then
+            echo "$MANIFEST already points at ${{ inputs.tag }}; nothing to commit"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add backends/sdcpp-manifest.json
-          git commit -m "chore(sdcpp-manifest): mirror upstream ${{ inputs.tag }}"
+          git add "$MANIFEST"
+          git commit -m "chore(sdcpp-manifest): mirror upstream ${{ inputs.tag }} into $(basename "$MANIFEST")"
           git push
 
       - name: Prune old mirrored releases

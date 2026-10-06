@@ -108,6 +108,9 @@ validate:
 	node .github/scripts/decision-catalog-check.mjs
 	npx --yes ajv-cli@5 validate -s backends/schema.json -d backends/manifest.json --strict=false
 	npx --yes ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
+	npx --yes ajv-cli@5 validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.json --strict=false
+	@if [ -f backends/sdcpp-manifest.staging.json ]; then \
+		npx --yes ajv-cli@5 validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.staging.json --strict=false; fi
 	npx --yes ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
 	npx --yes ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
 	npx --yes ajv-cli@5 validate -s runtimes/environments/windows.schema.json -d runtimes/environments/windows.json --strict=true
