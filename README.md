@@ -510,7 +510,7 @@ No released atomic-chat-core reads `runtimes/`: core 0.7.0–0.7.4 and every
 already-released Atomic Chat app and CLI never fetch or parse this directory,
 so publishing or changing a document here has no effect on them. The
 environment manifests require core **0.7.5** or later; the current descriptor
-`tensorrt-llm-1.3.0rc29-r2` requires core **0.7.6** (its
+`tensorrt-llm-1.3.0rc29-r3` requires core **0.7.6** (its
 `minimum_core_version`): 0.7.5 refuses its architecture names with an
 underscore and cannot read mixed-precision checkpoints, so it keeps whatever
 descriptor it accepted before.
@@ -548,6 +548,13 @@ that already ship `layers_block_type` are not affected, so
 `NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4` stays listed. The NemotronH
 architectures stay listed; the dense checkpoints come back once an image's
 `transformers` parses `-`.
+`tensorrt-llm-1.3.0rc29-r3` is `rc29-r2` with `minimum_driver_version`
+lowered from `615.65.02` to `615.0`, the start of the R615 branch. `615.65.02`
+is the image's `CUDA_DRIVER_VERSION` label — the driver the CUDA 13.4.1 build
+was made with, not a requirement: CUDA 13.4's release notes map the toolkit to
+a driver *branch* (R615), and every R615 driver runs CUDA 13.4. The patch-level
+floor blocked the first NVIDIA Windows on Arm machines (2026-10-06), whose
+Windows driver 616 hands WSL the R615 libraries `615.41`.
 
 ### Installed engines stay pinned to their descriptor
 
@@ -576,10 +583,12 @@ at that point.
    `minimum_compute_capability` from that tag's own source (its parser
    registries, its hardware-support matrix), rather than carrying over the
    previous descriptor's values. Re-derive `minimum_driver_version` as the
-   higher of the engine image's `CUDA_DRIVER_VERSION` label and the minimum
-   driver for the probe image's own CUDA version (from its
-   `NVIDIA_REQUIRE_CUDA` constraint / that CUDA Toolkit version's release
-   notes).
+   first version of the driver branch that the probe image's own CUDA version
+   needs (from its `NVIDIA_REQUIRE_CUDA` constraint and that CUDA Toolkit
+   version's release notes, "CUDA Toolkit and Corresponding Driver Branch":
+   CUDA 13.4 → R615 → `615.0`). The engine image's `CUDA_DRIVER_VERSION` label
+   is the driver its CUDA build was made with, not a floor; since CUDA 13.4 the
+   toolkit no longer bundles a driver.
 4. Re-derive `curated_models`: re-check each repo is still ungated, re-resolve
    `revision` to the commit its `main` branch currently points at, and
    recompute `inventory_digest` (below).
@@ -614,14 +623,17 @@ at that point.
   --query-gpu=driver_version`, splits both that value and this field on
   `.`, parses each component as a base-10 integer, pads whichever of the two
   has fewer components with zeros, and compares them as integer tuples; the
-  host is blocked iff its tuple is lower than this field's. The value itself
-  is the **higher of**: (1) the engine image's own `CUDA_DRIVER_VERSION`
-  label (the driver NVIDIA bundled with/tested that CUDA build against), and
-  (2) the minimum driver for the `probe_image`'s own CUDA version, read from
-  that image's `NVIDIA_REQUIRE_CUDA` constraint and cross-checked against
-  that CUDA Toolkit version's release notes' "CUDA Toolkit and Corresponding
-  Driver Versions" table — this is the **non-datacenter (GeForce/consumer)
-  floor**, since `NVIDIA_REQUIRE_CUDA`'s own brand exceptions only relax it
+  host is blocked iff its tuple is lower than this field's. On Windows core
+  compares the version of the NVIDIA libraries Windows hands WSL
+  (`/usr/lib/wsl/lib`, Linux numbering: Windows driver 616 → `615.41`), not
+  the Windows driver number. The value itself is the first version of the
+  driver branch the `probe_image`'s own CUDA version needs, read from that
+  image's `NVIDIA_REQUIRE_CUDA` constraint and that CUDA Toolkit version's
+  release notes ("CUDA Toolkit and Corresponding Driver Branch": CUDA 13.4 →
+  R615 → `615.0`). It is **not** the engine image's `CUDA_DRIVER_VERSION`
+  label: that is the driver its CUDA build was made with, and a patch-level
+  floor from it blocks drivers of the same branch that run the image. This
+  is the **non-datacenter (GeForce/consumer) floor**, since `NVIDIA_REQUIRE_CUDA`'s own brand exceptions only relax it
   for datacenter/vGPU brands. **This is deliberately stricter than some
   hosts need**: `probe_image`'s own `NVIDIA_REQUIRE_CUDA` carries
   CUDA-minor-version-compatibility exceptions that let specific
@@ -631,10 +643,9 @@ at that point.
   datacenter hosts on an older driver that forward compatibility would
   otherwise have let through — a deliberate simplification favoring one
   clear blocker message over modeling every brand exception. To update it
-  for a new engine tag: read the new engine image's `CUDA_DRIVER_VERSION`
-  label, separately read the new probe image's minimum driver for its own
-  CUDA version (`NVIDIA_REQUIRE_CUDA` / that CUDA Toolkit version's release
-  notes), and take the higher of the two.
+  for a new engine tag: read the new probe image's CUDA version
+  (`NVIDIA_REQUIRE_CUDA`), find its driver branch in that CUDA Toolkit
+  version's release notes, and write the branch's first version (`<branch>.0`).
 - **`quantization[].excluded_compute_capabilities`** lists compute
   capabilities where this engine release does **not** support the format,
   even though the capability is numerically above the format's own
@@ -771,10 +782,11 @@ the TensorRT-LLM source at tag `v1.3.0rc29` and the Hugging Face API on
 `inventory_digest`; nothing has run on a card yet. What changed from
 `tensorrt-llm-1.2.1-r2`:
 
-- **Driver:** the image is CUDA 13.4 with `CUDA_DRIVER_VERSION` 615.65.02,
+- **Driver:** the image is CUDA 13.4 (`CUDA_DRIVER_VERSION` label 615.65.02),
   and CUDA 13.4 needs the R615 branch on consumer cards, so
-  `minimum_driver_version` is `615.65.02`. Hosts on R580–R610 are blocked at
-  the probe until they update the driver (615.71.09 is public).
+  `minimum_driver_version` is `615.0` (since `rc29-r3`; `r1` and `r2` carried
+  the label's `615.65.02`). Hosts on R580–R610 are blocked at the probe until
+  they update the driver.
 - **Architectures:** re-derived from `_arch_index.py`. The vision-language
   architectures whose text path serves chat are listed for the families the
   curated list carries (Qwen3.5/3.6/3.8, Gemma 4, Gemma 3, Mistral 3,

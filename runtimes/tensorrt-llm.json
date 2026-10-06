@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "descriptor_id": "tensorrt-llm-1.3.0rc29-r2",
+  "descriptor_id": "tensorrt-llm-1.3.0rc29-r3",
   "engine_id": "tensorrt-llm",
   "adapter_id": "tensorrt-llm",
   "adapter_contract_version": 1,
@@ -26,7 +26,7 @@
   },
   "minimum_core_version": "0.7.6",
   "minimum_app_version": "2.0.49",
-  "minimum_driver_version": "615.65.02",
+  "minimum_driver_version": "615.0",
   "minimum_compute_capability": "8.0",
   "supported_architectures": [
     "AfmoeForCausalLM",
@@ -463,7 +463,7 @@
     "By pulling and using the CUDA base image used for the GPU check you accept the NVIDIA Deep Learning Container License (https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license).",
     "Both images bundle third-party and open-source software, such as PyTorch in the TensorRT-LLM image, under its own licenses; TensorRT-LLM lists these components in its ATTRIBUTIONS files at https://github.com/NVIDIA/TensorRT-LLM/tree/v1.3.0rc29.",
     "TensorRT-LLM 1.3.0rc29 is a pre-release build of TensorRT-LLM 1.3, not a final release.",
-    "This TensorRT-LLM release needs NVIDIA driver 615.65.02 or newer (the R615 branch, CUDA 13.4)."
+    "This TensorRT-LLM release needs an NVIDIA driver from the R615 branch or newer (CUDA 13.4)."
   ],
   "exclusions": [
     "Vision and other multimodal input is not supported in this release of the integration; models that ship a vision or audio encoder (Qwen3.5 and later, Gemma 4) run text-only.",
