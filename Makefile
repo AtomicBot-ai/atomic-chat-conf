@@ -89,6 +89,9 @@ verify-release:
 	codesign --verify --strict "$$WORK/$$ROOT/llama-server"; \
 	echo "macOS asset OK. Windows assets need 'signtool verify /pa' on a Windows host."
 
+# Engine descriptors (runtimes/<engine_id>.json) are not named here: the
+# runtime-descriptor-*.test.mjs files discover every one of them, schema
+# included, so a new engine's descriptor is checked without editing this list.
 validate:
 	node --test .github/scripts/recommendation-tiers.test.mjs
 	node --test .github/scripts/runtime-descriptor.test.mjs
@@ -108,7 +111,6 @@ validate:
 	node .github/scripts/decision-catalog-check.mjs
 	npx --yes ajv-cli@5 validate -s backends/schema.json -d backends/manifest.json --strict=false
 	npx --yes ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
-	npx --yes ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
 	npx --yes ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
 	npx --yes ajv-cli@5 validate -s runtimes/environments/windows.schema.json -d runtimes/environments/windows.json --strict=true
 	npx --yes ajv-cli@5 validate -s runtimes/environments/windows-arm64.schema.json -d runtimes/environments/windows-arm64.json --strict=true

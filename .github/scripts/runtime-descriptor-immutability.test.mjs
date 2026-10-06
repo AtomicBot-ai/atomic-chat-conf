@@ -5,18 +5,21 @@ import {
   checkDescriptorImmutability,
   readDescriptorAtRef,
 } from './runtime-descriptor-immutability.mjs'
+import { listDescriptorPaths } from './runtime-descriptor-files.mjs'
 
 // descriptor_id immutability (R24 / F2): a published descriptor_id's content
 // must never change — core caches an accepted descriptor by this id and pins
 // an installation to it, so editing a published descriptor's fields in place
 // would silently change what an already-installed engine is compared
-// against (see README "descriptor_id is immutable"). This compares the
-// working tree's runtimes/tensorrt-llm.json against the same file read from
-// a base git ref.
+// against (see README "descriptor_id is immutable"). This compares every
+// working-tree runtimes/<engine_id>.json against the same file read from a
+// base git ref; a descriptor absent at the base (a new engine) has nothing to
+// compare against and passes.
 //
 // The pure comparison (checkDescriptorImmutability) is tested in isolation
-// first, against in-memory objects, with no git or disk involved. The single
-// integration test at the bottom exercises the real base ref via git.
+// first, against in-memory objects, with no git or disk involved. The
+// integration tests at the bottom exercise the real base ref via git, one per
+// descriptor file.
 
 const descriptor = JSON.parse(
   readFileSync(new URL('../../runtimes/tensorrt-llm.json', import.meta.url), 'utf8')
@@ -65,24 +68,44 @@ test('immutability: absent base descriptor -> ok', () => {
   assert.equal(result.ok, true)
 })
 
+// "Правка опубликованного дескриптора vLLM": the check is per file, so a vLLM
+// descriptor already in main fails the same way TensorRT-LLM's does when its
+// quantization matrix changes under the same descriptor_id.
+test('immutability: published vLLM descriptor with a changed quantization matrix and the same descriptor_id -> fail', () => {
+  const published = JSON.parse(
+    readFileSync(new URL('../fixtures/runtimes/valid-vllm.json', import.meta.url), 'utf8')
+  )
+  const edited = JSON.parse(JSON.stringify(published))
+  edited.quantization = edited.quantization.filter((q) => q.format !== 'autoawq_w4a16')
+  const result = checkDescriptorImmutability(published, edited)
+  assert.equal(result.ok, false)
+  assert.match(result.reason, /descriptor_id "vllm-fixture-1" is published with different content/)
+  assert.match(result.reason, /immutable/)
+})
+
+const DESCRIPTOR = 'runtimes/tensorrt-llm.json'
+
 test('readDescriptorAtRef: all-zeros ref (push "before" on a brand-new branch) is treated as absent', () => {
-  assert.equal(readDescriptorAtRef('0000000000000000000000000000000000000000'), null)
+  assert.equal(readDescriptorAtRef('0000000000000000000000000000000000000000', DESCRIPTOR), null)
 })
 
 test('readDescriptorAtRef: empty ref is treated as absent', () => {
-  assert.equal(readDescriptorAtRef(''), null)
+  assert.equal(readDescriptorAtRef('', DESCRIPTOR), null)
 })
 
 test('readDescriptorAtRef: a ref that does not exist in this repo is treated as absent', () => {
-  assert.equal(readDescriptorAtRef('refs/this-ref-does-not-exist-xyz'), null)
+  assert.equal(readDescriptorAtRef('refs/this-ref-does-not-exist-xyz', DESCRIPTOR), null)
 })
 
-test(`descriptor_id immutability against base ref "${BASE_REF}" (env RUNTIME_DESCRIPTOR_BASE_REF, default origin/main)`, () => {
-  const base = readDescriptorAtRef(BASE_REF)
-  if (base === null) {
-    console.log(`  base ref/file absent at "${BASE_REF}" — nothing to compare, passing`)
-    return
-  }
-  const result = checkDescriptorImmutability(base, descriptor)
-  assert.equal(result.ok, true, result.reason)
-})
+for (const path of listDescriptorPaths()) {
+  test(`${path}: descriptor_id immutability against base ref "${BASE_REF}" (env RUNTIME_DESCRIPTOR_BASE_REF, default origin/main)`, () => {
+    const base = readDescriptorAtRef(BASE_REF, path)
+    if (base === null) {
+      console.log(`  ${path} absent at "${BASE_REF}" (or the ref is) — nothing to compare, passing`)
+      return
+    }
+    const current = JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8'))
+    const result = checkDescriptorImmutability(base, current)
+    assert.equal(result.ok, true, result.reason)
+  })
+}

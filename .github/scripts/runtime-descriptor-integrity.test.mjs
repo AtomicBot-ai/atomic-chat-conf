@@ -1,16 +1,21 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { test } from 'node:test'
+import { REPO_ROOT, engineIdFromPath, listDescriptorPaths } from './runtime-descriptor-files.mjs'
 
-// Cross-field integrity for runtimes/tensorrt-llm.json that the JSON Schema
+// Cross-field integrity for every runtimes/<engine_id>.json that the JSON Schema
 // cannot express (schema.json can only constrain one field/subtree at a
 // time). Each check is a pure function over an in-memory descriptor object,
 // so it is testable against a deliberately broken clone without touching
 // disk — and so `make validate` and CI can both run the same node:test file
 // (see runtime-descriptor.test.mjs for the schema-shape half of this gate).
+// Descriptors are discovered, not named (runtime-descriptor-files.mjs).
 
-const DESCRIPTOR_PATH = new URL('../../runtimes/tensorrt-llm.json', import.meta.url)
-const descriptor = JSON.parse(readFileSync(DESCRIPTOR_PATH, 'utf8'))
+const readJson = (path) => JSON.parse(readFileSync(join(REPO_ROOT, path), 'utf8'))
+// The rejection tests below break a clone of the TensorRT-LLM descriptor: it is
+// the one whose formats (fp8, its 8.0 floor) the assertions name.
+const descriptor = readJson('runtimes/tensorrt-llm.json')
 const clone = (value) => JSON.parse(JSON.stringify(value))
 
 function checkUniqueSupportedArchitectures(d) {
@@ -132,14 +137,41 @@ function checkDescriptorIntegrity(d) {
   return CHECKS.flatMap((check) => check(d))
 }
 
-test('the committed tensorrt-llm.json descriptor passes every integrity check', () => {
-  assert.deepEqual(checkDescriptorIntegrity(descriptor), [])
-})
+// The file name is the engine's identity in conf: core fetches runtimes/<engine_id>.json for the
+// engine it has an adapter for and refuses a descriptor whose engine_id is another engine's. A
+// mismatch here would publish a descriptor that every core rejects, so it fails the gate instead.
+// Kept out of CHECKS because it needs the path, and fixtures are not named after an engine.
+function checkEngineIdMatchesFileName(d, path) {
+  const expected = engineIdFromPath(path)
+  if (d.engine_id === expected) return []
+  return [`${path}: engine_id "${d.engine_id}" must equal the file name "${expected}"`]
+}
 
-test('the valid.json fixture passes every integrity check', () => {
-  const fixturePath = new URL('../fixtures/runtimes/valid.json', import.meta.url)
-  const fixture = JSON.parse(readFileSync(fixturePath, 'utf8'))
-  assert.deepEqual(checkDescriptorIntegrity(fixture), [])
+const checkDescriptorFile = (path) => {
+  const d = readJson(path)
+  return [...checkEngineIdMatchesFileName(d, path), ...checkDescriptorIntegrity(d)]
+}
+
+for (const path of listDescriptorPaths()) {
+  test(`${path} passes every integrity check`, () => {
+    assert.deepEqual(checkDescriptorFile(path), [])
+  })
+}
+
+for (const fixture of ['valid.json', 'valid-vllm.json']) {
+  test(`the ${fixture} fixture passes every integrity check`, () => {
+    assert.deepEqual(checkDescriptorIntegrity(readJson(`.github/fixtures/runtimes/${fixture}`)), [])
+  })
+}
+
+// "Имя файла не совпадает с движком": runtimes/vllm.json carrying engine_id tensorrt-llm. The
+// fixture is otherwise valid (its descriptor_id even matches its engine_id), so the file-name rule
+// is the only one that can catch it.
+test('rejects: a vllm.json whose engine_id is tensorrt-llm', () => {
+  const [path] = listDescriptorPaths('.github/fixtures/runtimes/catalogs/engine-id-mismatch')
+  assert.deepEqual(checkDescriptorFile(path), [
+    '.github/fixtures/runtimes/catalogs/engine-id-mismatch/vllm.json: engine_id "tensorrt-llm" must equal the file name "vllm"',
+  ])
 })
 
 test('rejects: duplicate supported_architectures entry', () => {
@@ -225,11 +257,7 @@ test('rejects: fixture invalid-excluded-cc-below-minimum.json (schema-valid, onl
   // This fixture is deliberately NOT in runtime-descriptor.test.mjs's ajv-rejection list: the
   // schema has no cross-field awareness, so ajv accepts it. Proving it is still rejected means
   // running the real integrity check against it directly.
-  const fixturePath = new URL(
-    '../fixtures/runtimes/invalid-excluded-cc-below-minimum.json',
-    import.meta.url
-  )
-  const fixture = JSON.parse(readFileSync(fixturePath, 'utf8'))
+  const fixture = readJson('.github/fixtures/runtimes/invalid-excluded-cc-below-minimum.json')
   const errors = checkDescriptorIntegrity(fixture)
   assert.equal(errors.length, 1)
   assert.equal(

@@ -15,8 +15,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # descriptor_id and manifest_id immutability (below) read
-          # runtimes/tensorrt-llm.json and runtimes/environments/*.json at a
+          # descriptor_id and manifest_id immutability (below) read every
+          # runtimes/<engine_id>.json and runtimes/environments/*.json at a
           # base ref via `git show`; a shallow clone would make that ref
           # unreachable.
           fetch-depth: 0
@@ -665,13 +665,6 @@ jobs:
           console.log(`  updated_at: ${data.updated_at}`)
           EOF
 
-      - name: Validate runtime descriptor against schema
-        run: |
-          ajv validate \
-            -s runtimes/schema.json \
-            -d runtimes/tensorrt-llm.json \
-            --strict=true
-
       - name: Validate Linux environment manifest against schema
         run: |
           ajv validate \
@@ -693,12 +686,18 @@ jobs:
             -d runtimes/environments/windows-arm64.json \
             --strict=true
 
-      # Cross-field rules the schema cannot express (uniqueness, model_families
-      # ⊆ supported_architectures, descriptor_id and manifest_id prefixes,
-      # disk >= download, minimum_compute_capability as a floor) live in
-      # node:test scripts shared with `make validate`, not inlined here, so the local and CI
-      # gates cannot drift apart the way a copy-pasted heredoc could.
-      - name: Check runtime descriptor and environment manifest fixtures, integrity and immutability
+      # Engine descriptors are not named in this workflow: the
+      # runtime-descriptor-*.test.mjs scripts discover every runtimes/*.json
+      # except schema.json and run the schema (ajv --strict), integrity and
+      # immutability checks on each, so a new engine's descriptor is gated the
+      # moment it lands. Cross-field rules the schema cannot express
+      # (uniqueness, model_families ⊆ supported_architectures, engine_id equal
+      # to the file name, descriptor_id and manifest_id prefixes, disk >=
+      # download, minimum_compute_capability as a floor) live in the same
+      # node:test scripts shared with `make validate`, not inlined here, so the
+      # local and CI gates cannot drift apart the way a copy-pasted heredoc
+      # could.
+      - name: Check runtime descriptors and environment manifests (schema, fixtures, integrity, immutability)
         env:
           # PR: compare against the target branch. Push: compare against the
           # pre-push tip (an all-zeros `before`, on a brand-new branch, is
