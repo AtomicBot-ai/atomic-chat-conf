@@ -1,13 +1,13 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-10-02T13:00:00Z",
-  "version": "2.1.2",
-  "tag": "v2.1.2",
-  "release_url": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/tag/v2.1.2",
+  "updated_at": "2026-10-06T11:47:39Z",
+  "version": "2.1.8",
+  "tag": "v2.1.8",
+  "release_url": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/tag/v2.1.8",
   "downloads": {
-    "macos": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/download/v2.1.2/Atomic.Chat_2.1.2_universal.dmg",
-    "windows": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/download/v2.1.2/Atomic.Chat_2.1.2_x64-setup.exe",
-    "linux": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/download/v2.1.2/Atomic.Chat_2.1.2_amd64.AppImage"
+    "macos": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/download/v2.1.8/Atomic.Chat_2.1.8_universal.dmg",
+    "windows": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/download/v2.1.8/Atomic.Chat_2.1.8_x64-setup.exe",
+    "linux": "https://github.com/AtomicBot-ai/Atomic-Chat/releases/download/v2.1.8/Atomic.Chat_2.1.8_amd64.AppImage"
   }
 }
