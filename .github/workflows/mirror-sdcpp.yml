@@ -104,8 +104,11 @@ jobs:
               pattern: /^sd-master-[0-9a-f]{7}-bin-Darwin-macOS-[\d.]+-arm64\.zip$/ },
             { backend: 'win-cuda12-x64', platform: 'windows', required: true,
               pattern: /^sd-master-[0-9a-f]{7}-bin-win-cuda12-x64\.zip$/ },
-            { backend: 'win-rocm', platform: 'windows', required: false, versioned: true,
-              pattern: /^sd-master-[0-9a-f]{7}-bin-win-rocm-(\d+\.\d+)(?:\.\d+)?-x64\.zip$/ },
+            // No win-rocm: upstream's Windows ROCm archive ships sd-cli,
+            // sd-server and stable-diffusion.dll only, and that DLL imports
+            // amdhip64_7.dll and hipblas.dll from an installed HIP SDK. Without
+            // one the binary cannot load and the client's probe fails, so AMD
+            // hosts take win-vulkan-x64 until an archive carries its runtime.
             { backend: 'win-vulkan-x64', platform: 'windows', required: true,
               pattern: /^sd-master-[0-9a-f]{7}-bin-win-vulkan-x64\.zip$/ },
             { backend: 'win-cpu-x64', platform: 'windows', required: true,
