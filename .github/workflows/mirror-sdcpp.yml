@@ -1,8 +1,10 @@
 name: Mirror upstream stable-diffusion.cpp
 
-# Takes a leejet/stable-diffusion.cpp release tag, re-signs the Windows and
-# macOS binaries with Atomic Chat's certificates, publishes them as a release
-# here, and points backends/sdcpp-manifest.json at them.
+# Takes a stable-diffusion.cpp release tag from source_repo (by default the
+# Atomic fork, AtomicBot-ai/stable-diffusion.cpp, which builds every engine
+# Atomic Chat ships from leejet's tag of the same name), re-signs the Windows
+# and macOS binaries with Atomic Chat's certificates, publishes them as a
+# release here, and points the manifest at them.
 #
 # Same reasoning as mirror-upstream.yml: the client downloads these archives
 # at runtime and must not run ad-hoc-signed (macOS) or unsigned (Windows)
@@ -14,12 +16,12 @@ name: Mirror upstream stable-diffusion.cpp
 # written to the manifest under an explicit `backend` id. The client selects
 # on that id and never derives anything from the file name.
 #
-# Upstream publishes nothing for arm64 Linux or Windows on Arm. Those four
-# archives (linux-cuda13-arm64, linux-cpu-arm64, win-cuda13-arm64,
-# win-cpu-arm64) come from the Atomic fork's release of the SAME tag
-# (AtomicBot-ai/stable-diffusion.cpp, release-arm64.yml), built from the
-# unmodified upstream source. They are optional: a tag the fork has not built
-# mirrors as before. The manifest keeps the upstream tag name, because the
+# The fork (release-atomic.yml) builds leejet's nine archives with leejet's
+# flags, plus what leejet does not publish: arm64 Linux and Windows on Arm
+# (linux-cpu-arm64, linux-cuda13-arm64, win-cpu-arm64, win-cuda13-arm64),
+# linux-cuda12-x64 and win-cuda13-x64. Those additions are optional here, so
+# source_repo=leejet/stable-diffusion.cpp still mirrors a plain upstream tag
+# as an emergency path. The manifest keeps the upstream tag name, because the
 # client matches installs on it and a new name would re-download every engine.
 
 on:
@@ -39,8 +41,8 @@ on:
         required: false
         default: true
         type: boolean
-      atomic_repo:
-        description: "Repository whose release of the same tag supplies the arm64 archives (empty: none)"
+      source_repo:
+        description: "Repository whose release of the tag supplies every archive (leejet/stable-diffusion.cpp: upstream only)"
         required: false
         default: "AtomicBot-ai/stable-diffusion.cpp"
         type: string
@@ -90,15 +92,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
-          ATOMIC_REPO: ${{ inputs.atomic_repo }}
+          SOURCE_REPO: ${{ inputs.source_repo }}
         run: |
           set -euo pipefail
           node <<'EOF'
           const fs = require('fs')
           const tag = process.env.TAG
-          const UPSTREAM = 'leejet/stable-diffusion.cpp'
-          const ATOMIC = (process.env.ATOMIC_REPO || '').trim()
-          if (ATOMIC && !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(ATOMIC)) throw new Error(`atomic_repo ${ATOMIC} is not owner/name`)
+          const SOURCE = (process.env.SOURCE_REPO || '').trim()
+          if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(SOURCE)) throw new Error(`source_repo ${SOURCE} is not owner/name`)
           const MATRIX = [
             { backend: 'macos-arm64', platform: 'macos', required: true,
               pattern: /^sd-master-[0-9a-f]{7}-bin-Darwin-macOS-[\d.]+-arm64\.zip$/ },
@@ -123,45 +124,38 @@ jobs:
             // applies to every asset the manifest lists.
             { backend: 'win-cudart-cu12', platform: 'passthrough', required: false, companion: true,
               pattern: /^cudart-sd-bin-win-cu12-x64\.zip$/ },
-            // Atomic-built arm64 archives. CUDA runtime DLLs/sonames are inside
-            // them, so there is no companion; Windows ones are signed like
-            // upstream's (already-signed NVIDIA and VC++ DLLs keep their own).
-            { backend: 'linux-cuda13-arm64', platform: 'passthrough', required: false, repo: ATOMIC,
+            // Atomic additions, absent from a leejet release. Their CUDA runtime
+            // is inside them, so there is no companion; Windows ones are signed
+            // like the rest (already-signed NVIDIA and VC++ DLLs keep their own).
+            { backend: 'linux-cuda12-x64', platform: 'passthrough', required: false,
+              pattern: /^sd-master-[0-9a-f]{7}-bin-Linux-Ubuntu-[\d.]+-x86_64-cuda12\.zip$/ },
+            { backend: 'win-cuda13-x64', platform: 'windows', required: false,
+              pattern: /^sd-master-[0-9a-f]{7}-bin-win-cuda13-x64\.zip$/ },
+            { backend: 'linux-cuda13-arm64', platform: 'passthrough', required: false,
               pattern: /^sd-master-[0-9a-f]{7}-bin-Linux-Ubuntu-[\d.]+-aarch64-cuda13\.zip$/ },
-            { backend: 'linux-cpu-arm64', platform: 'passthrough', required: false, repo: ATOMIC,
+            { backend: 'linux-cpu-arm64', platform: 'passthrough', required: false,
               pattern: /^sd-master-[0-9a-f]{7}-bin-Linux-Ubuntu-[\d.]+-aarch64\.zip$/ },
-            { backend: 'win-cuda13-arm64', platform: 'windows', required: false, repo: ATOMIC,
+            { backend: 'win-cuda13-arm64', platform: 'windows', required: false,
               pattern: /^sd-master-[0-9a-f]{7}-bin-win-cuda13-arm64\.zip$/ },
-            { backend: 'win-cpu-arm64', platform: 'windows', required: false, repo: ATOMIC,
+            { backend: 'win-cpu-arm64', platform: 'windows', required: false,
               pattern: /^sd-master-[0-9a-f]{7}-bin-win-cpu-arm64\.zip$/ },
           ]
 
-          const releases = new Map()
-          async function releaseOf(repo) {
-            if (releases.has(repo)) return releases.get(repo)
-            const resp = await fetch(`https://api.github.com/repos/${repo}/releases/tags/${tag}`, {
+          async function main() {
+            const resp = await fetch(`https://api.github.com/repos/${SOURCE}/releases/tags/${tag}`, {
               headers: {
                 Accept: 'application/vnd.github+json',
                 'User-Agent': 'atomic-chat-conf-mirror-sdcpp',
                 Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
               },
             })
-            let release = null
-            if (resp.ok) release = await resp.json()
-            else if (resp.status === 404 && repo !== UPSTREAM) console.error(`::warning::${repo} has no release ${tag}; mirroring without its arm64 archives`)
-            else throw new Error(`GitHub API ${resp.status} for ${repo} tag ${tag}: ${await resp.text()}`)
-            releases.set(repo, release)
-            return release
-          }
-
-          async function main() {
+            if (!resp.ok) throw new Error(`GitHub API ${resp.status} for ${SOURCE} tag ${tag}: ${await resp.text()}`)
+            const release = await resp.json()
+            const repo = SOURCE
             const selected = []
             const missing = []
             for (const entry of MATRIX) {
-              const repo = entry.repo === undefined ? UPSTREAM : entry.repo
-              if (!repo) continue
-              const release = await releaseOf(repo)
-              const matches = (release?.assets ?? []).filter((a) => entry.pattern.test(a.name))
+              const matches = (release.assets ?? []).filter((a) => entry.pattern.test(a.name))
               if (matches.length === 0) {
                 if (entry.required) missing.push(entry.pattern.source)
                 continue
@@ -179,7 +173,7 @@ jobs:
                 url: `https://github.com/${repo}/releases/download/${tag}/${asset.name}`,
               })
             }
-            if (missing.length > 0) throw new Error(`Upstream tag ${tag} is missing required assets:\n  ${missing.join('\n  ')}`)
+            if (missing.length > 0) throw new Error(`${SOURCE} release ${tag} is missing required assets:\n  ${missing.join('\n  ')}`)
             selected.sort((a, b) => a.backend.localeCompare(b.backend))
             fs.writeFileSync('assets.json', JSON.stringify({ tag, assets: selected }, null, 2) + '\n')
             for (const a of selected) console.error(`  ${a.platform.padEnd(12)} ${a.backend.padEnd(20)} ${a.name} (${(a.size / 1024 ** 2).toFixed(1)} MiB) from ${a.repo}`)
@@ -416,20 +410,22 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${{ inputs.tag }}"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG exists; replacing its assets"
-            gh release upload "$TAG" dist/* --clobber
-            exit 0
-          fi
+          SOURCE="$(jq -r '.assets[0].repo' selection/assets.json)"
           {
-            printf 'Mirror of [leejet/stable-diffusion.cpp %s](https://github.com/leejet/stable-diffusion.cpp/releases/tag/%s).\n\n' "$TAG" "$TAG"
-            printf 'Windows binaries are Authenticode-signed and macOS binaries carry a Developer ID signature with hardened runtime. Linux archives and the CUDA runtime companion are mirrored byte-for-byte.\n\n'
-            atomic="$(jq -r --arg up leejet/stable-diffusion.cpp '[.assets[] | select(.repo != $up) | .repo] | unique | join(", ")' selection/assets.json)"
-            if [ -n "$atomic" ]; then
-              printf 'The arm64 archives (Linux and Windows on Arm) are built by [%s](https://github.com/%s/releases/tag/%s) from the same upstream tag; upstream publishes none.\n\n' "$atomic" "$atomic" "$TAG"
+            printf 'Mirror of [%s %s](https://github.com/%s/releases/tag/%s)' "$SOURCE" "$TAG" "$SOURCE" "$TAG"
+            if [ "$SOURCE" != leejet/stable-diffusion.cpp ]; then
+              printf ', built from [leejet/stable-diffusion.cpp %s](https://github.com/leejet/stable-diffusion.cpp/releases/tag/%s)' "$TAG" "$TAG"
             fi
+            printf '.\n\n'
+            printf 'Windows binaries are Authenticode-signed and macOS binaries carry a Developer ID signature with hardened runtime; DLLs already signed by NVIDIA or Microsoft keep their own signature. Linux archives and the CUDA runtime companion are mirrored byte-for-byte.\n\n'
             printf 'Consumed by Atomic Chat through `backends/sdcpp-manifest.json`.\n'
           } > notes.md
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG exists; replacing its assets and notes"
+            gh release upload "$TAG" dist/* --clobber
+            gh release edit "$TAG" --notes-file notes.md
+            exit 0
+          fi
           gh release create "$TAG" dist/* \
             --title "stable-diffusion.cpp $TAG (signed mirror)" \
             --notes-file notes.md
@@ -460,7 +456,7 @@ jobs:
           const manifest = {
             $schema: './sdcpp-schema.json',
             updated_at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-            upstream_repo: 'leejet/stable-diffusion.cpp',
+            upstream_repo: selection.assets[0].repo,
             tag_name: tag,
             download_base: 'https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download',
             assets,
@@ -489,7 +485,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$MANIFEST"
-          git commit -m "chore(sdcpp-manifest): mirror upstream ${{ inputs.tag }} into $(basename "$MANIFEST")"
+          git commit -m "chore(sdcpp-manifest): mirror ${{ inputs.source_repo }} ${{ inputs.tag }} into $(basename "$MANIFEST")"
           git push
 
       - name: Prune old mirrored releases
