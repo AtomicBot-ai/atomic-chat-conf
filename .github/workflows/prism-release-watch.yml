@@ -1,0 +1,99 @@
+name: Watch PrismML llama.cpp releases
+
+# Opens a pull request that lists a new PrismML-Eng/llama.cpp release in
+# backends/atomic-prism-manifest.json with every asset marked `candidate`.
+#
+# Candidates are never offered to users: the core recommends and offers updates
+# only from `approved` assets. A maintainer flips an asset to `approved` in the
+# pull request after the real-hardware acceptance for that OS/GPU family, adds
+# `notes` for the update banner, and merges. A merge into main reaches every
+# installed client within an hour.
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "PrismML release tag to list (default: the latest release)"
+        required: false
+        type: string
+
+concurrency:
+  group: prism-release-watch
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  watch:
+    name: List new PrismML release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Resolve tag
+        id: tag
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          TAG="${INPUT_TAG:-$(node .github/scripts/prism-manifest.mjs latest)}"
+          if ! [[ "$TAG" =~ ^prism-b[0-9]+-[0-9a-f]{7}$ ]]; then
+            echo "::error::tag must look like a PrismML release tag (e.g. prism-b10754-2459f68)"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Add the release as candidate
+        id: add
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          node .github/scripts/prism-manifest.mjs add --tag "$TAG"
+          if git diff --quiet -- backends/atomic-prism-manifest.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check manifests
+        if: steps.add.outputs.changed == 'true'
+        run: |
+          node --test .github/scripts/prism-manifest.test.mjs
+          node .github/scripts/prism-manifest.mjs check
+
+      - name: Open pull request
+        if: steps.add.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          BRANCH="prism-release/$TAG"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+            echo "Branch $BRANCH already exists; a pull request is open or was closed on purpose."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add backends/atomic-prism-manifest.json
+          git commit -m "chore(prism-manifest): list PrismML $TAG as candidate"
+          git push origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "PrismML $TAG: candidate release" \
+            --body "Lists [$TAG](https://github.com/PrismML-Eng/llama.cpp/releases/tag/$TAG) in \`backends/atomic-prism-manifest.json\` with every asset as \`candidate\` (sha256 from the release's published digests).
+
+          Candidates are not offered to users. Before merging, for each OS/GPU family that passed real-hardware acceptance:
+          - set its asset (and a Windows CUDA pack's \`win-cudart-*\` companion) to \`approved\`;
+          - add a one-line \`notes\` for the update banner;
+          - list replaced releases in \`supersedes\`, or mark a bad one \`withdrawn\`.
+
+          Leave a family \`candidate\` when it was not verified."

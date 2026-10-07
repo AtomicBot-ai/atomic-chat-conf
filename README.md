@@ -23,13 +23,17 @@ models/
   schema.json        # JSON Schema (Draft-07) for the recommended-models manifest
   staff-picks.json   # Curated Staff Picks list shown by default in Hub
   schema.staff-picks.json # JSON Schema (Draft-07) for the staff-picks manifest
-  decision.json      # Decision models (Laya checkpoints) for llama-server --decision
+  decision.json      # Decision models (TurboQuant checkpoints and llama.cpp GGUFs)
   schema.decision.json # JSON Schema (Draft-07) for the decision catalog
+  atomic-prism-models.json # Which Bonsai GGUF files need PrismML llama.cpp (atomic-prism)
+  schema.atomic-prism-models.json # JSON Schema (Draft-07) for the Prism model rules
 backends/
   manifest.json            # llama.cpp backend catalog (mirrors a ggml-org release)
   schema.json              # JSON Schema (Draft-07) for the backends manifest
   turboquant-manifest.json # TurboQuant backend catalog (one unified release tag)
   turboquant-schema.json   # JSON Schema (Draft-07) for the TurboQuant manifest
+  atomic-prism-manifest.json # PrismML llama.cpp releases (candidate / approved per asset)
+  atomic-prism-schema.json   # JSON Schema (Draft-07) for the PrismML manifest
 runtimes/
   tensorrt-llm.json  # TensorRT-LLM managed-engine runtime descriptor
   vllm.json          # vLLM managed-engine runtime descriptor (branch only until live acceptance)
@@ -48,6 +52,7 @@ app/
 .github/
   workflows/validate.yml        # Validates every manifest on every PR
   workflows/mirror-upstream.yml # Mirrors + signs an upstream llama.cpp release
+  workflows/prism-release-watch.yml # Opens a PR listing a new PrismML release as candidate
   actions/windows-code-sign/    # Authenticode signing via DigiCert KeyLocker
   scripts/mirror.mjs            # Asset whitelist + manifest generation
   entitlements.plist            # Entitlements for the signed macOS binaries
@@ -328,11 +333,51 @@ as its GGUF twin plus 5, and `"description_key": "hub:recForMlx"`.
 Editing flow is identical to the recommended-models manifest: edit on GitHub,
 bump `updated_at`, open a PR, wait for the "Validate registry" workflow.
 
+## Decision models
+
+`models/decision.json` lists the decision models of the Hub's Decision
+category: models that answer typed questions (`choice`, `score`, `noul`) about
+a state in one forward pass, served on `/v1/systemone`. The app downloads every
+listed file into `<data>/decision/models/<id>/`, checking bytes and sha256, and
+the core starts the decision server on the model's engine. One decision model
+runs at a time.
+
+A model runs on one of two engines, set by `engine`:
+
+| `engine`            | `format`     | What the files are                                       | `min_engine`             |
+| ------------------- | ------------ | -------------------------------------------------------- | ------------------------ |
+| `llamacpp` (default)| `checkpoint` | A laya checkpoint folder TurboQuant converts to GGUF once | TurboQuant tag `b10269-1.7.0` |
+| `llamacpp-upstream` | `gguf`       | One GGUF (`role: "model"`), plus an `mmproj` for vision  | Upstream tag, e.g. `b11370` |
+
+The upstream builds that serve a type are: `b11370` for laya, openjev, lev, kev
+and nimble; `b11371` for clef; `b11418` for clef with images. Until the
+upstream manifest reaches a model's `min_engine`, the app lists the model with a
+"needs llama.cpp b<N>+" notice instead of a Start button.
+
+| Field           | Required            | Notes                                                                                       |
+| --------------- | ------------------- | ------------------------------------------------------------------------------------------- |
+| `id`            | yes                 | Folder name under `decision/models` and the model id the engine answers with.               |
+| `repo`, `revision` | yes              | Hugging Face repo and the full commit every file is pinned to.                              |
+| `files`         | yes                 | `path`, `bytes`, `sha256` from the Hugging Face API; GGUF files also carry `role`.          |
+| `engine`        | upstream only       | `llamacpp` or `llamacpp-upstream`. Also the settings page that manages the model.           |
+| `format`        | upstream only       | `checkpoint` or `gguf`. An upstream model is always `gguf`.                                  |
+| `decision_type` | upstream only       | The GGUF `<arch>.decision.type`: `laya`, `openjev`, `lev`, `kev`, `nimble`, `clef`.         |
+| `icon`          | no                  | Bundled logo key (`web-app/src/lib/model-logo.ts`, `ICON_KEY_LOGOS`). Omitted: Convai.       |
+| `vision`        | no                  | `true` for a model that reads images. It must list an `mmproj` file.                         |
+| `default`       | no                  | The model suggested first on its engine's page. At most one per engine.                     |
+| `context`       | yes                 | Prompt context the engine is started with (`-c`).                                            |
+
+Clients that predate the `engine` field keep only checkpoint models: they drop
+every model without the checkpoint files. So the catalog keeps
+`schema_version: 1` and must always hold a default checkpoint model; the
+integrity check enforces both. A new logo key needs the image in the app first,
+then the `icon` value here.
+
 ## llama.cpp backends manifest
 
 [`backends/manifest.json`](backends/manifest.json) is the catalog of
 downloadable `llama.cpp` backend builds the Atomic Chat client offers on
-**Windows, Linux x64 and Apple Silicon**. It exists to dodge GitHub's unauthenticated API
+**Windows, Linux (x64 and arm64) and Apple Silicon**. It exists to dodge GitHub's unauthenticated API
 rate limit (60 req/hr/IP): the client used to resolve the backend list
 straight from `api.github.com/repos/ggml-org/llama.cpp/releases/latest`,
 which dead-ended on shared / NAT / VPN networks (see ATO-199). It now reads
@@ -372,7 +417,10 @@ is what a tag we have not mirrored has to do.
   `cudart-*` companions stay on the upstream CDN (their DLLs are NVIDIA's
   own, already signed by NVIDIA, and mirroring them would triple the size of
   every release for no gain).
-- Windows x64, Linux x64 and `macos-arm64` assets are listed. macOS used to be
+- Windows (x64 and arm64), Linux (x64 and arm64) and `macos-arm64` assets are
+  listed. Linux arm64 is CPU, Vulkan and CUDA 13; the Snapdragon build is not
+  mirrored. The Linux CUDA companion carries the tag in its name
+  (`cudart-llama-<tag>-bin-ubuntu-cuda-<toolkit>-arm64.tar.gz`). macOS used to be
   bundled-only and was deliberately omitted; it now resolves from this
   manifest like the other platforms, so an engine update reaches macOS users
   without an Atomic Chat release. The client still ships a bundled macOS build
@@ -1274,6 +1322,14 @@ every push and pull request. It performs the following checks:
   `models/schema.staff-picks.json`.
 - Every `model_name` and every `order` in the staff-picks manifest must be
   unique, and `description_key`, when present, must start with `hub:`.
+- `ajv` validates `models/decision.json` against `models/schema.decision.json`
+  (an upstream model must be `gguf`, name a `decision_type` and pin a `b<build>`
+  tag; a checkpoint model a TurboQuant tag).
+- `.github/scripts/decision-catalog-check.mjs`: model ids and file paths are
+  unique and safe, a checkpoint model lists the four checkpoint files, a GGUF
+  model has one `role: "model"` file and at most one `mmproj` (only when
+  `vision` is true), at most one default per engine, and a default checkpoint
+  model exists.
 - `ajv` validates `backends/manifest.json` against `backends/schema.json`.
 - Every `llama-*` asset name must carry the declared `tag_name`, and asset
   names must be unique.
@@ -1339,6 +1395,8 @@ If you want to run the schema checks individually before pushing:
 npx ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
 npx ajv-cli@5 validate -s models/schema.json    -d models/recommended.json   --strict=false
 npx ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
+npx ajv-cli@5 validate -s models/schema.decision.json -d models/decision.json --strict=false
+node .github/scripts/decision-catalog-check.mjs
 npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
 npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true

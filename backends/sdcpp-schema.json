@@ -47,9 +47,13 @@
             "linux-vulkan-x64",
             "linux-rocm-7.14-x64",
             "linux-cpu-x64",
+            "linux-cuda13-arm64",
+            "linux-cpu-arm64",
+            "win-cuda13-arm64",
+            "win-cpu-arm64",
             "win-cudart-cu12"
           ],
-          "description": "Stable backend id the client selects on; the only field it matches against."
+          "description": "Stable backend id the client selects on; the only field it matches against. The *-arm64 ids other than macos-arm64 are built by AtomicBot-ai/stable-diffusion.cpp from the same upstream tag (upstream publishes none) and carry their CUDA runtime inside."
         },
         "name": { "type": "string" },
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },

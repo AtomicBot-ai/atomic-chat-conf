@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat PrismML model compatibility rules",
+  "description": "Which Bonsai GGUF files need the atomic-prism provider, which also run on stock llama.cpp, and which are legacy layouts no current engine runs. The core reads this to decide the engine for a file before download (by repository and file name) and after download (by sha256 and the GGUF header). `tensor_types` and `metadata_capabilities` turn header evidence into capabilities, so a new Prism packing can be recognised without a client release. The core embeds a baseline copy and keeps working when this file is unreachable.",
+  "type": "object",
+  "required": ["schema_version", "updated_at", "rules_version", "tensor_types", "metadata_capabilities", "upstream_capabilities", "families"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "rules_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Bumped on every semantic change; recorded in model.yml so a stale verdict is recomputed."
+    },
+    "tensor_types": {
+      "type": "object",
+      "description": "ggml tensor type id -> capability it requires. `q2_0` (id 42) is resolved further by its bits per weight: 2.25 is the official group-64 layout (q2_0_g64), 2.125 the legacy group-128 layout no current engine runs.",
+      "additionalProperties": { "$ref": "#/definitions/capability_or_q2" }
+    },
+    "metadata_capabilities": {
+      "type": "object",
+      "description": "GGUF metadata key -> capability its presence requires (prism.hadamard.version -> hadamard).",
+      "additionalProperties": { "$ref": "#/definitions/capability" }
+    },
+    "upstream_capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "Capabilities the stock llama.cpp providers (llamacpp-upstream, llamacpp) also run. A file needing anything else requires atomic-prism.",
+      "items": { "$ref": "#/definitions/capability" }
+    },
+    "families": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/family" }
+    }
+  },
+  "definitions": {
+    "capability": {
+      "type": "string",
+      "enum": ["q1_0", "q2_0_g64", "pq2_0", "ptq1_0", "hadamard", "vision"]
+    },
+    "capability_or_q2": {
+      "type": "string",
+      "enum": ["q1_0", "q2_0", "q2_0_g64", "pq2_0", "ptq1_0", "hadamard", "vision"]
+    },
+    "family": {
+      "type": "object",
+      "required": ["id", "title", "repo", "revision", "files"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9.-]*$" },
+        "title": { "type": "string", "minLength": 1 },
+        "repo": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+        "revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "Hugging Face commit the sizes and hashes were taken from; downloads are pinned to it."
+        },
+        "featured": { "type": "boolean", "description": "Shown first among Bonsai models in Hub." },
+        "default_packing": { "$ref": "#/definitions/packing" },
+        "sampling": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Model-specific defaults, applied unless the user set their own.",
+          "properties": {
+            "temperature": { "type": "number", "minimum": 0 },
+            "top_p": { "type": "number", "minimum": 0, "maximum": 1 },
+            "top_k": { "type": "integer", "minimum": 0 },
+            "min_p": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "default_ctx": { "type": "integer", "minimum": 512 },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/file" }
+        },
+        "projectors": {
+          "type": "array",
+          "description": "Vision projectors matched to this family. Never substituted across families.",
+          "items": { "$ref": "#/definitions/projector" }
+        }
+      }
+    },
+    "packing": { "type": "string", "enum": ["pq2_0", "ptq1_0", "q2_0_g64", "q2_0_legacy", "f16"] },
+    "file": {
+      "type": "object",
+      "required": ["file", "size", "sha256", "treatment"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string", "pattern": "^[A-Za-z0-9._-]+\\.gguf$" },
+        "size": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "packing": { "$ref": "#/definitions/packing" },
+        "treatment": {
+          "type": "string",
+          "enum": ["prism_required", "any", "legacy", "excluded"],
+          "description": "prism_required: only atomic-prism runs it. any: stock llama.cpp runs it too; existing routing is kept. legacy: an old layout no current engine runs; offer `replacement`. excluded: recognised but never offered for download (F16 masters, drafters)."
+        },
+        "requires": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/definitions/capability" }
+        },
+        "min_prism_build": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Oldest PrismML build number known to run this file correctly."
+        },
+        "default": { "type": "boolean" },
+        "replacement": { "type": "string", "pattern": "^[A-Za-z0-9._-]+\\.gguf$" },
+        "summary": { "type": "string", "maxLength": 160 }
+      }
+    },
+    "projector": {
+      "type": "object",
+      "required": ["file", "size", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string", "pattern": "^[A-Za-z0-9._-]+\\.gguf$" },
+        "size": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "default": { "type": "boolean" }
+      }
+    }
+  }
+}

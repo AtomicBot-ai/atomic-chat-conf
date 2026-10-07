@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Atomic Chat decision model catalog",
-  "description": "Decision models the app offers for `llama-server --decision` (TurboQuant fork). Each model is a Hugging Face checkpoint folder pinned to one commit; the app downloads every listed file into <data>/decision/models/<id>/<path>, checking bytes and sha256, and hands the folder to the core, whose engine converts it to GGUF once. Every size is the exact byte count from the Hugging Face API.",
+  "description": "Decision models the app offers. A model runs on one engine: `llamacpp` (the TurboQuant fork, `llama-server --decision`, from a Hugging Face checkpoint folder it converts to GGUF once) or `llamacpp-upstream` (ggml-org llama.cpp, from a GGUF whose `<arch>.decision.type` it reads). Each model is pinned to one commit; the app downloads every listed file into <data>/decision/models/<id>/<path>, checking bytes and sha256, and hands it to the core, which starts the decision server on the model's engine. Every size is the exact byte count from the Hugging Face API. The fields added after the first release (engine, format, decision_type, icon, vision, files[].role) are optional and default to the TurboQuant checkpoint shape: clients that predate them drop the GGUF models, which lack the checkpoint files, and keep the rest.",
   "type": "object",
   "required": ["schema_version", "updated_at", "models"],
   "additionalProperties": false,
@@ -27,7 +27,12 @@
           "pattern": "^(?!config\\.json$)[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*$"
         },
         "bytes": { "type": "integer", "minimum": 1 },
-        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "role": {
+          "type": "string",
+          "enum": ["model", "mmproj"],
+          "description": "GGUF models only: `model` is the file passed with -m, `mmproj` the multimodal projector passed with --mmproj."
+        }
       }
     },
     "model": {
@@ -77,23 +82,77 @@
           "description": "Whether /v1/systemone probabilities are calibrated for this model."
         },
         "license": { "type": "string", "minLength": 1 },
-        "default": { "type": "boolean" },
+        "default": {
+          "type": "boolean",
+          "description": "The model the app suggests first on its engine's page. At most one per engine."
+        },
         "min_engine": {
           "type": "string",
-          "description": "The oldest TurboQuant release that runs this model from a checkpoint folder.",
-          "pattern": "^b[0-9]+-[0-9]+\\.[0-9]+\\.[0-9]+$"
+          "description": "The oldest engine release that runs this model: a TurboQuant tag b<build>-<x.y.z> for `llamacpp`, an upstream tag b<build> for `llamacpp-upstream`."
         },
         "gguf_cache_bytes": {
           "type": "integer",
           "minimum": 1,
-          "description": "Approximate size of the F16 GGUF the engine converts the folder into."
+          "description": "Checkpoint models only: approximate size of the F16 GGUF the engine converts the folder into."
         },
         "files": {
           "type": "array",
           "minItems": 1,
           "items": { "$ref": "#/definitions/file" }
+        },
+        "engine": {
+          "type": "string",
+          "enum": ["llamacpp", "llamacpp-upstream"],
+          "default": "llamacpp",
+          "description": "The provider whose llama-server runs the model, and the settings page it is managed on: `llamacpp` (TurboQuant fork) or `llamacpp-upstream` (ggml-org llama.cpp)."
+        },
+        "format": {
+          "type": "string",
+          "enum": ["checkpoint", "gguf"],
+          "default": "checkpoint",
+          "description": "`checkpoint`: a laya checkpoint folder the TurboQuant engine converts. `gguf`: a ready GGUF file, plus an optional projector."
+        },
+        "decision_type": {
+          "type": "string",
+          "enum": ["laya", "openjev", "lev", "kev", "nimble", "clef"],
+          "description": "The GGUF `<arch>.decision.type`. Informational for the Hub; the core reads the type from the file itself."
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "Logo key the client maps to a bundled image (web-app/src/lib/model-logo.ts, ICON_KEY_LOGOS), as in staff-picks. Omitted: the Convai logo."
+        },
+        "vision": {
+          "type": "boolean",
+          "description": "GGUF models only: whether the model reads images. Such a model lists an `mmproj` file."
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "engine": { "const": "llamacpp-upstream" } }, "required": ["engine"] },
+          "then": {
+            "required": ["format", "decision_type"],
+            "properties": {
+              "format": { "const": "gguf" },
+              "min_engine": { "pattern": "^b[0-9]+$" }
+            }
+          },
+          "else": {
+            "properties": {
+              "format": { "const": "checkpoint" },
+              "min_engine": { "pattern": "^b[0-9]+-[0-9]+\\.[0-9]+\\.[0-9]+$" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "format": { "const": "gguf" } }, "required": ["format"] },
+          "then": { "not": { "required": ["gguf_cache_bytes"] } },
+          "else": {
+            "not": { "required": ["vision"] },
+            "properties": { "files": { "items": { "not": { "required": ["role"] } } } }
+          }
+        }
+      ]
     }
   }
 }

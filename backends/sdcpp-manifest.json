@@ -1,6 +1,6 @@
 {
   "$schema": "./sdcpp-schema.json",
-  "updated_at": "2026-09-20T16:59:19Z",
+  "updated_at": "2026-10-06T17:32:12Z",
   "upstream_repo": "leejet/stable-diffusion.cpp",
   "tag_name": "master-883-137f740",
   "assets": [
@@ -15,12 +15,6 @@
       "name": "sd-master-137f740-bin-win-cuda12-x64.zip",
       "sha256": "d181b8a7be452dc74f2163893ec17edd960005c9f790382aef939e7bf93ab07f",
       "size": 330849525
-    },
-    {
-      "backend": "win-rocm-7.14-x64",
-      "name": "sd-master-137f740-bin-win-rocm-7.14.0-x64.zip",
-      "sha256": "d541f7aa0d0046843dc35fecd79dbf808cf5af8bd6ab5c0d048dad9e9342c59d",
-      "size": 192039488
     },
     {
       "backend": "win-vulkan-x64",
