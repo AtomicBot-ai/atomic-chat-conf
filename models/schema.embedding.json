@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat embedding model catalog",
+  "description": "Embedding models the app offers on the Local API Server. Every model runs on stock llama.cpp (`llamacpp-upstream`, `llama-server --embedding`), from one GGUF plus an optional multimodal projector. Each model is pinned to one commit; the app downloads every listed file into <data>/embedding/models/<id>/<path>, checking bytes and sha256, and hands it to the core, which starts the embedding server and serves it on /v1/embeddings. Every size is the exact byte count from the Hugging Face API.",
+  "type": "object",
+  "required": ["schema_version", "updated_at", "models"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "type": "integer", "const": 1 },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "models": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/model" }
+    }
+  },
+  "definitions": {
+    "file": {
+      "type": "object",
+      "required": ["path", "bytes", "sha256", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path inside the repository and inside the model folder.",
+          "pattern": "^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*\\.gguf$"
+        },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "role": {
+          "type": "string",
+          "enum": ["model", "mmproj"],
+          "description": "`model` is the file passed with -m, `mmproj` the multimodal projector passed with --mmproj."
+        }
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "Text the model expects in front of each input, shown in the app for API clients to copy. The server never adds them; they apply to text only.",
+      "properties": {
+        "query": { "type": "string", "minLength": 1 },
+        "document": { "type": "string", "minLength": 1 }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "description",
+        "repo",
+        "revision",
+        "params",
+        "languages",
+        "context",
+        "max_context",
+        "dims",
+        "pooling",
+        "modalities",
+        "license",
+        "min_engine",
+        "engine",
+        "format",
+        "icon",
+        "files"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable id: the folder name under embedding/models and the model id the engine answers with (-a), which API clients pass as `model`.",
+          "pattern": "^[a-z0-9][a-z0-9.-]*$"
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "repo": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "revision": {
+          "type": "string",
+          "description": "The full commit the files are pinned to; URLs are https://huggingface.co/<repo>/resolve/<revision>/<path>.",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "params": { "type": "string", "minLength": 1 },
+        "languages": {
+          "type": "string",
+          "description": "'multilingual' or a single language code.",
+          "pattern": "^(multilingual|[a-z]{2})$"
+        },
+        "context": {
+          "type": "integer",
+          "minimum": 64,
+          "description": "Tokens per input the engine is started with (-c, and -b/-ub: an encoder reads one whole input per batch). Media tokens count too."
+        },
+        "max_context": {
+          "type": "integer",
+          "minimum": 64,
+          "description": "The longest input the model was trained for; never below `context`."
+        },
+        "dims": { "type": "integer", "minimum": 1, "description": "Length of the vectors /v1/embeddings returns." },
+        "matryoshka_dims": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "Shorter lengths the vectors can be truncated to (re-normalize after truncating), largest first, all below `dims`."
+        },
+        "pooling": {
+          "type": "string",
+          "enum": ["mean", "cls", "last"],
+          "description": "--pooling. The model's own pooling, also written in its GGUF."
+        },
+        "modalities": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["text", "image", "audio"] },
+          "contains": { "const": "text" },
+          "description": "What one input may hold. Anything beyond text needs an `mmproj` file and goes in a `content` array of the input."
+        },
+        "image_max_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "--image-max-tokens: the token budget one image is resized to. Image models only."
+        },
+        "prompts": { "$ref": "#/definitions/prompts" },
+        "license": { "type": "string", "minLength": 1 },
+        "default": {
+          "type": "boolean",
+          "description": "The model the app suggests first. At most one."
+        },
+        "min_engine": {
+          "type": "string",
+          "description": "The oldest upstream llama.cpp release that runs this model, as its tag.",
+          "pattern": "^b[0-9]+$"
+        },
+        "engine": { "type": "string", "const": "llamacpp-upstream" },
+        "format": { "type": "string", "const": "gguf" },
+        "icon": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "Logo key the client maps to a bundled image (web-app/src/lib/model-logo.ts, ICON_KEY_LOGOS). Required: every embedding model shows its maker's logo."
+        },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": { "$ref": "#/definitions/file" }
+        }
+      }
+    }
+  }
+}

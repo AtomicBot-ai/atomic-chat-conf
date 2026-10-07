@@ -753,6 +753,16 @@ jobs:
       - name: Check decision catalog integrity
         run: node .github/scripts/decision-catalog-check.mjs
 
+      - name: Validate embedding catalog against schema
+        run: |
+          ajv validate \
+            -s models/schema.embedding.json \
+            -d models/embedding.json \
+            --strict=false
+
+      - name: Check embedding catalog integrity
+        run: node .github/scripts/embedding-catalog-check.mjs
+
       - name: Validate landing release manifest against schema
         run: |
           ajv validate \
