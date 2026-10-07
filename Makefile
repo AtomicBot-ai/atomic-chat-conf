@@ -106,6 +106,8 @@ validate:
 	npx --yes ajv-cli@5 validate -s models/schema.diffusion.json -d models/diffusion.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.decision.json -d models/decision.json --strict=false
 	node .github/scripts/decision-catalog-check.mjs
+	npx --yes ajv-cli@5 validate -s models/schema.embedding.json -d models/embedding.json --strict=false
+	node .github/scripts/embedding-catalog-check.mjs
 	npx --yes ajv-cli@5 validate -s backends/schema.json -d backends/manifest.json --strict=false
 	npx --yes ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 	node --test .github/scripts/prism-manifest.test.mjs

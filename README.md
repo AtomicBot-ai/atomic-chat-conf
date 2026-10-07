@@ -25,6 +25,8 @@ models/
   schema.staff-picks.json # JSON Schema (Draft-07) for the staff-picks manifest
   decision.json      # Decision models (TurboQuant checkpoints and llama.cpp GGUFs)
   schema.decision.json # JSON Schema (Draft-07) for the decision catalog
+  embedding.json     # Embedding models served on /v1/embeddings (llama.cpp GGUFs)
+  schema.embedding.json # JSON Schema (Draft-07) for the embedding catalog
   atomic-prism-models.json # Which Bonsai GGUF files need PrismML llama.cpp (atomic-prism)
   schema.atomic-prism-models.json # JSON Schema (Draft-07) for the Prism model rules
 backends/
@@ -371,6 +373,57 @@ every model without the checkpoint files. So the catalog keeps
 `schema_version: 1` and must always hold a default checkpoint model; the
 integrity check enforces both. A new logo key needs the image in the app first,
 then the `icon` value here.
+
+## Embedding models
+
+`models/embedding.json` lists the embedding models of the Hub's Embedding
+category: models that turn an input into a vector, served on the Local API
+Server's OpenAI-compatible `/v1/embeddings`. The app downloads every listed
+file into `<data>/embedding/models/<id>/`, checking bytes and sha256, and the
+core starts one `llama-server --embedding` for the model the user turned on.
+One embedding model runs at a time, beside the chat model; API clients pick it
+by passing its `id` as `model`.
+
+Every model runs on stock llama.cpp (`engine: "llamacpp-upstream"`,
+`format: "gguf"`): one GGUF (`role: "model"`), plus an `mmproj` projector for a
+model that reads more than text. Until the user's llama.cpp reaches a model's
+`min_engine`, the app lists the model with an "update llama.cpp" notice
+instead of a Start button. EmbeddingGemma 2 (`gemma-embedding2`) needs `b11454`.
+
+| Field              | Required | Notes                                                                                          |
+| ------------------ | -------- | ---------------------------------------------------------------------------------------------- |
+| `id`               | yes      | Folder name under `embedding/models` and the model id the engine answers with (`model` in API calls). |
+| `repo`, `revision` | yes      | Hugging Face repo and the full commit every file is pinned to.                                 |
+| `files`            | yes      | `path`, `role`, `bytes`, `sha256` from the Hugging Face API. One `model`, at most one `mmproj`. |
+| `context`          | yes      | Tokens per input the engine is started with: `-c`, and `-b`/`-ub` (an encoder reads one whole input per batch, media tokens included). |
+| `max_context`      | yes      | The longest input the model was trained for.                                                   |
+| `dims`             | yes      | Vector length `/v1/embeddings` returns.                                                        |
+| `matryoshka_dims`  | no       | Shorter lengths a vector can be cut to (re-normalize after cutting). The server never cuts.    |
+| `pooling`          | yes      | `mean`, `cls` or `last`: passed as `--pooling`.                                                |
+| `modalities`       | yes      | `text`, plus `image` / `audio` for a model with an `mmproj`.                                   |
+| `image_max_tokens` | no       | `--image-max-tokens`: the token budget one image is resized to, at most half of `context`.     |
+| `prompts`          | no       | `query` / `document` text the model expects before each text input. Shown in the app for clients to copy; the server never adds it. |
+| `icon`             | yes      | Bundled logo key (`web-app/src/lib/model-logo.ts`, `ICON_KEY_LOGOS`).                          |
+| `min_engine`       | yes      | The oldest upstream tag that runs the model, `b<build>`.                                       |
+| `default`          | no       | The model the app suggests first. Exactly one.                                                 |
+
+An input beyond text goes in a `content` array of one `input` item and gives
+one vector; text and media can be mixed in one item:
+
+```json
+{
+  "model": "embeddinggemma-2",
+  "input": [
+    "task: search result | query: a red square",
+    { "content": [{ "type": "image_url", "image_url": { "url": "data:image/png;base64,..." } }] },
+    { "content": [{ "type": "input_audio", "input_audio": { "data": "<base64 wav, mp3 or flac>" } }] }
+  ]
+}
+```
+
+Media must be inline (`data:` URLs or base64): the core refuses links, so the
+engine never fetches a URL a client hands it. A new logo key needs the image in
+the app first, then the `icon` value here.
 
 ## llama.cpp backends manifest
 
@@ -1109,6 +1162,12 @@ every push and pull request. It performs the following checks:
   model has one `role: "model"` file and at most one `mmproj` (only when
   `vision` is true), at most one default per engine, and a default checkpoint
   model exists.
+- `ajv` validates `models/embedding.json` against `models/schema.embedding.json`
+  (every model is an upstream `gguf` with a `b<build>` tag and an `icon`).
+- `.github/scripts/embedding-catalog-check.mjs`: model ids and file paths are
+  unique and safe, one `role: "model"` file and at most one `mmproj`, which a
+  model has exactly when it reads more than text, `image_max_tokens` fits half
+  the context, `matryoshka_dims` shrink below `dims`, and exactly one default.
 - `ajv` validates `backends/manifest.json` against `backends/schema.json`.
 - Every `llama-*` asset name must carry the declared `tag_name`, and asset
   names must be unique.
@@ -1170,6 +1229,8 @@ npx ajv-cli@5 validate -s models/schema.json    -d models/recommended.json   --s
 npx ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
 npx ajv-cli@5 validate -s models/schema.decision.json -d models/decision.json --strict=false
 node .github/scripts/decision-catalog-check.mjs
+npx ajv-cli@5 validate -s models/schema.embedding.json -d models/embedding.json --strict=false
+node .github/scripts/embedding-catalog-check.mjs
 npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
 npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
