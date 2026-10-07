@@ -16,7 +16,7 @@
     "tag_name": {
       "type": "string",
       "pattern": "^master-[0-9]+-[0-9a-f]{7}(-a[0-9a-f]{7})?$",
-      "description": "leejet/stable-diffusion.cpp release tag (e.g. master-849-d04e895). An `-a<sha>` suffix marks an Atomic-built variant carrying local patches; the client strips it when falling back to the upstream CDN."
+      "description": "leejet/stable-diffusion.cpp release tag (e.g. master-849-d04e895). An `-a<rev>` suffix marks a rebuild of that tag by AtomicBot-ai/stable-diffusion.cpp at fork commit <rev> (mirror-sdcpp.yml atomic_rev): installs are matched on this name, so the new name is what moves installed clients onto the rebuild. The client strips it when downloading from upstream_repo instead of download_base."
     },
     "download_base": {
       "type": "string",
