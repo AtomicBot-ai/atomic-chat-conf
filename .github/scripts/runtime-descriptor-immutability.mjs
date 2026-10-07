@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// Published-id immutability for the documents under runtimes/: the engine
-// descriptor runtimes/tensorrt-llm.json (descriptor_id, R24 / F2) and every
-// environment manifest under runtimes/environments/ (manifest_id).
+// Published-id immutability for the documents under runtimes/: every engine
+// descriptor runtimes/<engine_id>.json (descriptor_id, R24 / F2), each against
+// its own version at the base ref, and every environment manifest under
+// runtimes/environments/ (manifest_id).
 //
 // A published id's content must never change: atomic-chat-core caches an
 // accepted document by its id and pins an installation (descriptor) or an
@@ -21,7 +22,6 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const REPO_ROOT = fileURLToPath(new URL('../..', import.meta.url))
-export const DESCRIPTOR_PATH = 'runtimes/tensorrt-llm.json'
 // One file per platform; a new platform's manifest joins this list and gets
 // the same check without a new test file.
 export const ENVIRONMENT_MANIFEST_PATHS = [
@@ -115,4 +115,6 @@ export function readJsonAtRef(ref, path) {
   }
 }
 
-export const readDescriptorAtRef = (ref, path = DESCRIPTOR_PATH) => readJsonAtRef(ref, path)
+// `path` is one of runtime-descriptor-files.mjs's listDescriptorPaths(): there
+// is no default descriptor, every engine's file is compared on its own.
+export const readDescriptorAtRef = (ref, path) => readJsonAtRef(ref, path)

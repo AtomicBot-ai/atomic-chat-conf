@@ -38,7 +38,8 @@ backends/
   atomic-prism-schema.json   # JSON Schema (Draft-07) for the PrismML manifest
 runtimes/
   tensorrt-llm.json  # TensorRT-LLM managed-engine runtime descriptor
-  schema.json        # JSON Schema (Draft-07) for a runtime descriptor
+  vllm.json          # vLLM managed-engine runtime descriptor (branch only until live acceptance)
+  schema.json        # JSON Schema (Draft-07) for a runtime descriptor, shared by every engine
   environments/
     linux.json        # Linux environment manifest (where core may install Docker + the NVIDIA toolkit)
     linux.schema.json # JSON Schema (Draft-07) for the Linux environment manifest
@@ -596,8 +597,16 @@ set stays expressible without a schema change.
 ## Runtime descriptors (`runtimes/`)
 
 A runtime descriptor tells atomic-chat-core which container image a
-**managed engine** (currently TensorRT-LLM) runs, pinned by digest, what host
-it needs, and what that release supports. It carries **data only** — no
+**managed engine** (TensorRT-LLM, vLLM) runs, pinned by digest, what host
+it needs, and what that release supports. There is **one descriptor per
+engine**, named after it: `runtimes/<engine_id>.json` (`tensorrt-llm.json`,
+`vllm.json`), all validated by the one shared `runtimes/schema.json`. The file
+name **is** the engine: a descriptor whose `engine_id` differs from its file
+name fails `make validate` and CI, because core fetches
+`runtimes/<engine_id>.json` for the engine it has an adapter for and refuses a
+descriptor carrying another engine's id. CI and `make validate` discover every
+`runtimes/*.json` except `schema.json`, so a new engine's descriptor is
+checked without editing either. It carries **data only** — no
 command, script or argv lives in it — and it describes **the engine alone**.
 Where core may set up the foundation every engine runs on (which Linux
 distributions it can install a GPU container runtime on) is environment data,
@@ -616,6 +625,38 @@ environment manifests require core **0.7.5** or later; the current descriptor
 underscore and cannot read mixed-precision checkpoints, so it keeps whatever
 descriptor it accepted before.
 
+Every released core up to 0.9.9 reads **only** `runtimes/tensorrt-llm.json`.
+`runtimes/vllm.json` is read only by a core built with the `vllm` adapter
+(the core release of change `add-vllm-runtime`), and such a core treats each
+engine's descriptor on its own: a missing or invalid `vllm.json` makes vLLM
+unavailable and leaves TensorRT-LLM as it was.
+
+core fetches each engine's descriptor from this repository's `main` branch.
+For development, the source of each engine can be overridden with
+`ATOMIC_RUNTIME_DESCRIPTOR_URL_<ENGINE>` — the engine id upper-cased, `-`
+replaced by `_` — set to a `file://` path or a URL:
+
+```bash
+ATOMIC_RUNTIME_DESCRIPTOR_URL_VLLM=file://$PWD/runtimes/vllm.json
+ATOMIC_RUNTIME_DESCRIPTOR_URL_TENSORRT_LLM=file://$PWD/runtimes/tensorrt-llm.json
+```
+
+The older `ATOMIC_RUNTIME_DESCRIPTOR_URL` keeps overriding `tensorrt-llm` only.
+
+### `vllm.json` reaches `main` only after live acceptance
+
+Publishing `runtimes/vllm.json` on `main` **is** the switch that turns vLLM on:
+a core with the `vllm` adapter shows the engine only once the file is there
+(a 404 means "unavailable", with no release and no restart needed when it
+appears). So the descriptor lives on the change branch and is merged into
+`main` only after the live acceptance on Linux and Windows has passed, and
+after the app release that ships vLLM is out. CI and README changes can reach
+`main` earlier: they are safe for every released client. Until the file is
+merged its `descriptor_id` is not published, so acceptance findings are
+fixed in place on the branch; from the merge on, the immutability rule below
+applies to it like to any other descriptor. Removing `vllm.json` from `main`
+switches vLLM off for everyone without a release.
+
 ### `descriptor_id` is immutable
 
 The content published under a given `descriptor_id` never changes. core
@@ -628,10 +669,13 @@ instead of editing this one. Adding or removing a distribution is not a
 descriptor change: it ships as a new `manifest_id` of the environment
 manifest, and the `descriptor_id` stays as it is.
 
-The id format is `tensorrt-llm-<engine tag>-r<N>`: bump the engine tag when
-the underlying TensorRT-LLM release changes (`tensorrt-llm-1.2.1-r2` →
-`tensorrt-llm-1.3.0-r1`), or bump `N` when the tag stays the same but a
-data-only field changes (a new curated model, a corrected notice, …).
+The id format is `<engine_id>-<engine tag>-r<N>` (CI checks the
+`<engine_id>-` prefix): bump the engine tag when the underlying engine
+release changes (`tensorrt-llm-1.2.1-r2` → `tensorrt-llm-1.3.0-r1`), or bump
+`N` when the tag stays the same but a data-only field changes (a new curated
+model, a corrected notice, …). Each descriptor file is compared with its own
+version on `main`, so editing `vllm.json` under a `descriptor_id` already on
+`main` fails CI exactly as it does for `tensorrt-llm.json`.
 `tensorrt-llm-1.2.1-r2` is `r1` with its distribution list moved out to the
 environment manifest; `r1` was never published to `main`, and installs set
 up against it on development machines are removed and set up again. The same
@@ -667,6 +711,10 @@ at that point.
 
 ### How to update the engine tag
 
+The steps below are written for TensorRT-LLM; vLLM follows the same steps
+with its own sources (the vLLM source at the image's `VLLM_BUILD_COMMIT`, see
+[vLLM descriptor](#vllm-descriptor-vllmjson)).
+
 1. Confirm the candidate tag is the latest non-rc release with the
    platform/hardware support you need — check NVIDIA's own release notes and
    hardware-support docs at that tag, not just the tag list. **Exception, by
@@ -697,7 +745,7 @@ at that point.
    registry manifests (below).
 6. Update `notices` if the image's license terms changed, and `exclusions` if
    the release's support gaps changed.
-7. Assign a new `descriptor_id` (`tensorrt-llm-<new tag>-r1`).
+7. Assign a new `descriptor_id` (`<engine_id>-<new tag>-r1`).
 8. Run `make validate` before opening a PR — it runs the schema and every
    integrity check below against what you just wrote.
 
@@ -783,37 +831,63 @@ at that point.
   systems (NVIDIA GB10 / DGX Spark) `nvidia-smi` reports no dedicated card
   memory at all, so there the tier is instead compared against the host's
   `MemAvailable` (design D13).
-- **`quantization[].format` names** follow a fixed checkpoint-metadata →
-  format-name mapping, documented here as the conf↔core contract. The inputs
-  are the checkpoint's `config.json` content, and — when the checkpoint
-  carries the file — its `hf_quant_config.json` content: a checkpoint can
-  have no `quantization_config` in `config.json` at all and still be
-  quantized (e.g. `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8` and
+- **`quantization[].format` names** follow one fixed checkpoint-metadata →
+  format-name rule, **shared by every engine** and documented here as the
+  conf↔core contract (atomic-chat-core implements it once, for all managed
+  engines). A name says **how the weights are encoded on disk**, not just
+  their arithmetic: checkpoints that loaders read differently get different
+  names even when the bit widths match (ModelOpt `w4a16_awq` ≠ AutoAWQ
+  `autoawq_w4a16`; ModelOpt `fp8` ≠ Hugging Face `hf_fp8` ≠ block-scaled
+  `fp8_block_scales`). The rule only **names** a checkpoint; whether an engine
+  loads it is decided by that engine's descriptor: an engine loads a format
+  iff its pinned descriptor has a `quantization` row with that name. A
+  checkpoint the rule does **not recognize** is rejected by every engine as
+  unsupported (naming its `quant_method` when there is one) — it never falls
+  through to the unquantized step 4.
+
+  The inputs are the checkpoint's `config.json` content, and — when the
+  checkpoint carries the file — its `hf_quant_config.json` content: a
+  checkpoint can have no `quantization_config` in `config.json` at all and
+  still be quantized (e.g. `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8` and
   `nvidia/Llama-3.3-70B-Instruct-NVFP4` both classify entirely from
   `hf_quant_config.json`), so `dtype`/`torch_dtype` must never be trusted
-  before `hf_quant_config.json` has been checked. Apply these steps in order,
+  before `hf_quant_config.json` has been checked. `quant_method` and the
+  string values below are compared lower-cased. Apply these steps in order,
   stopping at the first that matches:
   1. If `hf_quant_config.json` is present (NVIDIA ModelOpt), the format is its
      `quantization.quant_algo` lower-cased, with `fp8_pb_wo` renamed to
-     `fp8_block_scales` (matching what the engine itself calls it
-     internally).
+     `fp8_block_scales` (matching what TensorRT-LLM itself calls it
+     internally). ModelOpt names therefore include `fp8`,
+     `fp8_per_channel_per_token`, `fp8_block_scales`, `nvfp4`, `w4a16_nvfp4`,
+     `mxfp8`, `w4a16_awq` and `w4a8_awq`.
   2. Otherwise, if `config.json`'s `quantization_config.quant_method` is set:
      - `modelopt` → the format is `quantization_config.quant_algo`
        lower-cased, with the same `fp8_pb_wo` → `fp8_block_scales` rename as
        step 1.
      - `fp8` **with** `quantization_config.weight_block_size` equal to
-       `[128,128]` → `fp8_block_scales`. `fp8` **without** that block size is
-       **not loadable** by this engine release (`model_config.py:323`) — it
-       must not fall through to step 4 and be reported as `bf16`/`fp16`.
+       `[128,128]` → `fp8_block_scales`.
+     - `fp8` **without** `weight_block_size` (absent or `null`) → `hf_fp8`:
+       the Hugging Face / AutoFP8 encoding with per-tensor or per-channel
+       scales. `fp8` with any other block size is **not recognized**.
      - `mxfp4` → `mxfp4`.
-     - anything else (e.g. `awq`, `gptq`) is **not loadable** by this engine
-       release and must not be listed as a supported format.
+     - `awq` (AutoAWQ) with `bits` (or `w_bit`) equal to 4 and `version`
+       absent or `gemm` → `autoawq_w4a16`. Any other bit width, or another
+       packing `version` (`gemv`, `gemv_fast`, `exllama`, `marlin`, …), is
+       **not recognized**: the packed bytes on disk differ.
+     - `gptq` with `bits` 4 or 8, `sym: true`, and `checkpoint_format` absent
+       or `gptq` → `gptq_w4a16` or `gptq_w8a16`. Other bit widths, asymmetric
+       quantization (`sym: false`) and other checkpoint formats (`gptq_v2`,
+       `marlin`) are **not recognized**.
+     - `compressed-tensors` → named by its scheme (below).
+     - `bitsandbytes` is deliberately **not recognized**: engines load it
+       slowly and only partially, so it is not offered at all.
+     - anything else is **not recognized**.
   3. Otherwise, if `config.json` has a top-level `quantization` object (the
      MLX convention: `bits`, `group_size`, e.g.
-     `prism-ml/Bonsai-27B-mlx-1bit`), the checkpoint is **not loadable**: its
-     weights are MLX-packed while its `dtype` still names the unquantized
-     model, so it must not fall through to step 4 and be reported as
-     `bf16`/`fp16`.
+     `prism-ml/Bonsai-27B-mlx-1bit`), the checkpoint is **not recognized**:
+     its weights are MLX-packed while its `dtype` still names the
+     unquantized model, so it must not fall through to step 4 and be
+     reported as `bf16`/`fp16`.
   4. Otherwise the checkpoint is unquantized: read `dtype` — the field
      TensorRT-LLM itself reads (`model_config.py:471`) — falling back to the
      legacy `torch_dtype` key only when `dtype` is absent, and then to
@@ -821,7 +895,39 @@ at that point.
      as Qwen3.5's declares its dtype only there, and TensorRT-LLM 1.3 falls
      back the same way). `bfloat16` → `bf16`; `float16` → `fp16`; anything
      else, including `float32` or a missing/unrecognized value, is **not
-     loadable**.
+     recognized**.
+
+  A **compressed-tensors** checkpoint (llm-compressor) is named by its
+  `quantization_config.config_groups`. Each group is classified by its
+  `weights` (`type`, `num_bits`) and `input_activations` (absent or `null`
+  means weight-only):
+
+  | `weights` | `input_activations` | format |
+  | --- | --- | --- |
+  | `int`, 4 bits | none | `ct_w4a16` |
+  | `int`, 8 bits | none | `ct_w8a16` |
+  | `float`, 8 bits | `float`, 8 bits | `ct_w8a8_fp8` |
+  | `int`, 8 bits | `int`, 8 bits | `ct_w8a8_int8` |
+  | `float`, 4 bits, `group_size` 16 | `float`, 4 bits | `ct_nvfp4` |
+
+  Every group must give the same name, and that name is the format. A group
+  that matches no row, groups that give different names, no groups at all,
+  or a `sparsity_config` whose `format` is anything but `dense` (an empty
+  `{}` or `null` means no sparsity) make the checkpoint **not recognized**.
+
+  **The rule never changes a TensorRT-LLM verdict.** Every name added for
+  vLLM (`hf_fp8`, `autoawq_w4a16`, `gptq_w4a16`, `gptq_w8a16`, the five
+  `ct_*` names) names a checkpoint that the rule used to call "not
+  loadable", and no `tensorrt-llm` descriptor has a row for any of them — so
+  for every checkpoint, every published TensorRT-LLM descriptor gives the
+  same `ok` or `MODEL_INCOMPATIBLE` as before; only the reason text can
+  change (it now names the format). atomic-chat-core proves this with a
+  verdict test over its TensorRT-LLM checkpoint corpus. Already-released
+  cores are unaffected: they read only `tensorrt-llm.json`, which carries
+  none of the new names. The same constraint binds every future edit: a new
+  name may only be given to a checkpoint the rule did not recognize before;
+  renaming or reclassifying a checkpoint that already has a name changes the
+  verdict of published descriptors and is not allowed.
 
   A format of `mixed_precision` (ModelOpt `quant_algo: MIXED_PRECISION`, e.g.
   `nvidia/Qwen3.8-27B-NVFP4`) is never a row of its own. Its
@@ -939,20 +1045,128 @@ The logs live in atomic-chat-core's checkout of branch
 (`vm-campaign/*`, `managed-install-ubuntu-26.04-x86_64-run*.log`,
 `tensorrt-llm-run2.log`).
 
+### vLLM descriptor (`vllm.json`)
+
+`vllm-0.31.0-r1` pins the vLLM project's own image
+`docker.io/vllm/vllm-openai:v0.31.0` (build commit
+`db9527a46873454610df6dbedf79a36d6bf1a7f6`, the `v0.31.0` tag) for
+`linux/amd64` and `linux/arm64`, and the CUDA 13.0 base image
+`nvcr.io/nvidia/cuda:13.0.2-base-ubuntu24.04` for the GPU check. **Not
+live-qualified yet**: every value below comes from the registry manifests,
+the vLLM source at that commit and the Hugging Face API on 2026-10-06. The
+live acceptance on an RTX 4070 Laptop (compute capability 8.9, 8 GB) under
+Ubuntu and Windows, run by the maintainers of change `add-vllm-runtime`
+with atomic-chat-core's live tests, confirms or corrects the driver floor,
+the matrix rows that run on 8.9, the curated list and the memory overheads
+before the file reaches `main`; its findings are recorded in that change's
+`rulings/`.
+
+- **Why not the `-cu129` variant.** The first descriptor,
+  `vllm-0.31.0-cu129-r1`, pinned `v0.31.0-cu129` for its lower driver floor
+  (R575). That image cannot start: next to `torch 2.13.0+cu129` it ships
+  `torchcodec 0.17.0`, built for CUDA 13, whose `libtorchcodec_image.so` needs
+  `libnvrtc.so.13`; the image has only `libnvrtc.so.12`. The `vllm` command
+  imports `torchcodec` on start and does not catch that `OSError`, so every
+  model fails with "vLLM exited with code 1 before it was ready" (Windows
+  acceptance, 2026-10-06; a bare `python3 -c "import torchcodec"` in the image
+  fails the same way, without a GPU or any of core's flags). vLLM requires
+  `torchcodec >= 0.14` with no upper bound, so the `-cu129` build picks up
+  whatever CUDA 13 wheel is current. The default tag is CUDA 13.0 throughout.
+  `vllm-0.31.0-cu129-r1` never reached `main`; an engine installed from it on
+  a development machine is removed and set up again. The cost is the driver
+  floor: R580 instead of R575, still well below TensorRT-LLM's R615, which is
+  what keeps it off many desktops and why vLLM is added. NGC's
+  `nvcr.io/nvidia/vllm` is not used: newer CUDA (higher floor), later than
+  upstream, and NGC terms on top.
+- **`minimum_driver_version` `580.0`.** The image's `NVIDIA_REQUIRE_CUDA` is
+  `cuda>=13.0` (`CUDA_VERSION` 13.0.2), and CUDA 13.0 needs the R580 branch on
+  consumer cards, so the floor is that branch's first version, by the same
+  rule as TensorRT-LLM (see `minimum_driver_version` above). The image's
+  datacenter brand exceptions (535, 550, 565, 570 and 575 branches) are not
+  modelled. The probe image is CUDA 13.0 as well, so the GPU check does not
+  raise the floor.
+- **`minimum_compute_capability` `8.0`** (Ampere), the same as
+  TensorRT-LLM. The amd64 image also carries Turing (7.5) kernels, but no
+  Turing card is available to check it, and a floor is not lowered without a
+  live run.
+- **`quantization`.** vLLM's documented hardware table stops at Hopper and
+  has no rows for NVFP4, MXFP4 or ModelOpt, so the matrix is read from the
+  code instead: each quantization method's `get_min_capability()` at the
+  build commit, the gate vLLM itself applies at load. Every format the shared
+  rule recognizes and vLLM loads has a gate at or below 8.0 — where a card
+  lacks native FP8 or FP4 tensor cores, vLLM falls back to Marlin
+  weight-only kernels (FP8, NVFP4, MXFP4) or, for compressed-tensors FP8, to
+  W8A16 — so every row is `8.0` with no exclusions. Not listed: ModelOpt
+  `w4a16_awq` and `w4a8_awq` (vLLM's ModelOpt loader does not accept them),
+  GPTQ other than 4/8-bit symmetric and AutoAWQ other than 4-bit (vLLM 0.31
+  refuses them), and bitsandbytes and GGUF. **Only the rows that run on 8.9
+  are checked live** (by the acceptance above). The rows that need native
+  support on newer cards to run fast — FP8 with block scales on Hopper,
+  NVFP4 and MXFP4 on Blackwell — and every row on 8.0/8.6, 9.0, 10.x and 12.x
+  come from the code alone. A row that turns out wrong fails at load with
+  the engine's own error and logs, and is fixed by a new `descriptor_id`
+  without a core release.
+- **`supported_architectures`.** Every architecture of the TensorRT-LLM
+  descriptor, all of which vLLM 0.31 serves (HunYuan, Starcoder2 and EXAONE
+  MoE through its Transformers backend; EXAONE MoE under vLLM's and Hugging
+  Face's spelling `ExaoneMoeForCausalLM`), plus six text families common on
+  small cards that TensorRT-LLM lacks: `Gemma2ForCausalLM`,
+  `GraniteForCausalLM`, `GraniteMoeHybridForCausalLM` (Granite 4),
+  `Ernie4_5ForCausalLM`, `Ernie4_5_MoeForCausalLM` and `Lfm2ForCausalLM`.
+  Vision-language classes run text-only.
+- **`model_families`.** Parser names are vLLM's own registry names at the
+  build commit (`vllm/tool_parsers/__init__.py`, `vllm/reasoning/__init__.py`),
+  chosen per family from vLLM's tool-calling and reasoning docs and the model
+  cards' `vllm serve` flags. A family gets a parser only when it works with
+  the checkpoint's own chat template: the adapter passes no
+  `--chat-template`, so families whose vLLM recipe requires one (Llama 3.x,
+  DeepSeek V3/V3.1, Mistral in the Transformers format, Granite 3.0) have
+  none, and so do families with more than one reasoning mode where a wrong
+  reasoning parser would swallow the answer (EXAONE, Trinity, ERNIE). Cohere
+  Command's parsers need the `cohere_melody` package, which only vLLM's test
+  requirements install, not the image. These names differ from TensorRT-LLM's for the same family
+  (Qwen3: `hermes`, not `qwen3`; Qwen3.5: `qwen3_coder` and `qwen3`, not
+  `qwen3` and `qwen3_5`) — the descriptor of each engine names its own
+  registry.
+- **`curated_models`.** First the thirteen TensorRT-LLM models at the same
+  revisions, so one copy on disk serves both engines (their tiers are those
+  of TensorRT-LLM, except `Qwen3.6-35B-A3B-FP8`, which vLLM also runs below
+  Hopper and so drops to the 48 GB tier); then 4-bit checkpoints that
+  TensorRT-LLM cannot load, for 8 and 12 GB cards: `Qwen/Qwen3-4B-AWQ`
+  (AutoAWQ), `cyankiwi/Qwen3.5-4B-AWQ-4bit` (compressed-tensors W4A16, a
+  community quantization: Qwen publishes no 4-bit Qwen3.5 below 27B) and
+  `Qwen/Qwen3-8B-AWQ`. Google's own `gemma-4-*-qat-w4a16-ct` checkpoints are
+  left out: their unquantized embeddings and encoders keep even E2B at
+  8.3 GB.
+- **`download_bytes`** is the larger platform's compressed layers (arm64,
+  10.1 GB); **`required_disk_bytes`** adds the extracted size sampled the
+  same way as for TensorRT-LLM, 28 GiB.
+- **Privacy.** core starts the container with vLLM's usage statistics off
+  (`VLLM_NO_USAGE_STATS=1`, `DO_NOT_TRACK=1`) and Hugging Face offline: the
+  image itself reports usage to `stats.vllm.ai` by default
+  (`VLLM_USAGE_SOURCE=production-docker-image`).
+- **`minimum_core_version` `0.9.9`, `minimum_app_version` `2.2.0`** are
+  provisional: `0.9.9` is the version core's change branch starts from, so
+  a development core accepts the file through
+  `ATOMIC_RUNTIME_DESCRIPTOR_URL_VLLM`; both are set to the actual core and
+  app releases that ship vLLM before the file is merged into `main`.
+
 ### Reproducing runtime descriptor digests
 
-`runtimes/tensorrt-llm.json` pins each image by its per-platform manifest
-digest (not the multi-arch index digest), so `docker pull repo@digest` gets
-exactly that platform. These print the digests from the registry (no Docker
+Every descriptor pins each image by its per-platform manifest digest (not
+the multi-arch index digest), so `docker pull repo@digest` gets exactly that
+platform. These print the digests from the registry (no Docker
 daemon needed); they match the descriptor for as long as NVIDIA does not
 repoint the tags:
 
 ```bash
 docker buildx imagetools inspect nvcr.io/nvidia/tensorrt-llm/release:1.3.0rc29
 docker buildx imagetools inspect nvcr.io/nvidia/cuda:13.4.1-base-ubuntu24.04
+docker buildx imagetools inspect docker.io/vllm/vllm-openai:v0.31.0
+docker buildx imagetools inspect nvcr.io/nvidia/cuda:13.0.2-base-ubuntu24.04
 
 # Same without Docker: anonymous registry token, then the manifest list.
-for ref in nvidia/tensorrt-llm/release:1.3.0rc29 nvidia/cuda:13.4.1-base-ubuntu24.04; do
+for ref in nvidia/tensorrt-llm/release:1.3.0rc29 nvidia/cuda:13.4.1-base-ubuntu24.04 nvidia/cuda:13.0.2-base-ubuntu24.04; do
   repo=${ref%:*} tag=${ref##*:}
   T=$(curl -s "https://nvcr.io/proxy_auth?scope=repository:$repo:pull" | jq -r .token)
   curl -s -H "Authorization: Bearer $T" \
@@ -960,6 +1174,13 @@ for ref in nvidia/tensorrt-llm/release:1.3.0rc29 nvidia/cuda:13.4.1-base-ubuntu2
     "https://nvcr.io/v2/$repo/manifests/$tag" |
     jq -r --arg ref "$ref" '.manifests[] | "\($ref) \(.platform.os)/\(.platform.architecture) \(.digest)"'
 done
+
+# Docker Hub (vLLM): the token comes from auth.docker.io.
+T=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:vllm/vllm-openai:pull" | jq -r .token)
+curl -s -H "Authorization: Bearer $T" \
+  -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json" \
+  https://registry-1.docker.io/v2/vllm/vllm-openai/manifests/v0.31.0 |
+  jq -r '.manifests[] | "\(.platform.os)/\(.platform.architecture) \(.digest)"'
 ```
 
 A curated model's `revision` is the commit `main` resolved to when it was
@@ -1179,12 +1400,17 @@ every push and pull request. It performs the following checks:
 - Every TurboQuant `tag` must look like `b<build>-<semver>` and all entries must
   share one tag, every `asset` must be `llama-turboquant-<id>.zip` on Windows /
   `.tar.gz` elsewhere, and backend ids must be unique.
-- `ajv` validates `runtimes/tensorrt-llm.json` against `runtimes/schema.json`.
+- Engine descriptors are **discovered, not named**: every `runtimes/*.json`
+  except `schema.json` (`.github/scripts/runtime-descriptor-files.mjs`) goes
+  through the checks below, so a new engine's descriptor is gated without
+  editing the workflow or the Makefile.
+- `node --test .github/scripts/runtime-descriptor.test.mjs` runs `ajv
+  --strict` with `runtimes/schema.json` on every descriptor and on the
+  accept/reject fixtures.
 - Cross-field integrity that the schema cannot express is checked by
-  `node --test` over `.github/scripts/runtime-descriptor.test.mjs`,
-  `.github/scripts/inventory-digest.test.mjs` and
-  `.github/scripts/runtime-descriptor-integrity.test.mjs`: fixture
-  accept/reject against the schema, and on the real descriptor —
+  `node --test` over `.github/scripts/inventory-digest.test.mjs` and
+  `.github/scripts/runtime-descriptor-integrity.test.mjs`, on every
+  descriptor — `engine_id` equals the file name,
   `supported_architectures` and `quantization[].format` are unique,
   every `model_families` key is a `supported_architectures` entry,
   `curated_models` are unique by `repository@revision`,
@@ -1193,9 +1419,10 @@ every push and pull request. It performs the following checks:
   is at or below every `quantization[].min_compute_capability`, and every
   `quantization[].excluded_compute_capabilities` entry is strictly above
   that same entry's own `min_compute_capability`.
-- `.github/scripts/runtime-descriptor-immutability.test.mjs` fails when
-  `descriptor_id` is unchanged against the base branch but the content
-  differs.
+- `.github/scripts/runtime-descriptor-immutability.test.mjs` fails when a
+  descriptor's `descriptor_id` is unchanged against its own version on the
+  base branch but the content differs (a descriptor absent there, such as a
+  new engine's, passes).
 - `ajv` validates `runtimes/environments/linux.json` against
   `runtimes/environments/linux.schema.json`, and
   `runtimes/environments/windows.json` against
@@ -1234,6 +1461,7 @@ node .github/scripts/embedding-catalog-check.mjs
 npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
 npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
+npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/vllm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
 npx ajv-cli@5 validate -s runtimes/environments/windows.schema.json -d runtimes/environments/windows.json --strict=true
 npx ajv-cli@5 validate -s app/schema.json -d app/latest.json --strict=false

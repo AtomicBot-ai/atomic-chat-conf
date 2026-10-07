@@ -2,9 +2,12 @@ import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
+import { listDescriptorPaths } from './runtime-descriptor-files.mjs'
 
-// This is the exact command `make validate` will run for the real descriptor (task 1.2), so a
-// green test here means the gate itself would pass, not just some approximation of it.
+// Schema gate for every engine descriptor. `make validate` and CI run this file instead of naming
+// each runtimes/<engine_id>.json in an ajv step, so a descriptor added for a new engine is checked
+// the moment it lands (see runtime-descriptor-files.mjs). The ajv command below is the same one the
+// gate used to run per file, so a green test here means the descriptors themselves pass.
 const REPO_ROOT = fileURLToPath(new URL('../..', import.meta.url))
 const SCHEMA = 'runtimes/schema.json'
 const STRICT = 'true'
@@ -22,13 +25,41 @@ const runAjv = (binary, args) => {
   return result
 }
 
-const validate = (fixture) =>
-  runAjv('npx', ['--yes', 'ajv-cli@5', 'validate', '-s', SCHEMA, '-d', `.github/fixtures/runtimes/${fixture}`, `--strict=${STRICT}`])
+const validatePath = (path) =>
+  runAjv('npx', ['--yes', 'ajv-cli@5', 'validate', '-s', SCHEMA, '-d', path, `--strict=${STRICT}`])
 
-test('valid descriptor passes schema validation', () => {
-  const result = validate('valid.json')
-  assert.equal(result.status, 0, result.stderr)
+const validate = (fixture) => validatePath(`.github/fixtures/runtimes/${fixture}`)
+
+const descriptorPaths = listDescriptorPaths()
+
+test('runtimes/ holds at least one descriptor and the listing skips schema.json', () => {
+  assert.ok(descriptorPaths.length >= 1, 'no descriptor found under runtimes/')
+  assert.ok(!descriptorPaths.includes('runtimes/schema.json'))
 })
+
+for (const path of descriptorPaths) {
+  test(`${path} passes schema validation`, () => {
+    const result = validatePath(path)
+    assert.equal(result.status, 0, result.stderr)
+  })
+}
+
+// "Новый дескриптор проверяется без правки CI": a catalog directory whose only descriptor
+// (vllm.json) breaks the schema and is named nowhere in this file or in CI — discovering it is
+// what catches it.
+test('a schema-invalid descriptor is found and rejected without being named anywhere', () => {
+  const paths = listDescriptorPaths('.github/fixtures/runtimes/catalogs/unnamed-invalid')
+  assert.deepEqual(paths, ['.github/fixtures/runtimes/catalogs/unnamed-invalid/vllm.json'])
+  const result = validatePath(paths[0])
+  assert.notEqual(result.status, 0, 'expected the undiscovered-by-name descriptor to fail schema validation')
+})
+
+for (const fixture of ['valid.json', 'valid-vllm.json']) {
+  test(`valid fixture ${fixture} passes schema validation`, () => {
+    const result = validate(fixture)
+    assert.equal(result.status, 0, result.stderr)
+  })
+}
 
 const invalid = [
   ['invalid-missing-digest.json', 'image digest missing for one platform'],
