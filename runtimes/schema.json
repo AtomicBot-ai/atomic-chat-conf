@@ -31,8 +31,9 @@
       "description": "Bump this when the shape of a descriptor changes in a backwards-incompatible way."
     },
     "descriptor_id": {
-      "$ref": "#/definitions/id",
-      "description": "Immutable identifier for this exact published descriptor. Any change to the image, matrices, model families or any other field MUST be published under a new descriptor_id instead of editing this one in place — an installation pins the descriptor_id it was set up with, and core caches descriptors by this id. Adding a distribution is not a descriptor change: it is a new manifest_id of the environment manifest."
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*-[0-9]+(\\.[0-9]+)*((a|b|rc)[0-9]+)?-r[0-9]+$",
+      "description": "Immutable identifier for this exact published descriptor, of the form <engine_id>-<engine version>-r<n>: the version is dot-separated numbers with an optional a<k>, b<k> or rc<k> pre-release suffix, and n is the edition of that release in conf (e.g. tensorrt-llm-1.3.0rc29-r3, vllm-0.31.0-r1). Core orders descriptors by this id to offer an update, so a new descriptor of an engine MUST have a strictly greater id: a newer engine version, or the same version with a greater r<n>. Any change to the image, matrices, model families or any other field MUST be published under a new descriptor_id instead of editing this one in place — an installation pins the descriptor_id it was set up with, and core caches descriptors by this id. Adding a distribution is not a descriptor change: it is a new manifest_id of the environment manifest. That the id starts with engine_id is checked in CI (runtime-descriptor-integrity.test.mjs), since the schema cannot compare two fields."
     },
     "engine_id": {
       "$ref": "#/definitions/id",

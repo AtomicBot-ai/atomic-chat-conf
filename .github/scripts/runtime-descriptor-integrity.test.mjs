@@ -60,11 +60,21 @@ function checkUniqueCuratedModels(d) {
   return errors
 }
 
-function checkDescriptorIdPrefix(d) {
+// descriptor_id is <engine_id>-<engine version>-r<n>. The schema's pattern fixes the shape but
+// cannot see engine_id, so a dash-separated engine part it accepts could still be another engine's
+// id or swallow part of the version ("tensorrt" + "llm-1.3.0-r1"). Core orders an engine's
+// descriptors by the part after "<engine_id>-", so that part alone must be <version>-r<n>.
+const DESCRIPTOR_ID_TAIL = /^[0-9]+(\.[0-9]+)*((a|b|rc)[0-9]+)?-r[0-9]+$/
+
+function checkDescriptorIdForm(d) {
   const errors = []
   const prefix = `${d.engine_id}-`
   if (typeof d.descriptor_id !== 'string' || !d.descriptor_id.startsWith(prefix)) {
     errors.push(`descriptor_id "${d.descriptor_id}" must start with "${prefix}" (engine_id + "-")`)
+  } else if (!DESCRIPTOR_ID_TAIL.test(d.descriptor_id.slice(prefix.length))) {
+    errors.push(
+      `descriptor_id "${d.descriptor_id}" must be "${prefix}<engine version>-r<n>" (e.g. ${prefix}1.3.0rc29-r3)`
+    )
   }
   return errors
 }
@@ -127,7 +137,7 @@ const CHECKS = [
   checkModelFamiliesSubsetOfSupportedArchitectures,
   checkUniqueQuantizationFormats,
   checkUniqueCuratedModels,
-  checkDescriptorIdPrefix,
+  checkDescriptorIdForm,
   checkRequiredDiskAtLeastDownload,
   checkMinimumComputeCapabilityIsAFloor,
   checkExcludedComputeCapabilitiesAboveMinimum,
@@ -213,9 +223,39 @@ test('rejects: duplicate curated_models repository@revision', () => {
 test('rejects: descriptor_id not prefixed with engine_id + "-"', () => {
   const bad = clone(descriptor)
   bad.descriptor_id = 'not-the-engine-id-r1'
-  const errors = checkDescriptorIdPrefix(bad)
+  const errors = checkDescriptorIdForm(bad)
   assert.equal(errors.length, 1)
-  assert.match(errors[0], /descriptor_id/)
+  assert.match(errors[0], /must start with "tensorrt-llm-"/)
+})
+
+// "Id не по форме": a copy of a published descriptor whose id is well-formed for the schema but
+// belongs to another engine.
+test('rejects: a well-formed descriptor_id that starts with another engine_id', () => {
+  const bad = clone(descriptor)
+  bad.engine_id = 'vllm'
+  const errors = checkDescriptorIdForm(bad)
+  assert.equal(errors.length, 1)
+  assert.match(errors[0], /must start with "vllm-"/)
+})
+
+test('rejects: engine_id that is only a dash-prefix of the engine part of descriptor_id', () => {
+  const bad = clone(descriptor)
+  bad.engine_id = 'tensorrt'
+  const errors = checkDescriptorIdForm(bad)
+  assert.equal(errors.length, 1)
+  assert.match(errors[0], /must be "tensorrt-<engine version>-r<n>"/)
+})
+
+test('accepts: descriptor_id forms the order in core reads', () => {
+  for (const [engine_id, descriptor_id] of [
+    ['tensorrt-llm', 'tensorrt-llm-1.3.0rc29-r3'],
+    ['vllm', 'vllm-0.31.0-r1'],
+    ['vllm', 'vllm-1-r12'],
+    ['vllm', 'vllm-0.32.0b1-r1'],
+    ['vllm', 'vllm-0.32.0a2-r1'],
+  ]) {
+    assert.deepEqual(checkDescriptorIdForm({ engine_id, descriptor_id }), [], descriptor_id)
+  }
 })
 
 test('rejects: required_disk_bytes smaller than download_bytes', () => {

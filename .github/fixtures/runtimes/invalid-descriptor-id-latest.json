@@ -1,45 +1,46 @@
 {
   "schema_version": 1,
-  "descriptor_id": "tensorrt-llm-0.0.1-r1",
-  "engine_id": "tensorrt-llm",
-  "adapter_id": "tensorrt-llm",
+  "descriptor_id": "vllm-latest",
+  "engine_id": "vllm",
+  "adapter_id": "vllm",
   "adapter_contract_version": 1,
   "image": {
     "linux/amd64": {
-      "repository": "nvcr.io/nvidia/tensorrt-llm/release",
-      "digest": "sha256:615028f0f0fb42fe4afc1dde130a3d0a8fb71e36dd7f714243ca0880f5154f98"
+      "repository": "docker.io/vllm/vllm-openai",
+      "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
     },
     "linux/arm64": {
-      "repository": "nvcr.io/nvidia/tensorrt-llm/release",
-      "digest": "sha256:49dbf899b9a762c74a6ff9f2b933d9e2f705fa5773d0056e7bb8b62d27e94b3d"
+      "repository": "docker.io/vllm/vllm-openai",
+      "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
     }
   },
   "probe_image": {
     "linux/amd64": {
-      "repository": "nvcr.io/nvidia/cuda",
-      "digest": "sha256:e8a5c0517db1de910bfa883adf4120719a63ec0633752176ed6593c666be26c4"
+      "repository": "docker.io/nvidia/cuda",
+      "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
     },
     "linux/arm64": {
-      "repository": "nvcr.io/nvidia/cuda",
-      "digest": "sha256:aab295a37aee351555c5f63e7c3d22d81e9672b1a9f83b6dbc6e0448bcab8ff7"
+      "repository": "docker.io/nvidia/cuda",
+      "digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
     }
   },
   "minimum_core_version": "1.4.0",
   "minimum_app_version": "1.4.0",
-  "minimum_driver_version": "525.60.13",
-  "minimum_compute_capability": "7.5",
+  "minimum_driver_version": "575.51.03",
+  "minimum_compute_capability": "8.0",
   "supported_architectures": [
     "LlamaForCausalLM",
-    "Qwen2ForCausalLM"
+    "Qwen3ForCausalLM"
   ],
   "quantization": [
     {
-      "format": "fp8",
-      "min_compute_capability": "8.9"
+      "format": "bf16",
+      "min_compute_capability": "8.0",
+      "excluded_compute_capabilities": []
     },
     {
-      "format": "fp16",
-      "min_compute_capability": "7.5",
+      "format": "autoawq_w4a16",
+      "min_compute_capability": "8.0",
       "excluded_compute_capabilities": []
     }
   ],
@@ -49,9 +50,9 @@
       "reasoning_parser": null,
       "structured_output": true
     },
-    "Qwen2ForCausalLM": {
+    "Qwen3ForCausalLM": {
       "tool_parser": "hermes",
-      "reasoning_parser": "qwen_reasoning",
+      "reasoning_parser": "qwen3",
       "structured_output": true
     }
   },
@@ -67,7 +68,7 @@
   "download_bytes": 17179869184,
   "required_disk_bytes": 34359738368,
   "notices": [
-    "Requires acceptance of the NVIDIA NGC container terms of use."
+    "vLLM is licensed under the Apache License 2.0."
   ],
   "exclusions": [
     "Vision, embeddings and the Responses API are not supported by this release."
