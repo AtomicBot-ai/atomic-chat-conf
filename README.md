@@ -420,14 +420,17 @@ one vector; text and media can be mixed in one item:
   "model": "embeddinggemma-2",
   "input": [
     "task: search result | query: a red square",
-    { "content": [{ "type": "image_url", "image_url": { "url": "data:image/png;base64,..." } }] },
+    { "content": [{ "type": "image_url", "image_url": { "url": "data:image/png;base64,<base64 png or jpeg>" } }] },
     { "content": [{ "type": "input_audio", "input_audio": { "data": "<base64 wav, mp3 or flac>" } }] }
   ]
 }
 ```
 
 Media must be inline (`data:` URLs or base64): the core refuses links, so the
-engine never fetches a URL a client hands it. A new logo key needs the image in
+engine never fetches a URL a client hands it, and answers malformed or
+undecodable media with a 400 that names the field. `dimensions` other than
+`dims` is refused too: the server returns full vectors, and a client that wants
+one of the `matryoshka_dims` keeps the first values and L2-normalizes them. A new logo key needs the image in
 the app first, then the `icon` value here.
 
 ## llama.cpp backends manifest
