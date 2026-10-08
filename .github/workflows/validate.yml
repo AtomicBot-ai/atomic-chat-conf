@@ -638,7 +638,8 @@ jobs:
       # immutability checks on each, so a new engine's descriptor is gated the
       # moment it lands. Cross-field rules the schema cannot express
       # (uniqueness, model_families ⊆ supported_architectures, engine_id equal
-      # to the file name, descriptor_id and manifest_id prefixes, disk >=
+      # to the file name, descriptor_id = <engine_id>-<version>-r<n> on top of
+      # the schema's pattern, the manifest_id prefix, disk >=
       # download, minimum_compute_capability as a floor) live in the same
       # node:test scripts shared with `make validate`, not inlined here, so the
       # local and CI gates cannot drift apart the way a copy-pasted heredoc
