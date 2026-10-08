@@ -36,6 +36,10 @@ backends/
   turboquant-schema.json   # JSON Schema (Draft-07) for the TurboQuant manifest
   atomic-prism-manifest.json # PrismML llama.cpp releases (candidate / approved per asset)
   atomic-prism-schema.json   # JSON Schema (Draft-07) for the PrismML manifest
+  sdcpp-manifest.json      # stable-diffusion.cpp build catalog (read by core)
+  sdcpp-schema.json        # JSON Schema (Draft-07) for the sd.cpp manifest
+  mlx-manifest.json        # The pinned mlx-server build (read by core and the desktop Makefile)
+  mlx-schema.json          # JSON Schema (Draft-07) for the MLX manifest
 runtimes/
   tensorrt-llm.json  # TensorRT-LLM managed-engine runtime descriptor
   vllm.json          # vLLM managed-engine runtime descriptor (branch only until live acceptance)
@@ -593,6 +597,81 @@ set stays expressible without a schema change.
 > PR, and merge once CI is green. Consumers pin an immutable commit of this
 > repository, so a merge alone does not upgrade anyone — the Atomic Chat
 > client must bump its pinned revision in a deliberate compatibility change.
+
+## MLX server manifest
+
+[`backends/mlx-manifest.json`](backends/mlx-manifest.json) pins the one
+`mlx-server` build Atomic Chat runs MLX models with on Apple Silicon: a
+release of the `AtomicBot-ai/mlx-vlm` fork. Schema:
+[`backends/mlx-schema.json`](backends/mlx-schema.json).
+
+```json
+{
+  "$schema": "./mlx-schema.json",
+  "upstream_repo": "AtomicBot-ai/mlx-vlm",
+  "tag_name": "mlxvlm-macos-arm64-07ba5a1",
+  "published_at": "2026-08-28T10:38:38Z",
+  "assets": [
+    {
+      "backend": "macos-arm64",
+      "name": "mlxvlm-mlx-server-macos-arm64.tar.gz",
+      "sha256": "cce16896300c340da22e34ce007b2da081d2f9b8d156d8dd61bf7fc3700f9d88",
+      "size": 210514030
+    }
+  ]
+}
+```
+
+### Who reads it
+
+- **Atomic Chat core** reads it from `main` (no pinned commit) to show the MLX
+  build catalog, check for an MLX update and install one into
+  `<data>/mlx/backends`. It keeps the last accepted copy on disk and answers
+  from it when offline. `ATOMIC_MLX_MANIFEST_URL` (`https://` or `file://`)
+  points core at another copy during development.
+- **The desktop Makefile** (`make build-mlx-server` in `atomic-chat`) bundles
+  the same build into the installer, checking `sha256` before unpacking, and
+  writes `{tag, published_at}` next to the binary so core can compare the
+  bundled build with downloaded ones. `MLX_MANIFEST=<file>` points it at a
+  local copy.
+
+Because core reads `main` directly, **merging a newer `published_at` offers
+that build as an update to every running client** within about an hour.
+
+### Fields
+
+- `tag_name` — the fork's release tag, `mlxvlm-macos-arm64-<commit>`. The
+  commit hash says nothing about order.
+- `published_at` — the release's `publishedAt` on GitHub. This is the version
+  order: clients treat a build as an update only when it was published
+  strictly later than the active one, so rolling the manifest back to an older
+  release never downgrades anyone.
+- `assets` — exactly one archive, `backend: "macos-arm64"`. `sha256` and
+  `size` are mandatory: the archive is downloaded straight from the fork's
+  GitHub release, not mirrored here, so the pinned hash is the only check on
+  what gets executed. `sha256` is the asset's GitHub `digest` without the
+  `sha256:` prefix.
+
+### The referenced release is never deleted or re-uploaded
+
+The `AtomicBot-ai/mlx-vlm` release that `backends/mlx-manifest.json` on `main`
+points at **must not be deleted, and its asset must not be re-uploaded**.
+Deleting it breaks every MLX install and every desktop build (404); re-uploading
+the archive changes its hash, so every install and build fails the `sha256`
+check. To ship a different build, publish a new release and repoint the
+manifest. Once `main` points elsewhere, the old release may go.
+
+### How to update the MLX manifest
+
+Take the new release from the fork and print the manifest fields:
+
+```bash
+gh release view mlxvlm-macos-arm64-07ba5a1 -R AtomicBot-ai/mlx-vlm --json tagName,publishedAt,assets --jq '{tag_name: .tagName, published_at: .publishedAt, assets: [.assets[] | {backend: "macos-arm64", name, sha256: (.digest | ltrimstr("sha256:")), size}]}'
+```
+
+Copy `tag_name`, `published_at` and `assets` into the manifest (keep
+`$schema` and `upstream_repo`), run `make validate`, open a PR, and merge once
+CI is green.
 
 ## Runtime descriptors (`runtimes/`)
 
@@ -1407,6 +1486,17 @@ every push and pull request. It performs the following checks:
 - `node --test .github/scripts/runtime-descriptor.test.mjs` runs `ajv
   --strict` with `runtimes/schema.json` on every descriptor and on the
   accept/reject fixtures.
+- `ajv` validates `backends/sdcpp-manifest.json` (and
+  `backends/sdcpp-manifest.staging.json`, when present) against
+  `backends/sdcpp-schema.json`, and `.github/scripts/sdcpp-manifest-check.mjs`
+  checks, for both, the tag, unique backend ids and asset names, the required backends,
+  the CUDA runtime companion, and `sha256`/`size` pairing.
+- `ajv` validates `backends/mlx-manifest.json` against
+  `backends/mlx-schema.json`, and `node --test` over
+  `.github/scripts/mlx-manifest.test.mjs` checks the tag pattern, exactly one
+  `macos-arm64` asset with `sha256` and `size`, and an RFC 3339
+  `published_at` (ajv ignores `format` here), plus that broken copies fail
+  the schema.
 - Cross-field integrity that the schema cannot express is checked by
   `node --test` over `.github/scripts/inventory-digest.test.mjs` and
   `.github/scripts/runtime-descriptor-integrity.test.mjs`, on every
@@ -1460,6 +1550,8 @@ npx ajv-cli@5 validate -s models/schema.embedding.json -d models/embedding.json 
 node .github/scripts/embedding-catalog-check.mjs
 npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
 npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
+npx ajv-cli@5 validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.json --strict=false
+npx ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.json --strict=false
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/vllm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true

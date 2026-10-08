@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat MLX Server Manifest",
+  "description": "Schema for the remote mlx-server manifest. Atomic Chat core installs and updates mlx-server from it, and the desktop Makefile bundles the same build into the installer. The archive is downloaded from the upstream_repo GitHub release (never mirrored here), so sha256 and size are mandatory: they are the only pin on what gets executed.",
+  "type": "object",
+  "required": ["tag_name", "upstream_repo", "published_at", "assets"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "upstream_repo": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+      "description": "GitHub repository the tag was released from (AtomicBot-ai/mlx-vlm). The download URL is https://github.com/<upstream_repo>/releases/download/<tag_name>/<asset name>."
+    },
+    "tag_name": {
+      "type": "string",
+      "pattern": "^mlxvlm-macos-arm64-[0-9a-f]{7,40}$",
+      "description": "Release tag of the mlx-vlm fork, suffixed with the fork commit it was built from (e.g. mlxvlm-macos-arm64-07ba5a1). The commit hash carries no order, so clients order builds by published_at instead."
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "publishedAt of the GitHub release. Clients order MLX builds by this timestamp: a build is an update only when it was published strictly later."
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": { "$ref": "#/definitions/asset" }
+    }
+  },
+  "definitions": {
+    "asset": {
+      "type": "object",
+      "required": ["backend", "name", "sha256", "size"],
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "type": "string",
+          "enum": ["macos-arm64"],
+          "description": "Stable backend id the client selects on. MLX runs only on Apple Silicon, so there is exactly one."
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+\\.(zip|tar\\.gz)$",
+          "description": "Asset file name inside the release; a bare file name, never a path."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Hex SHA-256 of the archive, from the asset's GitHub `digest` field."
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Archive size in bytes; clients check it before hashing."
+        }
+      }
+    }
+  }
+}

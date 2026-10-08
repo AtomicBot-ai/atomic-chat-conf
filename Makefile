@@ -120,6 +120,9 @@ validate:
 	npx --yes ajv-cli@5 validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.json --strict=false
 	@if [ -f backends/sdcpp-manifest.staging.json ]; then \
 		npx --yes ajv-cli@5 validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.staging.json --strict=false; fi
+	node .github/scripts/sdcpp-manifest-check.mjs
+	npx --yes ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.json --strict=false
+	node --test .github/scripts/mlx-manifest.test.mjs
 	npx --yes ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
 	npx --yes ajv-cli@5 validate -s runtimes/environments/windows.schema.json -d runtimes/environments/windows.json --strict=true
 	npx --yes ajv-cli@5 validate -s runtimes/environments/windows-arm64.schema.json -d runtimes/environments/windows-arm64.json --strict=true
