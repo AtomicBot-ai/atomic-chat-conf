@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.diffusion.json",
   "schema_version": 1,
-  "updated_at": "2026-09-23T12:00:00Z",
+  "updated_at": "2026-10-09T16:00:00Z",
   "families": [
     {
       "id": "z-image",
@@ -748,6 +748,96 @@
       },
       "ranges": {
         "steps": [1, 50],
+        "dims": [256, 2048],
+        "dim_multiple": 32
+      },
+      "capabilities": {
+        "negative_prompt": false,
+        "guidance": false,
+        "workflows": ["create", "reference", "edit"]
+      }
+    },
+    {
+      "id": "qwen-image-2.1-turbo",
+      "name": "Qwen-Image-2.1-Turbo",
+      "developer": "Qwen",
+      "modality": "image",
+      "description": "Qwen-Image-2.1 distilled to 8 denoising steps at CFG 1: the same 7B text-to-image and image-editing model, several times faster, sharing the text encoder, vision projector and VAE of Qwen-Image-2.1. NON-COMMERCIAL ONLY: licensed for research and evaluation under the Qwen Research License; commercial use requires a separate license. Qwen is Copyright (c) 2026 Hangzhou Tongyi Laboratory Technology Co., Ltd. GGUF packaging is provided by Atomic Chat.",
+      "license": "qwen-research-non-commercial",
+      "engines": ["sdcpp"],
+      "transformer": {
+        "repo": "AtomicChat/Qwen-Image-2.1-Turbo-GGUF",
+        "quants": [
+          {
+            "id": "q3_k",
+            "label": "Q3_K",
+            "filename": "Qwen-Image-2.1-Turbo-Q3_K.gguf",
+            "bytes": 3110428384,
+            "sha256": "4497124d80b24804a02faddb2fb8e3b262f6f7bd5a769385d0ac09ae879fb3ef"
+          },
+          {
+            "id": "q4_k",
+            "label": "Q4_K",
+            "filename": "Qwen-Image-2.1-Turbo-Q4_K.gguf",
+            "bytes": 4050912992,
+            "sha256": "824885a0a76797997757a4aaf3eef99bcc1fa47a24ab990623e711e398afdc95"
+          },
+          {
+            "id": "q5_k",
+            "label": "Q5_K",
+            "filename": "Qwen-Image-2.1-Turbo-Q5_K.gguf",
+            "bytes": 4936074976,
+            "sha256": "08eedfd4b6922cc2590aa1b79ca9265863d6511623136b43ff7b396a69d036d2"
+          },
+          {
+            "id": "q6_k",
+            "label": "Q6_K",
+            "filename": "Qwen-Image-2.1-Turbo-Q6_K.gguf",
+            "bytes": 5876559584,
+            "sha256": "1e34bc19ea4350544b465cfff71e968b2bb9a80c00fc7538b88988e7a1ab7204",
+            "recommended": true
+          },
+          {
+            "id": "q8_0",
+            "label": "Q8_0",
+            "filename": "Qwen-Image-2.1-Turbo-Q8_0.gguf",
+            "bytes": 7591554784,
+            "sha256": "99f498fb7188be7eac9eb5f345a9e074d30eef3ca235b419e92563e5b48073c4"
+          }
+        ]
+      },
+      "vae": {
+        "repo": "Comfy-Org/Qwen-Image-2.1",
+        "filename": "vae/qwen_image_2.1_vae_bf16.safetensors",
+        "bytes": 675509688,
+        "sha256": "bb21f7473051e1ac368515dd3f2e15cd44d7a11748ee8823e1ddca3e4876b7c9"
+      },
+      "text_encoders": [
+        {
+          "repo": "Qwen/Qwen3-VL-8B-Instruct-GGUF",
+          "filename": "Qwen3VL-8B-Instruct-Q4_K_M.gguf",
+          "bytes": 5027784800,
+          "sha256": "67d1659bfe71b89d50b45a4ad1a9e5b997e5bb16ce5da66a6a6167abd569e9e2",
+          "field": "llm"
+        },
+        {
+          "repo": "Qwen/Qwen3-VL-8B-Instruct-GGUF",
+          "filename": "mmproj-Qwen3VL-8B-Instruct-F16.gguf",
+          "bytes": 1159029824,
+          "sha256": "ca524100ebf825c9a870db1c580d03879e0da0ab2541697e2458e64891cf9d38",
+          "field": "llm_vision"
+        }
+      ],
+      "defaults": {
+        "steps": 8,
+        "cfg_scale": 1.0,
+        "sampling_method": "euler",
+        "width": 1024,
+        "height": 1024,
+        "sigmas": [1.0, 0.978453, 0.95418, 0.926626, 0.89508, 0.845148, 0.704534, 0.414568]
+      },
+      "ranges": {
+        "steps": [1, 20],
         "dims": [256, 2048],
         "dim_multiple": 32
       },

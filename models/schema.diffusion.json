@@ -76,6 +76,7 @@
             "krea-2-turbo",
             "qwen-image",
             "qwen-image-2.1",
+            "qwen-image-2.1-turbo",
             "wan2.2-ti2v-5b",
             "ltx-2"
           ]
@@ -127,7 +128,7 @@
               "type": "array",
               "minItems": 1,
               "items": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
-              "description": "A distilled model's fixed sigma schedule; sent as custom_sigmas when steps equals its length."
+              "description": "A distilled model's fixed sigma schedule, one value per step and without the closing 0; the core (>= 0.11.7) sends it as custom_sigmas with the 0 appended when steps equals its length."
             }
           }
         },
