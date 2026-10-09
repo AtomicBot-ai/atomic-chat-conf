@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.diffusion.json",
   "schema_version": 1,
-  "updated_at": "2026-10-09T16:00:00Z",
+  "updated_at": "2026-10-09T17:00:00Z",
   "families": [
     {
       "id": "z-image",
@@ -769,33 +769,40 @@
         "repo": "AtomicChat/Qwen-Image-2.1-Turbo-GGUF",
         "quants": [
           {
-            "id": "q3_k",
-            "label": "Q3_K",
-            "filename": "Qwen-Image-2.1-Turbo-Q3_K.gguf",
-            "bytes": 3110428384,
-            "sha256": "4497124d80b24804a02faddb2fb8e3b262f6f7bd5a769385d0ac09ae879fb3ef"
+            "id": "ad_q2_k",
+            "label": "AD_Q2_K",
+            "filename": "Qwen-Image-2.1-Turbo-AD-Q2_K.gguf",
+            "bytes": 2553333472,
+            "sha256": "8ab2888f605030a894c6238d978f51427bfde6732f4a112c71cff0439e265d04"
           },
           {
-            "id": "q4_k",
-            "label": "Q4_K",
-            "filename": "Qwen-Image-2.1-Turbo-Q4_K.gguf",
-            "bytes": 4050912992,
-            "sha256": "824885a0a76797997757a4aaf3eef99bcc1fa47a24ab990623e711e398afdc95"
+            "id": "ad_q3_k",
+            "label": "AD_Q3_K",
+            "filename": "Qwen-Image-2.1-Turbo-AD-Q3_K.gguf",
+            "bytes": 3599812320,
+            "sha256": "544bef750b2c4b058fe5f646b459602d6e468a914afc106fa1fc9dff00169d9f"
           },
           {
-            "id": "q5_k",
-            "label": "Q5_K",
-            "filename": "Qwen-Image-2.1-Turbo-Q5_K.gguf",
-            "bytes": 4936074976,
-            "sha256": "08eedfd4b6922cc2590aa1b79ca9265863d6511623136b43ff7b396a69d036d2"
-          },
-          {
-            "id": "q6_k",
-            "label": "Q6_K",
-            "filename": "Qwen-Image-2.1-Turbo-Q6_K.gguf",
-            "bytes": 5876559584,
-            "sha256": "1e34bc19ea4350544b465cfff71e968b2bb9a80c00fc7538b88988e7a1ab7204",
+            "id": "ad_q4_k",
+            "label": "AD_Q4_K",
+            "filename": "Qwen-Image-2.1-Turbo-AD-Q4_K.gguf",
+            "bytes": 4201694944,
+            "sha256": "4bb73c53cbe284bbd6d69b9fdc59539c531f0389dd2aa567663d777f8130bc59",
             "recommended": true
+          },
+          {
+            "id": "ad_q5_k",
+            "label": "AD_Q5_K",
+            "filename": "Qwen-Image-2.1-Turbo-AD-Q5_K.gguf",
+            "bytes": 5399168736,
+            "sha256": "c56db41508c4c3c0d5782e40e4f153c38a1154ac9466c1c5c50a6e4bd09f6a69"
+          },
+          {
+            "id": "ad_q6_k",
+            "label": "AD_Q6_K",
+            "filename": "Qwen-Image-2.1-Turbo-AD-Q6_K.gguf",
+            "bytes": 6711985888,
+            "sha256": "aa98b85820544771506b94aa75368a97a457e0d5b569d1a602bde6c64f5a9cfd"
           },
           {
             "id": "q8_0",
