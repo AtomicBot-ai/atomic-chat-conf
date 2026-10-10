@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.diffusion.json",
   "schema_version": 1,
-  "updated_at": "2026-09-23T12:00:00Z",
+  "updated_at": "2026-10-09T17:00:00Z",
   "families": [
     {
       "id": "z-image",
@@ -748,6 +748,103 @@
       },
       "ranges": {
         "steps": [1, 50],
+        "dims": [256, 2048],
+        "dim_multiple": 32
+      },
+      "capabilities": {
+        "negative_prompt": false,
+        "guidance": false,
+        "workflows": ["create", "reference", "edit"]
+      }
+    },
+    {
+      "id": "qwen-image-2.1-turbo",
+      "name": "Qwen-Image-2.1-Turbo",
+      "developer": "Qwen",
+      "modality": "image",
+      "description": "Qwen-Image-2.1 distilled to 8 denoising steps at CFG 1: the same 7B text-to-image and image-editing model, several times faster, sharing the text encoder, vision projector and VAE of Qwen-Image-2.1. NON-COMMERCIAL ONLY: licensed for research and evaluation under the Qwen Research License; commercial use requires a separate license. Qwen is Copyright (c) 2026 Hangzhou Tongyi Laboratory Technology Co., Ltd. GGUF packaging is provided by Atomic Chat.",
+      "license": "qwen-research-non-commercial",
+      "engines": ["sdcpp"],
+      "transformer": {
+        "repo": "AtomicChat/Qwen-Image-2.1-Turbo-GGUF",
+        "quants": [
+          {
+            "id": "ad_q2_k",
+            "label": "AD_Q2_K",
+            "filename": "Qwen-Image-2.1-Turbo-AD-Q2_K.gguf",
+            "bytes": 2553333472,
+            "sha256": "8ab2888f605030a894c6238d978f51427bfde6732f4a112c71cff0439e265d04"
+          },
+          {
+            "id": "ad_q3_k",
+            "label": "AD_Q3_K",
+            "filename": "Qwen-Image-2.1-Turbo-AD-Q3_K.gguf",
+            "bytes": 3599812320,
+            "sha256": "544bef750b2c4b058fe5f646b459602d6e468a914afc106fa1fc9dff00169d9f"
+          },
+          {
+            "id": "ad_q4_k",
+            "label": "AD_Q4_K",
+            "filename": "Qwen-Image-2.1-Turbo-AD-Q4_K.gguf",
+            "bytes": 4201694944,
+            "sha256": "4bb73c53cbe284bbd6d69b9fdc59539c531f0389dd2aa567663d777f8130bc59",
+            "recommended": true
+          },
+          {
+            "id": "ad_q5_k",
+            "label": "AD_Q5_K",
+            "filename": "Qwen-Image-2.1-Turbo-AD-Q5_K.gguf",
+            "bytes": 5399168736,
+            "sha256": "c56db41508c4c3c0d5782e40e4f153c38a1154ac9466c1c5c50a6e4bd09f6a69"
+          },
+          {
+            "id": "ad_q6_k",
+            "label": "AD_Q6_K",
+            "filename": "Qwen-Image-2.1-Turbo-AD-Q6_K.gguf",
+            "bytes": 6711985888,
+            "sha256": "aa98b85820544771506b94aa75368a97a457e0d5b569d1a602bde6c64f5a9cfd"
+          },
+          {
+            "id": "q8_0",
+            "label": "Q8_0",
+            "filename": "Qwen-Image-2.1-Turbo-Q8_0.gguf",
+            "bytes": 7591554784,
+            "sha256": "99f498fb7188be7eac9eb5f345a9e074d30eef3ca235b419e92563e5b48073c4"
+          }
+        ]
+      },
+      "vae": {
+        "repo": "Comfy-Org/Qwen-Image-2.1",
+        "filename": "vae/qwen_image_2.1_vae_bf16.safetensors",
+        "bytes": 675509688,
+        "sha256": "bb21f7473051e1ac368515dd3f2e15cd44d7a11748ee8823e1ddca3e4876b7c9"
+      },
+      "text_encoders": [
+        {
+          "repo": "Qwen/Qwen3-VL-8B-Instruct-GGUF",
+          "filename": "Qwen3VL-8B-Instruct-Q4_K_M.gguf",
+          "bytes": 5027784800,
+          "sha256": "67d1659bfe71b89d50b45a4ad1a9e5b997e5bb16ce5da66a6a6167abd569e9e2",
+          "field": "llm"
+        },
+        {
+          "repo": "Qwen/Qwen3-VL-8B-Instruct-GGUF",
+          "filename": "mmproj-Qwen3VL-8B-Instruct-F16.gguf",
+          "bytes": 1159029824,
+          "sha256": "ca524100ebf825c9a870db1c580d03879e0da0ab2541697e2458e64891cf9d38",
+          "field": "llm_vision"
+        }
+      ],
+      "defaults": {
+        "steps": 8,
+        "cfg_scale": 1.0,
+        "sampling_method": "euler",
+        "width": 1024,
+        "height": 1024,
+        "sigmas": [1.0, 0.978453, 0.95418, 0.926626, 0.89508, 0.845148, 0.704534, 0.414568]
+      },
+      "ranges": {
+        "steps": [1, 20],
         "dims": [256, 2048],
         "dim_multiple": 32
       },
