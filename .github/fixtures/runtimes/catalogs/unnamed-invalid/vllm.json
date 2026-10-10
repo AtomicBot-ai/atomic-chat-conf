@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "descriptor_id": "vllm-fixture-1",
+  "descriptor_id": "vllm-0.0.1-r1",
   "engine_id": "vllm",
   "adapter_id": "vllm",
   "adapter_contract_version": 1,

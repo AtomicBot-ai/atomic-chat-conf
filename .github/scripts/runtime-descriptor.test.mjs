@@ -74,6 +74,7 @@ const invalid = [
   ['invalid-quantization-missing-excluded-cc.json', 'quantization entry without excluded_compute_capabilities'],
   ['invalid-excluded-cc-duplicate.json', 'duplicate compute capability within one excluded_compute_capabilities'],
   ['invalid-malformed-driver-version.json', 'malformed minimum_driver_version (leading "v")'],
+  ['invalid-descriptor-id-latest.json', 'descriptor_id not of the form <engine_id>-<version>-r<n> (vllm-latest)'],
 ]
 
 for (const [fixture, defect] of invalid) {

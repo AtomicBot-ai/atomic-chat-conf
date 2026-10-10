@@ -79,7 +79,7 @@ test('immutability: published vLLM descriptor with a changed quantization matrix
   edited.quantization = edited.quantization.filter((q) => q.format !== 'autoawq_w4a16')
   const result = checkDescriptorImmutability(published, edited)
   assert.equal(result.ok, false)
-  assert.match(result.reason, /descriptor_id "vllm-fixture-1" is published with different content/)
+  assert.match(result.reason, /descriptor_id "vllm-0.0.1-r1" is published with different content/)
   assert.match(result.reason, /immutable/)
 })
 

@@ -751,11 +751,11 @@ instead of editing this one. Adding or removing a distribution is not a
 descriptor change: it ships as a new `manifest_id` of the environment
 manifest, and the `descriptor_id` stays as it is.
 
-The id format is `<engine_id>-<engine tag>-r<N>` (CI checks the
-`<engine_id>-` prefix): bump the engine tag when the underlying engine
-release changes (`tensorrt-llm-1.2.1-r2` → `tensorrt-llm-1.3.0-r1`), or bump
-`N` when the tag stays the same but a data-only field changes (a new curated
-model, a corrected notice, …). Each descriptor file is compared with its own
+The new id follows the [form and order](#descriptor_id-form-and-order) below:
+bump the engine version when the underlying engine release changes
+(`tensorrt-llm-1.2.1-r2` → `tensorrt-llm-1.3.0-r1`), or bump `n` when the
+version stays the same but a data-only field changes (a new curated model, a
+corrected notice, …). Each descriptor file is compared with its own
 version on `main`, so editing `vllm.json` under a `descriptor_id` already on
 `main` fails CI exactly as it does for `tensorrt-llm.json`.
 `tensorrt-llm-1.2.1-r2` is `r1` with its distribution list moved out to the
@@ -783,13 +783,55 @@ a driver *branch* (R615), and every R615 driver runs CUDA 13.4. The patch-level
 floor blocked the first NVIDIA Windows on Arm machines (2026-10-06), whose
 Windows driver 616 hands WSL the R615 libraries `615.41`.
 
+### `descriptor_id` form and order
+
+A `descriptor_id` has the form `<engine_id>-<engine version>-r<n>`:
+
+- the engine version is numbers separated by dots, with an optional
+  pre-release suffix `a<k>`, `b<k>` or `rc<k>` (`1.3.0rc29`, `0.31.0`);
+- `n` is the edition of that engine release in conf, starting at `1`.
+
+`runtimes/schema.json` checks the shape with a `pattern`. The integrity
+check in CI adds what the schema cannot see: the id starts with this
+descriptor's own `engine_id`, and what follows `<engine_id>-` is exactly
+`<engine version>-r<n>`. So `vllm-latest` and a `tensorrt-llm-…` id in
+`vllm.json` both fail `make validate` and CI.
+
+**A new descriptor of an engine MUST have a strictly greater
+`descriptor_id` than the one it replaces**: a newer engine version, or the
+same version with a greater `n` (`vllm-0.31.0-r1` → `vllm-0.31.0-r2` for a
+new curated list on the same image). atomic-chat-core decides whether to
+offer an installed engine an update by this order, comparing the installed
+`descriptor_id` with the one on `main`:
+
+1. the version's numeric parts, left to right;
+2. a pre-release is older than the same version without a suffix
+   (`1.3.0rc29` < `1.3.0`), and pre-releases order `a` < `b` < `rc`, then
+   by `k`;
+3. for an equal version, by `n`.
+
+An id that does not parse, or belongs to another engine, is never newer. So
+publishing an older or equal id is not offered to installed engines at all,
+and rolling a descriptor back does not make every installation "update"
+backwards. CI does not compare an id with the one it replaces; keeping it
+greater is the maintainer's job. The order is specified in the
+`engine-lifecycle` capability of atomic-chat-spec
+([`openspec/specs/engine-lifecycle/spec.md`](https://github.com/AtomicBot-ai/atomic-chat-spec/blob/main/openspec/specs/engine-lifecycle/spec.md),
+requirement "Порядок дескрипторов managed-движка"), and core implements it.
+
 ### Installed engines stay pinned to their descriptor
 
 An installation records the `descriptor_id` it was set up with and keeps
 using it. Publishing a new descriptor here therefore only affects **new**
-installs; an existing install is unaffected until the user removes the
-engine and sets it up again, which picks up whatever descriptor is current
-at that point.
+installs and never changes, re-downloads or breaks an existing one.
+
+A core release of change `unify-engine-lifecycle` and later also **reports**
+that `main` holds a descriptor newer than the installed one (by the order
+above), and updates the engine only when a client asks it to. The update is a
+reinstall: core removes the installation and keeps the models, then starts
+setup with the new descriptor, which waits for the user's consent. Core never
+starts it by itself. Older cores offer nothing: the user removes the engine
+and sets it up again, which picks up whatever descriptor is current then.
 
 ### How to update the engine tag
 
@@ -827,7 +869,9 @@ with its own sources (the vLLM source at the image's `VLLM_BUILD_COMMIT`, see
    registry manifests (below).
 6. Update `notices` if the image's license terms changed, and `exclusions` if
    the release's support gaps changed.
-7. Assign a new `descriptor_id` (`<engine_id>-<new tag>-r1`).
+7. Assign a new `descriptor_id`, `<engine_id>-<new version>-r1`, strictly
+   greater than the current one (see [form and
+   order](#descriptor_id-form-and-order)).
 8. Run `make validate` before opening a PR — it runs the schema and every
    integrity check below against what you just wrote.
 
@@ -1488,7 +1532,8 @@ every push and pull request. It performs the following checks:
   editing the workflow or the Makefile.
 - `node --test .github/scripts/runtime-descriptor.test.mjs` runs `ajv
   --strict` with `runtimes/schema.json` on every descriptor and on the
-  accept/reject fixtures.
+  accept/reject fixtures; the schema's `pattern` holds `descriptor_id` to
+  `<engine_id>-<engine version>-r<n>`.
 - `ajv` validates `backends/sdcpp-manifest.json` (and
   `backends/sdcpp-manifest.staging.json`, when present) against
   `backends/sdcpp-schema.json`, and `.github/scripts/sdcpp-manifest-check.mjs`
@@ -1507,7 +1552,8 @@ every push and pull request. It performs the following checks:
   `supported_architectures` and `quantization[].format` are unique,
   every `model_families` key is a `supported_architectures` entry,
   `curated_models` are unique by `repository@revision`,
-  `descriptor_id` starts with `engine_id + "-"`,
+  `descriptor_id` is `<engine_id>-` followed by exactly `<engine
+  version>-r<n>` ([form and order](#descriptor_id-form-and-order)),
   `required_disk_bytes >= download_bytes`, `minimum_compute_capability`
   is at or below every `quantization[].min_compute_capability`, and every
   `quantization[].excluded_compute_capabilities` entry is strictly above
