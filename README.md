@@ -679,10 +679,11 @@ CI is green.
 ## Runtime descriptors (`runtimes/`)
 
 A runtime descriptor tells atomic-chat-core which container image a
-**managed engine** (TensorRT-LLM, vLLM) runs, pinned by digest, what host
+**managed engine** (TensorRT-LLM, vLLM, SGLang) runs, pinned by digest, what host
 it needs, and what that release supports. There is **one descriptor per
 engine**, named after it: `runtimes/<engine_id>.json` (`tensorrt-llm.json`,
-`vllm.json`), all validated by the one shared `runtimes/schema.json`. The file
+`vllm.json`, `sglang.json`), all validated by the one shared
+`runtimes/schema.json`. The file
 name **is** the engine: a descriptor whose `engine_id` differs from its file
 name fails `make validate` and CI, because core fetches
 `runtimes/<engine_id>.json` for the engine it has an adapter for and refuses a
@@ -711,7 +712,10 @@ Every released core up to 0.9.9 reads **only** `runtimes/tensorrt-llm.json`.
 `runtimes/vllm.json` is read only by a core built with the `vllm` adapter
 (the core release of change `add-vllm-runtime`), and such a core treats each
 engine's descriptor on its own: a missing or invalid `vllm.json` makes vLLM
-unavailable and leaves TensorRT-LLM as it was.
+unavailable and leaves TensorRT-LLM as it was. The same holds for
+`runtimes/sglang.json`: only a core built with the `sglang` adapter (the core
+release of change `add-sglang-runtime`) reads it, and a missing or invalid
+file makes SGLang unavailable without touching the other engines.
 
 core fetches each engine's descriptor from this repository's `main` branch.
 For development, the source of each engine can be overridden with
@@ -720,6 +724,7 @@ replaced by `_` — set to a `file://` path or a URL:
 
 ```bash
 ATOMIC_RUNTIME_DESCRIPTOR_URL_VLLM=file://$PWD/runtimes/vllm.json
+ATOMIC_RUNTIME_DESCRIPTOR_URL_SGLANG=file://$PWD/runtimes/sglang.json
 ATOMIC_RUNTIME_DESCRIPTOR_URL_TENSORRT_LLM=file://$PWD/runtimes/tensorrt-llm.json
 ```
 
@@ -738,6 +743,19 @@ merged its `descriptor_id` is not published, so acceptance findings are
 fixed in place on the branch; from the merge on, the immutability rule below
 applies to it like to any other descriptor. Removing `vllm.json` from `main`
 switches vLLM off for everyone without a release.
+
+### `sglang.json` reaches `main` only after live acceptance
+
+The same rule holds for SGLang, for the same reason: publishing
+`runtimes/sglang.json` on `main` turns SGLang on for every core with the
+`sglang` adapter, within the hour and without a release. The descriptor lives
+on the branch of change `add-sglang-runtime` and is merged into `main` only
+after the live acceptance on Linux and Windows has passed and after the app
+release that ships SGLang is out; README changes may reach `main` earlier.
+Until the merge, `sglang-0.5.21-r1` is unpublished and acceptance findings are
+fixed in place on the branch; from the merge on it is immutable like every
+other descriptor. Removing `sglang.json` from `main` switches SGLang off for
+everyone without a release; vLLM and TensorRT-LLM are not affected.
 
 ### `descriptor_id` is immutable
 
@@ -837,7 +855,9 @@ and sets it up again, which picks up whatever descriptor is current then.
 
 The steps below are written for TensorRT-LLM; vLLM follows the same steps
 with its own sources (the vLLM source at the image's `VLLM_BUILD_COMMIT`, see
-[vLLM descriptor](#vllm-descriptor-vllmjson)).
+[vLLM descriptor](#vllm-descriptor-vllmjson)), and so does SGLang (the SGLang
+source at the image's `SGLANG_BUILD_COMMIT`, see [SGLang
+descriptor](#sglang-descriptor-sglangjson)).
 
 1. Confirm the candidate tag is the latest non-rc release with the
    platform/hardware support you need — check NVIDIA's own release notes and
@@ -1277,6 +1297,160 @@ before the file reaches `main`; its findings are recorded in that change's
   `ATOMIC_RUNTIME_DESCRIPTOR_URL_VLLM`; both are set to the actual core and
   app releases that ship vLLM before the file is merged into `main`.
 
+### SGLang descriptor (`sglang.json`)
+
+`sglang-0.5.21-r1` pins the SGLang project's own image
+`docker.io/lmsysorg/sglang:v0.5.21` (build commit
+`e00930c5489053f26d86b179cee0d087f846acbb`, the `v0.5.21` tag, recorded in
+the image as `SGLANG_BUILD_COMMIT`) for `linux/amd64` and `linux/arm64`, and
+the same CUDA 13.0 base image as vLLM,
+`nvcr.io/nvidia/cuda:13.0.2-base-ubuntu24.04`, for the GPU check. **Not
+live-qualified yet**: every value below comes from the registry manifests,
+the SGLang source at that commit and the Hugging Face API on 2026-10-13. The
+live acceptance on an RTX 4070 Laptop (compute capability 8.9, 8 GB) under
+Ubuntu and Windows, run by the maintainers of change `add-sglang-runtime`
+with atomic-chat-core's live tests, confirms or corrects the driver floor,
+the matrix rows that run on 8.9, the curated list and the parser names
+before the file reaches `main`; its findings are recorded in that change's
+`rulings/`.
+
+- **Why the release tag.** A descriptor is immutable, so it pins a release
+  tag. SGLang also publishes `dev` and nightly tags, which are rebuilt in
+  place, and day-0 tags for single new models, which are not releases. The
+  CUDA 12 line of images ended after v0.5.19, so `v0.5.21` exists only as a
+  CUDA 13 build. NGC's `nvcr.io/nvidia/sglang` is not used for the same
+  reasons as NGC's vLLM: it trails upstream and adds NGC terms.
+- **`minimum_driver_version` `580.0`.** The image's `CUDA_VERSION` is
+  `13.0.3` and its `NVIDIA_REQUIRE_CUDA` is `cuda>=13.0`; CUDA 13.0 needs the
+  R580 branch on consumer cards, so the floor is that branch's first
+  version, the same rule and the same value as vLLM. The image's datacenter
+  brand exceptions (535 to 575 branches) are not modelled, and the probe
+  image is CUDA 13.0 as well.
+- **`minimum_compute_capability` `8.0`** (Ampere), as for vLLM and
+  TensorRT-LLM: no older card is available to check, and a floor is not
+  lowered without a live run.
+- **`quantization`.** The matrix is read from the code, like vLLM's: for
+  each name of the shared rule, the quantization config SGLang dispatches the
+  checkpoint to (`python/sglang/srt/configs/model_config.py`, ModelOpt
+  through `_parse_modelopt_quant_config`) and that config's
+  `get_min_capability()`, the gate SGLang's loader applies before loading
+  (`model_loader/loader.py`). Whoever moves the descriptor to a new SGLang
+  release re-reads both at the new image's `SGLANG_BUILD_COMMIT`; the live
+  acceptance then checks the rows it runs on 8.9. Where the result differs
+  from vLLM:
+  - `fp8` (ModelOpt FP8) is `8.9`: `ModelOptFp8Config` gates at 89, while
+    vLLM runs it through Marlin from 8.0. Core requires every per-layer
+    format of a mixed-precision checkpoint, so the ModelOpt mixed
+    checkpoints with FP8 layers (`nvidia/Qwen3.8-27B-NVFP4`,
+    `nvidia/Qwen3.6-35B-A3B-NVFP4`, the Nemotron 3.5 Lightning NVFP4) need
+    8.9 here too, although SGLang's own mixed-precision config gates at 8.0.
+    That blocks them on Ampere, where they might run; the opposite choice,
+    `8.0`, would pass plain ModelOpt FP8 checkpoints that SGLang then refuses
+    at load.
+  - `mxfp8` is `10.0`: SGLang reads ModelOpt MXFP8 with its own `mxfp8`
+    method, which gates at 100 on CUDA.
+  - `ct_nvfp4` is `10.0`: compressed-tensors W4A4 NVFP4 has no fallback below
+    Blackwell, SGLang raises instead.
+  - `fp8_per_channel_per_token` has no row: SGLang's ModelOpt dispatch has no
+    branch for that `quant_algo`. Neither does it dispatch a checkpoint whose
+    top-level `quant_algo` is `FP8_PB_WO`; the `fp8_block_scales` row (8.0)
+    is there for Hugging Face FP8 with 128x128 block scales (`Fp8Config`) and
+    for block-FP8 layers inside a ModelOpt mixed checkpoint. A plain ModelOpt
+    `FP8_PB_WO` checkpoint therefore passes the check and fails at load with
+    the engine's own error; none is curated.
+  - Every other row is `8.0` with no exclusions: `Fp8Config` (`hf_fp8`,
+    `fp8_block_scales`) and ModelOpt NVFP4 (`nvfp4`, `w4a16_nvfp4`, and the
+    mixed config) gate at 80 and fall back to Marlin weight-only kernels
+    where the card lacks native FP8 or FP4; `mxfp4`, AWQ Marlin
+    (`autoawq_w4a16`), GPTQ Marlin (`gptq_w4a16`, `gptq_w8a16`) and the
+    compressed-tensors W4A16/W8A16, W8A8 INT8 and W8A8 FP8 schemes gate at
+    80 (W8A8 FP8 below 8.9 falls back to W8A16).
+  - Not listed, as for vLLM: ModelOpt `w4a16_awq` and `w4a8_awq` (not
+    dispatched), bitsandbytes and GGUF.
+
+  **Rows not checked live on 8.9.** The acceptance runs `bf16`
+  (Qwen3.5-2B) and one 4-bit curated model (`autoawq_w4a16` or `ct_w4a16`).
+  `fp16`, `fp8`, `fp8_block_scales`, `nvfp4`, `w4a16_nvfp4`, `hf_fp8`,
+  `mxfp4`, `gptq_w4a16`, `gptq_w8a16`, `ct_w8a16`, `ct_w8a8_fp8`,
+  `ct_w8a8_int8` and whichever 4-bit row it does not run come from the code
+  alone on 8.9, and so does every row on 8.0/8.6, 9.0, 10.x and 12.x
+  (`mxfp8` and `ct_nvfp4` do not run on 8.9 at all). A row that turns out
+  wrong fails at load with the engine's own error and logs, and is fixed by a
+  new `descriptor_id` without a core release.
+- **`supported_architectures`.** The 45 architectures of `vllm.json` that
+  SGLang 0.5.21 implements natively: the `EntryClass` names under
+  `python/sglang/srt/models/`, which SGLang's registry matches exactly
+  against `config.json`. Five vLLM architectures are left out because SGLang
+  has no native class under the Hugging Face name: `Ernie4_5ForCausalLM`
+  (SGLang registers `Ernie4_5_ForCausalLM`), `ExaoneMoeForCausalLM` (SGLang:
+  `ExaoneMoEForCausalLM`), `NemotronForCausalLM`, `Qwen4ExpForCausalLM`
+  (SGLang has only `Qwen4ExpForConditionalGeneration`) and
+  `SeedOssForCausalLM`. SGLang would try those through its generic
+  Transformers backend, which is not what this descriptor qualifies.
+  Vision-language classes run text-only. SGLang 0.5.21 has a text-only
+  switch, `--language-model-only`: with it the Qwen3.5 and Qwen4Exp classes
+  never build or load their encoders, and every class serves with
+  multimodal off, so SGLang reserves no memory for images and refuses them.
+  The Gemma 3/4 and Mistral 3 classes ignore the switch for loading and
+  still load their encoders (not checked live: no Gemma or Mistral model
+  fits the 8 GB acceptance card). Which flag core passes is core's adapter
+  decision (change `add-sglang-runtime`, `rulings/core.md`).
+- **`model_families`.** Parser names are SGLang's own registry names at the
+  build commit (`python/sglang/srt/function_call/parser_names.py`,
+  `python/sglang/srt/parser/reasoning_parser_names.py`), chosen per family
+  from the launch commands in SGLang's cookbook and SGLang's chat-template
+  auto-detection (`parser/template_detection.py`). The descriptor never
+  names `auto`: core declares tools and reasoning from these names, so they
+  are data, not a guess at start. The rule is vLLM's: a family gets a parser
+  only when it works with the checkpoint's own chat template (the adapter
+  passes no `--chat-template`) and its reasoning mode is unambiguous.
+  Where the names differ from vLLM's:
+  - Qwen2 and Qwen3 (`Qwen2*`, `Qwen3ForCausalLM`, `Qwen3Moe*`,
+    `Qwen3Next*`): tool parser `qwen`, SGLang's name for the Qwen 2.5/3
+    `<tool_call>` JSON format; Qwen3.5 and later keep `qwen3_coder` and
+    `qwen3`.
+  - Granite 4 (`GraniteMoeHybridForCausalLM`) and EXAONE 4: `hermes`; their
+    templates emit the same `<tool_call>` JSON format, and SGLang has no
+    Granite parser.
+  - Trinity (`AfmoeForCausalLM`): `trinity`, SGLang's parser for it, which
+    also reads tool calls written inside the reasoning.
+  - MiniMax-M2: `minimax-m2` and reasoning `minimax`, the parser SGLang's
+    auto-detection picks for that architecture. The cookbook's
+    `minimax-append-think` leaves the reasoning in the answer text.
+  - Nemotron-H: `qwen3_coder` and `nemotron_3`.
+  - None where SGLang has no parser for the family's format: ERNIE 4.5,
+    Granite 3 (`<|tool_call|>`), HunYuan A13B (SGLang's `hunyuan` parsers
+    are for the Hunyuan 3 format).
+  - None where one architecture spans checkpoints with different formats or
+    needs its own template, as for vLLM: Llama, DeepSeek V3/V3.2 (also
+    Kimi K2 and DeepSeek V3.1), every Mistral class, Cohere 2 (SGLang's
+    `cohere_command4` targets Command 4 and is unchecked on Command A and
+    R7B), HunYuan dense. GLM-4.5/4.6 get `glm45`, but GLM-4.7 shares
+    `Glm4MoeForCausalLM` and uses the `glm47` format: the same compromise as
+    vLLM.
+
+  `structured_output` is `true` for every family: SGLang 0.5.21 constrains
+  output with xgrammar for any model.
+- **`curated_models`.** All sixteen models of `vllm.json` at the same
+  revisions and inventory digests, so one copy on disk serves both engines;
+  every one passes SGLang's architecture list and matrix, and the tiers and
+  notes are vLLM's, except that the notes of the three mixed NVFP4 + FP8
+  checkpoints say their FP8 layers need compute capability 8.9 here. The
+  live acceptance runs Qwen3.5-2B and one 4-bit model on 8 GB; a model it
+  rejects is removed before the merge, without a new `descriptor_id`.
+- **`download_bytes`** is the larger platform's compressed layers (amd64,
+  15.2 GB); **`required_disk_bytes`** adds the extracted size sampled
+  the same way as for TensorRT-LLM, 48 GiB (about 36 GB extracted).
+- **Privacy.** SGLang 0.5.21 reports no usage statistics, and its
+  OpenTelemetry tracing stays off unless it is started with `--enable-trace`.
+  core starts the container with Hugging Face offline and `DO_NOT_TRACK=1`
+  regardless.
+- **`minimum_core_version` `0.13.6`, `minimum_app_version` `2.2.4`** are
+  provisional: they are the versions the core and app change branches start
+  from, so a development core accepts the file through
+  `ATOMIC_RUNTIME_DESCRIPTOR_URL_SGLANG`; both are set to the actual core and
+  app releases that ship SGLang before the file is merged into `main`.
+
 ### Reproducing runtime descriptor digests
 
 Every descriptor pins each image by its per-platform manifest digest (not
@@ -1290,6 +1464,7 @@ docker buildx imagetools inspect nvcr.io/nvidia/tensorrt-llm/release:1.3.0rc29
 docker buildx imagetools inspect nvcr.io/nvidia/cuda:13.4.1-base-ubuntu24.04
 docker buildx imagetools inspect docker.io/vllm/vllm-openai:v0.31.0
 docker buildx imagetools inspect nvcr.io/nvidia/cuda:13.0.2-base-ubuntu24.04
+docker buildx imagetools inspect docker.io/lmsysorg/sglang:v0.5.21
 
 # Same without Docker: anonymous registry token, then the manifest list.
 for ref in nvidia/tensorrt-llm/release:1.3.0rc29 nvidia/cuda:13.4.1-base-ubuntu24.04 nvidia/cuda:13.0.2-base-ubuntu24.04; do
@@ -1301,12 +1476,30 @@ for ref in nvidia/tensorrt-llm/release:1.3.0rc29 nvidia/cuda:13.4.1-base-ubuntu2
     jq -r --arg ref "$ref" '.manifests[] | "\($ref) \(.platform.os)/\(.platform.architecture) \(.digest)"'
 done
 
-# Docker Hub (vLLM): the token comes from auth.docker.io.
-T=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:vllm/vllm-openai:pull" | jq -r .token)
-curl -s -H "Authorization: Bearer $T" \
-  -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json" \
-  https://registry-1.docker.io/v2/vllm/vllm-openai/manifests/v0.31.0 |
-  jq -r '.manifests[] | "\(.platform.os)/\(.platform.architecture) \(.digest)"'
+# Docker Hub (vLLM, SGLang): the token comes from auth.docker.io.
+for ref in vllm/vllm-openai:v0.31.0 lmsysorg/sglang:v0.5.21; do
+  repo=${ref%:*} tag=${ref##*:}
+  T=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:$repo:pull" | jq -r .token)
+  curl -s -H "Authorization: Bearer $T" \
+    -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json" \
+    "https://registry-1.docker.io/v2/$repo/manifests/$tag" |
+    jq -r --arg ref "$ref" '.manifests[] | select(.platform.os != "unknown") | "\($ref) \(.platform.os)/\(.platform.architecture) \(.digest)"'
+done
+```
+
+`lmsysorg/sglang`'s index also lists two `unknown/unknown` entries: the
+build attestations of the two images, not images to pin, hence the
+`select`. The SGLang source commit the image was built from, and the CUDA
+version its driver floor comes from, are in the image config of either
+platform:
+
+```bash
+T=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:lmsysorg/sglang:pull" | jq -r .token)
+CFG=$(curl -s -H "Authorization: Bearer $T" -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+  https://registry-1.docker.io/v2/lmsysorg/sglang/manifests/sha256:2dbe4c7f53230b09aaa8fa41891c13c51d9d2e253f486a70822aaf08783fff75 |
+  jq -r .config.digest)
+curl -sL -H "Authorization: Bearer $T" "https://registry-1.docker.io/v2/lmsysorg/sglang/blobs/$CFG" |
+  jq -r '.config.Env[] | select(startswith("CUDA_VERSION=") or startswith("SGLANG_BUILD_COMMIT="))'
 ```
 
 A curated model's `revision` is the commit `main` resolved to when it was
