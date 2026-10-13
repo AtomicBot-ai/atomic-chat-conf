@@ -9,15 +9,24 @@ REPO ?= AtomicBot-ai/atomic-chat-conf
 RETAIN ?= 3
 UPSTREAM_BASE = https://github.com/ggml-org/llama.cpp/releases/download
 
-.PHONY: help mirror mirror-select mirror-local-macos verify-release validate
+.PHONY: help mirror mirror-select mirror-local-macos verify-release validate \
+	upstream-approve upstream-promote upstream-withdraw
 
 help:
 	@echo "Targets:"
-	@echo "  make mirror TAG=b10405        Mirror + sign an upstream release (runs CI, waits for it)"
+	@echo "  make mirror TAG=b10405        Mirror + sign an upstream release and list it as a candidate"
+	@echo "                                (runs CI, waits for it). PUBLISH=1 also promotes it for every"
+	@echo "                                core; MIN_CORE=0.16.0 lists it for cores from that version"
 	@echo "  make mirror-select TAG=b10405 Show which assets that tag would mirror (no side effects)"
 	@echo "  make mirror-local-macos TAG=b10405"
 	@echo "                                Sign the macOS asset locally; needs a Developer ID in the keychain"
 	@echo "  make verify-release TAG=b10405 Check the published release is signed as expected"
+	@echo "  make upstream-approve TAG=b10405 [MIN_CORE=0.16.0] [ONLY=name,name]"
+	@echo "                                Approve a listed release after it was verified"
+	@echo "  make upstream-promote TAG=b10405"
+	@echo "                                Approve it for every core and move backends/manifest.json to it"
+	@echo "  make upstream-withdraw TAG=b10405 REASON=\"...\""
+	@echo "                                Pull a listed release from offers"
 	@echo "  make validate                 Validate every manifest against its schema"
 	@echo ""
 	@echo "Variables: RETAIN=$(RETAIN) (releases kept), REPO=$(REPO)"
@@ -29,7 +38,9 @@ mirror:
 	@test -n "$(TAG)" || { echo "Usage: make mirror TAG=b10405"; exit 1; }
 	@echo "$(TAG)" | grep -Eq '^b[0-9]+$$' || { echo "TAG must look like b10405"; exit 1; }
 	gh workflow run mirror-upstream.yml --repo $(REPO) \
-		-f tag=$(TAG) -f retain=$(RETAIN)
+		-f tag=$(TAG) -f retain=$(RETAIN) \
+		-f publish_manifest=$(if $(PUBLISH),true,false) \
+		-f min_core_version=$(MIN_CORE)
 	@echo "Waiting for the run to be queued..."
 	@sleep 6
 	@RUN_ID=$$(gh run list --repo $(REPO) --workflow mirror-upstream.yml \
@@ -89,6 +100,23 @@ verify-release:
 	codesign --verify --strict "$$WORK/$$ROOT/llama-server"; \
 	echo "macOS asset OK. Windows assets need 'signtool verify /pa' on a Windows host."
 
+# The upstream release list is edited locally and lands through a pull
+# request; the mirror workflow only ever adds candidates (or promotes with
+# PUBLISH=1). Approving needs no re-mirror: the bytes verified are the bytes
+# listed.
+upstream-approve:
+	@test -n "$(TAG)" || { echo "Usage: make upstream-approve TAG=b10405 [MIN_CORE=0.16.0] [ONLY=name,name]"; exit 1; }
+	node .github/scripts/upstream-releases.mjs approve --tag $(TAG) \
+		$(if $(MIN_CORE),--min-core-version $(MIN_CORE),) $(if $(ONLY),--only $(ONLY),)
+
+upstream-promote:
+	@test -n "$(TAG)" || { echo "Usage: make upstream-promote TAG=b10405"; exit 1; }
+	node .github/scripts/upstream-releases.mjs promote --tag $(TAG)
+
+upstream-withdraw:
+	@test -n "$(TAG)" -a -n "$(REASON)" || { echo "Usage: make upstream-withdraw TAG=b10405 REASON=\"...\""; exit 1; }
+	node .github/scripts/upstream-releases.mjs withdraw --tag $(TAG) --reason "$(REASON)"
+
 # Engine descriptors (runtimes/<engine_id>.json) are not named here: the
 # runtime-descriptor-*.test.mjs files discover every one of them, schema
 # included, so a new engine's descriptor is checked without editing this list.
@@ -114,6 +142,9 @@ validate:
 	npx --yes ajv-cli@5 validate -s models/schema.embedding.json -d models/embedding.json --strict=false
 	node .github/scripts/embedding-catalog-check.mjs
 	npx --yes ajv-cli@5 validate -s backends/schema.json -d backends/manifest.json --strict=false
+	node --test .github/scripts/upstream-releases.test.mjs
+	npx --yes ajv-cli@5 validate -s backends/llamacpp-upstream-releases-schema.json -d backends/llamacpp-upstream-releases.json --strict=false
+	node .github/scripts/upstream-releases.mjs check
 	npx --yes ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 	node --test .github/scripts/prism-manifest.test.mjs
 	npx --yes ajv-cli@5 validate -s backends/atomic-prism-schema.json -d backends/atomic-prism-manifest.json --strict=false

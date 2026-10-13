@@ -467,6 +467,20 @@ jobs:
           if (data.commit) console.log(`  commit: ${data.commit}`)
           EOF
 
+      - name: Validate upstream llama.cpp release list against schema
+        run: |
+          ajv validate \
+            -s backends/llamacpp-upstream-releases-schema.json \
+            -d backends/llamacpp-upstream-releases.json \
+            --strict=false
+
+      # Includes the rule older cores depend on: backends/manifest.json names an
+      # approved release of the list that every core runs, with the same bytes.
+      - name: Check upstream llama.cpp release list integrity
+        run: |
+          node --test .github/scripts/upstream-releases.test.mjs
+          node .github/scripts/upstream-releases.mjs check
+
       - name: Validate PrismML backends manifest against schema
         run: |
           ajv validate \

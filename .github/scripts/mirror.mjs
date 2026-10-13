@@ -15,11 +15,12 @@ import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
 import { readdir, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const UPSTREAM_REPO = 'ggml-org/llama.cpp'
 const GGML_ORG_DOWNLOAD_BASE =
   'https://github.com/ggml-org/llama.cpp/releases/download'
-const MIRROR_DOWNLOAD_BASE =
+export const MIRROR_DOWNLOAD_BASE =
   'https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download'
 
 // What the Atomic Chat backend matrix can actually use. Everything else that
@@ -146,7 +147,7 @@ function selectAssets(tag, upstreamAssets) {
   return selected.sort((a, b) => a.name.localeCompare(b.name))
 }
 
-async function sha256File(path) {
+export async function sha256File(path) {
   const hash = createHash('sha256')
   for await (const chunk of createReadStream(path)) hash.update(chunk)
   return hash.digest('hex')
@@ -194,6 +195,21 @@ async function cmdSelect(args) {
   }
 }
 
+/**
+ * backends/manifest.json for a tag: the mirrored archives with their hashes,
+ * then the CUDA runtime companions they need. Also written by
+ * upstream-releases.mjs when a listed release is promoted.
+ */
+export function legacyManifest(tag, archives, downloadBase, updatedAt) {
+  return {
+    $schema: './schema.json',
+    updated_at: updatedAt,
+    tag_name: tag,
+    download_base: downloadBase,
+    assets: [...archives, ...cudartCompanions(archives.map((a) => a.name))],
+  }
+}
+
 async function cmdManifest(args) {
   const tag = assertTag(args.tag)
   if (!args.dir) throw new Error('--dir is required')
@@ -213,15 +229,12 @@ async function cmdManifest(args) {
     const { size } = await stat(path)
     assets.push({ name, sha256: await sha256File(path), size })
   }
-  assets.push(...cudartCompanions(entries))
-
-  const manifest = {
-    $schema: './schema.json',
-    updated_at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-    tag_name: tag,
-    download_base: args.downloadBase ?? MIRROR_DOWNLOAD_BASE,
+  const manifest = legacyManifest(
+    tag,
     assets,
-  }
+    args.downloadBase ?? MIRROR_DOWNLOAD_BASE,
+    new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+  )
 
   const out = args.out ?? 'backends/manifest.json'
   await writeFile(out, JSON.stringify(manifest, null, 2) + '\n')
@@ -244,7 +257,9 @@ async function main() {
   await command(args)
 }
 
-main().catch((err) => {
-  process.stderr.write(`${err.message}\n`)
-  process.exit(1)
-})
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main().catch((err) => {
+    process.stderr.write(`${err.message}\n`)
+    process.exit(1)
+  })
+}

@@ -2,7 +2,11 @@ name: Mirror upstream llama.cpp
 
 # Takes a ggml-org/llama.cpp release tag, re-signs the Windows and macOS
 # binaries with Atomic Chat's certificates, publishes them as a release here,
-# and points backends/manifest.json at them.
+# and lists the tag in backends/llamacpp-upstream-releases.json as a
+# candidate. Candidates reach no one: a release is approved after it was
+# verified (`make upstream-approve`, or `make upstream-promote` for one every
+# core runs). With publish_manifest the tag is promoted right away and
+# backends/manifest.json, which cores before 0.15.0 follow, moves to it.
 #
 # Why mirror at all: the client downloads these archives at runtime and also
 # bundles one in the installer. Upstream ships them ad-hoc-signed (macOS) or
@@ -25,10 +29,15 @@ on:
         default: "3"
         type: string
       publish_manifest:
-        description: "Commit backends/manifest.json so clients pick the tag up"
+        description: "Green: approve every asset for every core and move backends/manifest.json to the tag"
         required: false
-        default: true
+        default: false
         type: boolean
+      min_core_version:
+        description: "Oldest core the release runs on (e.g. 0.16.0); empty for every core"
+        required: false
+        default: ""
+        type: string
 
 concurrency:
   group: mirror-upstream
@@ -52,12 +61,27 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Validate tag
+      - name: Validate inputs
+        env:
+          MIN_CORE: ${{ inputs.min_core_version }}
         run: |
           if ! [[ "${{ inputs.tag }}" =~ ^b[0-9]+$ ]]; then
             echo "::error::tag must look like a ggml-org release tag (e.g. b10405)"
             exit 1
           fi
+          if [ -n "$MIN_CORE" ] && ! [[ "$MIN_CORE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::min_core_version must look like 0.16.0"
+            exit 1
+          fi
+          if [ "${{ inputs.publish_manifest }}" = "true" ] && [ -n "$MIN_CORE" ] && [ "$MIN_CORE" != "0.0.0" ]; then
+            echo "::error::publish_manifest moves the release older cores follow, so it cannot need core $MIN_CORE"
+            exit 1
+          fi
+
+      # A re-run re-signs every archive and replaces the release assets in
+      # place; once a tag is approved, clients hold its hashes.
+      - name: Refuse to re-mirror an approved tag
+        run: node .github/scripts/upstream-releases.mjs guard --tag "${{ inputs.tag }}"
 
       - name: Resolve mirrored assets
         id: pick
@@ -310,32 +334,56 @@ jobs:
           {
             printf 'Mirror of [ggml-org/llama.cpp %s](https://github.com/ggml-org/llama.cpp/releases/tag/%s).\n\n' "$TAG" "$TAG"
             printf 'Windows binaries are Authenticode-signed and macOS binaries carry a Developer ID signature with hardened runtime. Linux archives are mirrored byte-for-byte: there is no Linux signing mechanism here.\n\n'
-            printf 'Consumed by Atomic Chat through `backends/manifest.json`.\n'
+            printf 'Consumed by Atomic Chat through `backends/llamacpp-upstream-releases.json` and `backends/manifest.json`.\n'
           } > notes.md
           gh release create "$TAG" dist/* \
             --title "llama.cpp $TAG (signed mirror)" \
             --notes-file notes.md
 
-      - name: Regenerate backends/manifest.json
-        run: node .github/scripts/mirror.mjs manifest --tag "${{ inputs.tag }}" --dir dist
-
-      - name: Validate the regenerated manifest
-        run: |
-          npm install -g ajv-cli@5
-          ajv validate -s backends/schema.json -d backends/manifest.json --strict=false
-
-      - name: Commit manifest
-        if: ${{ inputs.publish_manifest }}
+      - name: List the tag as a candidate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MIN_CORE: ${{ inputs.min_core_version }}
         run: |
           set -euo pipefail
-          if git diff --quiet backends/manifest.json; then
-            echo "Manifest already points at ${{ inputs.tag }}; nothing to commit"
+          node .github/scripts/upstream-releases.mjs add --tag "${{ inputs.tag }}" --dir dist \
+            ${MIN_CORE:+--min-core-version "$MIN_CORE"}
+
+      - name: Promote it for every core
+        if: ${{ inputs.publish_manifest }}
+        run: node .github/scripts/upstream-releases.mjs promote --tag "${{ inputs.tag }}"
+
+      - name: Drop releases the new one replaces
+        run: node .github/scripts/upstream-releases.mjs prune
+
+      - name: Validate the release list and the manifest
+        run: |
+          set -euo pipefail
+          npm install -g ajv-cli@5
+          ajv validate -s backends/schema.json -d backends/manifest.json --strict=false
+          ajv validate -s backends/llamacpp-upstream-releases-schema.json \
+            -d backends/llamacpp-upstream-releases.json --strict=false
+          node .github/scripts/upstream-releases.mjs check
+
+      # Pushed straight to main: a candidate is offered to no one, and a
+      # promotion is what publish_manifest asked for.
+      - name: Commit the release list and the manifest
+        run: |
+          set -euo pipefail
+          git add -N backends/llamacpp-upstream-releases.json
+          if git diff --quiet -- backends/llamacpp-upstream-releases.json backends/manifest.json; then
+            echo "Nothing changed for ${{ inputs.tag }}"
             exit 0
+          fi
+          if [ "${{ inputs.publish_manifest }}" = "true" ]; then
+            MESSAGE="chore(manifest): mirror upstream ${{ inputs.tag }}"
+          else
+            MESSAGE="chore(upstream-releases): list llama.cpp ${{ inputs.tag }} as candidate"
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add backends/manifest.json
-          git commit -m "chore(manifest): mirror upstream ${{ inputs.tag }}"
+          git add backends/llamacpp-upstream-releases.json backends/manifest.json
+          git commit -m "$MESSAGE"
           git push
 
       - name: Prune old mirrored releases
@@ -350,17 +398,26 @@ jobs:
           fi
           # Sort by tag number, not by date: a re-run of an older tag would
           # otherwise look like the newest release and evict a current one.
+          # The tag just published, every tag the committed release list
+          # still offers and the one backends/manifest.json names are never
+          # deleted: a core may download any of them. Read into a variable
+          # first so a failing script stops the step instead of keeping nothing.
+          LISTED="$(node .github/scripts/upstream-releases.mjs keep-tags)"
+          mapfile -t keep < <(echo "${{ inputs.tag }}"; echo "$LISTED")
           mapfile -t stale < <(
             gh release list --limit 100 --json tagName --jq '.[].tagName' \
               | grep -E '^b[0-9]+$' \
               | sort -t b -k2 -nr \
               | tail -n +$((RETAIN + 1))
           )
-          if [ ${#stale[@]} -eq 0 ]; then
-            echo "Nothing to prune (retaining $RETAIN)"
-            exit 0
-          fi
+          pruned=0
           for tag in "${stale[@]}"; do
+            if printf '%s\n' "${keep[@]}" | grep -qxF "$tag"; then
+              echo "Keeping $tag: the release list or the manifest names it"
+              continue
+            fi
             echo "Deleting release $tag"
             gh release delete "$tag" --yes --cleanup-tag
+            pruned=$((pruned + 1))
           done
+          [ "$pruned" -gt 0 ] || echo "Nothing to prune (retaining $RETAIN)"

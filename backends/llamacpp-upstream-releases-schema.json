@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat upstream llama.cpp Release List",
+  "description": "Schema for the release list of the `llamacpp-upstream` provider: ggml-org/llama.cpp builds this repository mirrors and signs. Every release is pinned by tag, upstream commit and per-asset sha256. A core takes, per backend, the newest release that is not withdrawn, whose `min_core_version` it meets and whose asset for that backend is `approved`; `candidate` assets reach only clients that explicitly opt into unverified builds. Cores before 0.15.0 do not read this file: they follow backends/manifest.json, which moves only to a release every core runs (`min_core_version` 0.0.0).",
+  "type": "object",
+  "required": ["schema_version", "updated_at", "upstream_repo", "download_base", "releases"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "upstream_repo": {
+      "const": "ggml-org/llama.cpp",
+      "description": "GitHub repository the releases come from."
+    },
+    "download_base": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://",
+      "description": "Base URL the client prepends to '<tag>/<asset name>': this repository's release stream, whose archives carry Atomic Chat's Windows Authenticode and macOS Developer ID signatures."
+    },
+    "releases": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Newest first. The client chooses among approved, non-withdrawn releases its own version meets.",
+      "items": { "$ref": "#/definitions/release" }
+    }
+  },
+  "definitions": {
+    "release": {
+      "type": "object",
+      "required": ["tag", "commit", "published_at", "min_core_version", "notes_url", "assets"],
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "type": "string",
+          "pattern": "^b[0-9]+$",
+          "description": "ggml-org/llama.cpp release tag, b<build>. The build number orders releases."
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "Upstream commit the release was built from."
+        },
+        "published_at": { "type": "string", "format": "date-time" },
+        "min_core_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Oldest atomic-chat-core this release runs on. 0.0.0 means every core that reads this list; a release that needed a core change names the core that shipped it. Older cores skip the release."
+        },
+        "notes_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Upstream release notes."
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 280,
+          "description": "Optional one-line summary of why this release is listed."
+        },
+        "withdrawn": {
+          "type": "object",
+          "required": ["reason"],
+          "additionalProperties": false,
+          "description": "A release pulled from offers. Installed packs are kept.",
+          "properties": {
+            "reason": { "type": "string", "minLength": 1, "maxLength": 280 }
+          }
+        },
+        "assets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/asset" }
+        }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "required": ["name", "sha256", "size", "validation"],
+      "additionalProperties": false,
+      "description": "A mirrored backend archive. The client derives the backend id from the name, as it does for backends/manifest.json. The CUDA runtime companions stay on the ggml-org CDN and are not listed.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^llama-b[0-9]+-bin-[A-Za-z0-9._-]+\\.(zip|tar\\.gz)$"
+        },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "size": { "type": "integer", "minimum": 1 },
+        "validation": {
+          "type": "string",
+          "enum": ["candidate", "approved"],
+          "description": "approved: verified for the cores the release names and offered to users. candidate: mirrored, not yet verified."
+        }
+      }
+    }
+  }
+}
