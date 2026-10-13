@@ -32,7 +32,9 @@ models/
   atomic-prism-models.json # Which Bonsai GGUF files need PrismML llama.cpp (atomic-prism)
   schema.atomic-prism-models.json # JSON Schema (Draft-07) for the Prism model rules
 backends/
-  manifest.json            # llama.cpp backend catalog (mirrors a ggml-org release)
+  llamacpp-upstream-releases.json # Mirrored llama.cpp releases with min_core_version (cores >= 0.15.0)
+  llamacpp-upstream-releases-schema.json # JSON Schema (Draft-07) for the release list
+  manifest.json            # Legacy llama.cpp catalog for cores < 0.15.0 (one release every core runs)
   schema.json              # JSON Schema (Draft-07) for the backends manifest
   turboquant-manifest.json # TurboQuant backend catalog (one unified release tag)
   turboquant-schema.json   # JSON Schema (Draft-07) for the TurboQuant manifest
@@ -63,6 +65,7 @@ app/
   workflows/prism-release-watch.yml # Opens a PR listing a new PrismML release as candidate
   actions/windows-code-sign/    # Authenticode signing via DigiCert KeyLocker
   scripts/mirror.mjs            # Asset whitelist + manifest generation
+  scripts/upstream-releases.mjs # Release list upkeep: add, approve, promote, withdraw, prune, check
   entitlements.plist            # Entitlements for the signed macOS binaries
 Makefile                        # make mirror TAG=... and friends
 README.md
@@ -472,6 +475,10 @@ removed here; no release is needed.
 
 ## llama.cpp backends manifest
 
+> Cores from 0.15.0 read the [upstream release list](#upstream-release-list)
+> instead and use this file only as a fallback. It stays for the cores already
+> released, so it only ever names a release every core runs.
+
 [`backends/manifest.json`](backends/manifest.json) is the catalog of
 downloadable `llama.cpp` backend builds the Atomic Chat client offers on
 **Windows, Linux (x64 and arm64) and Apple Silicon**. It exists to dodge GitHub's unauthenticated API
@@ -531,6 +538,62 @@ is what a tag we have not mirrored has to do.
   backend regex ignores them (it matches only `llama-<tag>-bin-...`), so
   they are harmless.
 
+### Upstream release list
+
+[`backends/llamacpp-upstream-releases.json`](backends/llamacpp-upstream-releases.json)
+lists the mirrored releases newest first, the same way the PrismML manifest
+does. Each release names the oldest core it runs on (`min_core_version`) and
+each archive its `validation`:
+
+- `candidate`: mirrored, not verified. No core offers it unless the user
+  opted into unverified builds.
+- `approved`: verified for the cores the release names and offered to them.
+
+A core takes, per backend, the newest release that is not withdrawn, whose
+`min_core_version` it meets and whose archive for that backend is approved.
+That is how an engine update that needs a core change reaches only the cores
+that have the change: list it with `min_core_version` set to the core that
+shipped the change. `0.0.0` means every core that reads the list.
+
+```json
+{
+  "$schema": "./llamacpp-upstream-releases-schema.json",
+  "schema_version": 1,
+  "updated_at": "2026-10-13T00:00:00Z",
+  "upstream_repo": "ggml-org/llama.cpp",
+  "download_base": "https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download",
+  "releases": [
+    {
+      "tag": "b11500",
+      "commit": "0000000000000000000000000000000000000000",
+      "published_at": "2026-10-10T00:00:00Z",
+      "min_core_version": "0.16.0",
+      "notes_url": "https://github.com/ggml-org/llama.cpp/releases/tag/b11500",
+      "assets": [
+        {
+          "name": "llama-b11500-bin-macos-arm64.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "size": 12087702,
+          "validation": "approved"
+        }
+      ]
+    }
+  ]
+}
+```
+
+- The backend is read from the archive name, as in `backends/manifest.json`.
+  The `cudart-*` companions are not listed: they stay on the ggml-org CDN.
+- `withdrawn: { "reason": "..." }` pulls a release from offers. Installed
+  packs are kept.
+- `backends/manifest.json` must name an approved release of the list with
+  `min_core_version` `0.0.0`, with the same hashes. CI enforces it
+  (`upstream-releases.mjs check`), so the file older cores follow can only
+  move to a release every core runs.
+- A newer release that is approved for every backend an older one is, for the
+  same or older cores, replaces it; the mirror drops replaced releases from
+  the list (the one `backends/manifest.json` names stays).
+
 ### Signed mirror
 
 Upstream ships its macOS binaries ad-hoc-signed and its Windows binaries
@@ -540,7 +603,8 @@ unsigned binary or re-signed it on each developer's machine. Now one CI run
 per tag produces a single artifact that serves both paths.
 
 ```bash
-make mirror TAG=b10405          # run the pipeline and wait for it
+make mirror TAG=b10405          # run the pipeline, list the tag as a candidate, wait for it
+make mirror TAG=b10405 PUBLISH=1 # same, then promote it for every core (moves backends/manifest.json)
 make mirror-select TAG=b10405   # dry run: show which assets that tag would mirror
 make verify-release TAG=b10405  # check the published macOS asset's signature
 ```
@@ -549,13 +613,19 @@ make verify-release TAG=b10405  # check the published macOS asset's signature
 downloads the whitelisted assets from ggml-org, signs the Windows binaries
 with DigiCert KeyLocker and the macOS binaries with our Developer ID
 (hardened runtime, secure timestamp), repacks each archive with its original
-layout, publishes them under the upstream tag, then regenerates this manifest
-with a `sha256` per asset and commits it. Linux archives pass through
-byte-for-byte: there is no Linux signing mechanism here.
+layout, publishes them under the upstream tag, then lists the tag in the
+release list as a candidate, with a `sha256` per archive, and commits it to
+main. Linux archives pass through byte-for-byte: there is no Linux signing
+mechanism here. With `PUBLISH=1` it also promotes the tag and regenerates
+`backends/manifest.json`; `MIN_CORE=0.16.0` lists it for cores from that
+version.
 
-The manifest moves **after** the upload succeeds, never before — clients
-resolve download URLs from it, so the reverse order would hand them 404s.
-Older mirrored releases are pruned (`RETAIN=3` by default).
+The lists move **after** the upload succeeds, never before — clients
+resolve download URLs from them, so the reverse order would hand them 404s.
+A tag with approved archives is never re-mirrored: a re-run re-signs every
+archive, and clients already hold the old hashes. Older mirrored releases are
+pruned (`RETAIN=3` by default), except the ones the release list still offers
+and the one `backends/manifest.json` names.
 
 Required secrets: `SM_API_KEY`, `SM_CLIENT_CERT_FILE_B64`,
 `SM_CLIENT_CERT_PASSWORD` (Windows), `APPLE_CERTIFICATE`,
@@ -564,16 +634,24 @@ creates gets a password generated on the runner, so that one is not a secret.
 
 ### How to update the backends manifest
 
-Run `make mirror TAG=<tag>`. Pick the newest **complete** ggml-org release:
-releases publish their tag before every asset finishes uploading, so do not
-blindly grab `latest`. The pipeline fails loudly if a required asset is
-missing from the tag, which is the check that used to be manual.
+1. Run `make mirror TAG=<tag>`. Pick the newest **complete** `b<build>`
+   release: releases publish their tag before every asset finishes uploading,
+   and ggml-org's `latest` is not a build at all. The pipeline fails loudly if
+   a required asset is missing from the tag, which is the check that used to
+   be manual. The tag lands as a candidate.
+2. Verify it (core's live tests against the candidate, or a build with
+   unverified builds allowed).
+3. On a branch, approve what passed and open a pull request:
+   - every core runs it: `make upstream-promote TAG=<tag>` (also moves
+     `backends/manifest.json`);
+   - it needs a core change: `make upstream-approve TAG=<tag> MIN_CORE=<core>`,
+     once that core is released;
+   - some backends failed: add `ONLY=<archive>,<archive>` to approve the rest.
+4. A release that turns out bad: `make upstream-withdraw TAG=<tag> REASON="..."`.
 
-Editing `backends/manifest.json` by hand still works and still points clients
-at a new engine within the hour, but a hand-written tag has no mirrored
-release behind it: drop `download_base` and the `sha256` fields in that case
-so the client falls back to the upstream CDN instead of resolving URLs into a
-release that does not exist.
+Cores from 0.15.0 re-read the list every hour; older cores read
+`backends/manifest.json` when they start. Do not edit `backends/manifest.json`
+by hand: CI refuses a tag the release list does not approve for every core.
 
 ## TurboQuant backends manifest
 
@@ -1558,6 +1636,12 @@ every push and pull request. It performs the following checks:
 - `sha256` and `size` must appear together on an asset, and when
   `download_base` is set every `llama-*` asset must carry a `sha256` — an
   archive we host but do not hash would be downloaded unverified.
+- `ajv` validates `backends/llamacpp-upstream-releases.json` against
+  `backends/llamacpp-upstream-releases-schema.json`, and
+  `.github/scripts/upstream-releases.mjs check` requires releases newest first
+  and unique, archive names that carry their release's tag, and a
+  `backends/manifest.json` that names an approved release with
+  `min_core_version` `0.0.0` and the same hashes.
 - `ajv` validates `backends/turboquant-manifest.json` against
   `backends/turboquant-schema.json`.
 - Every TurboQuant `tag` must look like `b<build>-<semver>` and all entries must
@@ -1635,6 +1719,8 @@ node .github/scripts/decision-catalog-check.mjs
 npx ajv-cli@5 validate -s models/schema.embedding.json -d models/embedding.json --strict=false
 node .github/scripts/embedding-catalog-check.mjs
 npx ajv-cli@5 validate -s backends/schema.json  -d backends/manifest.json     --strict=false
+npx ajv-cli@5 validate -s backends/llamacpp-upstream-releases-schema.json -d backends/llamacpp-upstream-releases.json --strict=false
+node .github/scripts/upstream-releases.mjs check
 npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 npx ajv-cli@5 validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.json --strict=false
 npx ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.json --strict=false
