@@ -1,0 +1,259 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat remote media catalog",
+  "description": "Image and video generation models that cloud providers and self-hosted servers offer through the core. Only the core reads this file: it picks the adapter (`api`) per provider and media kind, and offers the listed models with their parameters. Hosts never come from here: an adapter derives every URL from the provider's registered base_url, so this file cannot send an API key anywhere new. Models a provider lists live are offered too, with the dialect's default parameters.",
+  "type": "object",
+  "required": ["schema_version", "catalog_version", "updated_at", "dialects", "providers"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "type": "integer", "const": 1 },
+    "catalog_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Raised on every change. A core keeps the newest of its bundled baseline and the fetched file."
+    },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "dialects": {
+      "type": "object",
+      "description": "Default workflows and parameters per adapter, used for models a provider lists live but this file does not name.",
+      "propertyNames": { "$ref": "#/definitions/dialect" },
+      "additionalProperties": { "$ref": "#/definitions/dialectDefaults" }
+    },
+    "providers": {
+      "type": "object",
+      "description": "Keyed by provider id: a provider of providers/registry.json, or a self-hosted provider the app ships (automatic1111, sdcpp-server).",
+      "propertyNames": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$" },
+      "additionalProperties": { "$ref": "#/definitions/provider" }
+    }
+  },
+  "definitions": {
+    "dialect": {
+      "type": "string",
+      "enum": [
+        "openai-images",
+        "xai-images",
+        "openrouter-images",
+        "gemini-image",
+        "minimax-image",
+        "dashscope-image",
+        "hf-images",
+        "nvidia-genai",
+        "mistral-agent-image",
+        "a1111",
+        "openai-videos",
+        "openrouter-videos",
+        "xai-videos",
+        "gemini-veo",
+        "minimax-video",
+        "minimax-video-v2",
+        "dashscope-video",
+        "aimlapi-videos",
+        "hf-videos"
+      ]
+    },
+    "kind": { "type": "string", "enum": ["image", "video"] },
+    "imageWorkflow": {
+      "type": "string",
+      "enum": ["create", "transform", "inpaint", "reference", "edit"],
+      "description": "create: text to image. transform: image to image with a strength. inpaint: repaint under a mask. reference: new image guided by reference images. edit: change a source image by instruction."
+    },
+    "videoWorkflow": {
+      "type": "string",
+      "enum": ["create", "image-to-video"]
+    },
+    "choice": {
+      "type": "object",
+      "required": ["values"],
+      "additionalProperties": false,
+      "properties": {
+        "values": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "default": { "type": "string", "minLength": 1 }
+      }
+    },
+    "numberRange": {
+      "type": "object",
+      "required": ["min", "max"],
+      "additionalProperties": false,
+      "properties": {
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "default": { "type": "number" },
+        "step": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "imageParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "What the generation form offers for this model. A missing key is a control the form hides.",
+      "properties": {
+        "size": {
+          "description": "Pixel size: a list of `WxH` (and `auto`), or a free range.",
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["kind", "values"],
+              "additionalProperties": false,
+              "properties": {
+                "kind": { "const": "enum" },
+                "values": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": { "type": "string", "pattern": "^(auto|[1-9][0-9]*x[1-9][0-9]*)$" }
+                },
+                "default": { "type": "string", "pattern": "^(auto|[1-9][0-9]*x[1-9][0-9]*)$" }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["kind", "min", "max", "multiple"],
+              "additionalProperties": false,
+              "properties": {
+                "kind": { "const": "range" },
+                "min": { "type": "integer", "minimum": 64 },
+                "max": { "type": "integer", "minimum": 64 },
+                "multiple": { "type": "integer", "minimum": 1 },
+                "default_width": { "type": "integer", "minimum": 64 },
+                "default_height": { "type": "integer", "minimum": 64 }
+              }
+            }
+          ]
+        },
+        "aspect_ratios": { "$ref": "#/definitions/choice" },
+        "resolutions": { "$ref": "#/definitions/choice" },
+        "n": {
+          "type": "object",
+          "required": ["max"],
+          "additionalProperties": false,
+          "properties": { "max": { "type": "integer", "minimum": 1, "maximum": 10 } }
+        },
+        "seed": { "type": "boolean" },
+        "negative_prompt": { "type": "boolean" },
+        "quality": { "$ref": "#/definitions/choice" },
+        "background": { "$ref": "#/definitions/choice" },
+        "output_format": { "$ref": "#/definitions/choice" },
+        "steps": { "$ref": "#/definitions/numberRange" },
+        "cfg": { "$ref": "#/definitions/numberRange" },
+        "guidance": { "$ref": "#/definitions/numberRange" },
+        "strength": { "$ref": "#/definitions/numberRange" },
+        "sampler": { "type": "boolean", "description": "The server lists samplers live; the form offers them." },
+        "max_input_images": { "type": "integer", "minimum": 1, "maximum": 16 }
+      }
+    },
+    "videoParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "durations": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Seconds: a list of values, or a range.",
+          "properties": {
+            "values": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "number", "exclusiveMinimum": 0 } },
+            "min": { "type": "number", "exclusiveMinimum": 0 },
+            "max": { "type": "number", "exclusiveMinimum": 0 },
+            "default": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "resolutions": { "$ref": "#/definitions/choice" },
+        "aspect_ratios": { "$ref": "#/definitions/choice" },
+        "sizes": { "$ref": "#/definitions/choice" },
+        "audio": { "type": "boolean", "description": "The model can generate sound; the form offers a switch." },
+        "seed": { "type": "boolean" },
+        "negative_prompt": { "type": "boolean" },
+        "last_frame": { "type": "boolean", "description": "Image to video also takes a last frame." }
+      }
+    },
+    "options": {
+      "type": "object",
+      "description": "Adapter-specific settings for one model (for example the Hugging Face inference provider and its model id, or the NVIDIA request schema). The adapter checks its own keys and drops a model it cannot read.",
+      "propertyNames": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "model": {
+      "type": "object",
+      "required": ["id", "name", "workflows", "params"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The id the provider's API takes as `model`, and the id clients pass to the core."
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "default": {
+          "type": "boolean",
+          "description": "Offered as soon as the provider is connected. At most one per provider and kind."
+        },
+        "api": {
+          "$ref": "#/definitions/dialect",
+          "description": "Overrides the provider's adapter for this model (MiniMax H3 uses the V2 video API)."
+        },
+        "workflows": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+        "params": { "type": "object" },
+        "options": { "$ref": "#/definitions/options" }
+      }
+    },
+    "imageModel": {
+      "allOf": [
+        { "$ref": "#/definitions/model" },
+        {
+          "properties": {
+            "workflows": { "items": { "$ref": "#/definitions/imageWorkflow" } },
+            "params": { "$ref": "#/definitions/imageParams" }
+          }
+        }
+      ]
+    },
+    "videoModel": {
+      "allOf": [
+        { "$ref": "#/definitions/model" },
+        {
+          "properties": {
+            "workflows": { "items": { "$ref": "#/definitions/videoWorkflow" } },
+            "params": { "$ref": "#/definitions/videoParams" }
+          }
+        }
+      ]
+    },
+    "imageSection": {
+      "type": "object",
+      "required": ["api", "models"],
+      "additionalProperties": false,
+      "properties": {
+        "api": { "$ref": "#/definitions/dialect" },
+        "models": { "type": "array", "items": { "$ref": "#/definitions/imageModel" } }
+      }
+    },
+    "videoSection": {
+      "type": "object",
+      "required": ["api", "models"],
+      "additionalProperties": false,
+      "properties": {
+        "api": { "$ref": "#/definitions/dialect" },
+        "models": { "type": "array", "items": { "$ref": "#/definitions/videoModel" } }
+      }
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "image": { "$ref": "#/definitions/imageSection" },
+        "video": { "$ref": "#/definitions/videoSection" }
+      }
+    },
+    "dialectDefaults": {
+      "type": "object",
+      "required": ["kind", "workflows", "params"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "$ref": "#/definitions/kind" },
+        "workflows": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+        "params": { "type": "object" }
+      }
+    }
+  }
+}

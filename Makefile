@@ -104,6 +104,8 @@ validate:
 	node --test .github/scripts/runtime-descriptor-immutability.test.mjs
 	node --test .github/scripts/environment-manifest-immutability.test.mjs
 	npx --yes ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
+	npx --yes ajv-cli@5 validate -s providers/schema.media.json -d providers/media.json --strict=false
+	node .github/scripts/media-catalog-check.mjs
 	npx --yes ajv-cli@5 validate -s models/schema.json -d models/recommended.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.diffusion.json -d models/diffusion.json --strict=false
