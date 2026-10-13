@@ -18,6 +18,8 @@ Windows, Linux) without an application release.
 providers/
   registry.json      # Single source of truth for cloud providers
   schema.json        # JSON Schema (Draft-07) used by CI validation
+  media.json         # Image and video models of cloud and self-hosted providers (read by core)
+  schema.media.json  # JSON Schema (Draft-07) for the remote media catalog
 models/
   recommended.json   # Recommended models surfaced in onboarding (frozen shape)
   schema.json        # JSON Schema (Draft-07) for the recommended-models manifest
@@ -432,6 +434,41 @@ undecodable media with a 400 that names the field. `dimensions` other than
 `dims` is refused too: the server returns full vectors, and a client that wants
 one of the `matryoshka_dims` keeps the first values and L2-normalizes them. A new logo key needs the image in
 the app first, then the `icon` value here.
+
+## Remote media catalog
+
+`providers/media.json` lists the image and video generation models that cloud
+providers and self-hosted servers offer through the core. Only the core reads
+it (released apps never fetch it). The core answers the app's media pickers
+from it and routes `/v1/images/generations`, `/v1/images/edits` and
+`/v1/videos` for these models to the provider.
+
+Per provider id (a provider of `providers/registry.json`, or `automatic1111` and
+`sdcpp-server`, which the app ships itself) there is an `image` and/or a `video`
+section:
+
+| Field             | Notes                                                                                                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------- |
+| `api`             | The core adapter (dialect) that speaks this provider's media API, e.g. `openai-images`, `gemini-veo`.   |
+| `models[].id`     | The id the provider takes as `model`, and the id clients pass to the core.                              |
+| `models[].default`| Offered as soon as the provider is connected. At most one per provider and kind.                        |
+| `models[].api`    | Overrides the section's adapter for one model (MiniMax H3 uses the V2 video API).                       |
+| `models[].workflows` | Image: `create`, `transform`, `inpaint`, `reference`, `edit`. Video: `create`, `image-to-video`.     |
+| `models[].params` | What the generation form offers: sizes, aspect ratios, resolutions, durations, quality, seed and so on. A missing key is a hidden control. |
+| `models[].options`| Adapter settings for one model (the Hugging Face inference provider, the NVIDIA request schema).        |
+
+`dialects` holds each adapter's default workflows and parameters. The core uses
+them for a model a provider lists live that this file does not name.
+
+**No hosts here.** An adapter derives every URL from the provider's registered
+`base_url` in code, so this file can never send an API key to a new host.
+
+**Compatibility.** Changes are additive. A core that does not know a dialect
+or a parameter skips that entry and keeps the rest. Raise `catalog_version` on
+every change; the core keeps the newer of its bundled baseline and this file.
+Bump `schema_version` only for a breaking change, and only after the core
+parser accepts the new version. A model that stops working at a provider is
+removed here; no release is needed.
 
 ## llama.cpp backends manifest
 

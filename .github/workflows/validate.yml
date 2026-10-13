@@ -674,6 +674,16 @@ jobs:
       - name: Check decision catalog integrity
         run: node .github/scripts/decision-catalog-check.mjs
 
+      - name: Validate remote media catalog against schema
+        run: |
+          ajv validate \
+            -s providers/schema.media.json \
+            -d providers/media.json \
+            --strict=false
+
+      - name: Check remote media catalog integrity
+        run: node .github/scripts/media-catalog-check.mjs
+
       - name: Validate embedding catalog against schema
         run: |
           ajv validate \
