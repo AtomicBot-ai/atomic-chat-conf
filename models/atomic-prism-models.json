@@ -1,8 +1,8 @@
 {
   "$schema": "./schema.atomic-prism-models.json",
   "schema_version": 1,
-  "updated_at": "2026-10-05T13:00:00Z",
-  "rules_version": 1,
+  "updated_at": "2026-10-15T20:00:00Z",
+  "rules_version": 2,
   "tensor_types": {
     "41": "q1_0",
     "42": "q2_0",
@@ -82,6 +82,241 @@
           "file": "Ternary-Bonsai-2-27B-mmproj-BF16.gguf",
           "size": 931145856,
           "sha256": "e287342d92332fa3577ed1d42e921dac9370c08da58ba9337fa450f6cc76cfd7"
+        }
+      ]
+    },
+    {
+      "id": "ternary-bonsai-2-9b",
+      "title": "Ternary Bonsai 2 9B",
+      "repo": "prism-ml/Ternary-Bonsai-2-9B-gguf",
+      "revision": "5b2abb02362efbed46bbe204014b02837778b2c2",
+      "default_packing": "pq2_0",
+      "sampling": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "min_p": 0.0
+      },
+      "default_ctx": 16384,
+      "files": [
+        {
+          "file": "Ternary-Bonsai-2-9B-PQ2_0.gguf",
+          "size": 2416851840,
+          "sha256": "7a89ab48f5038c704480f60781f9b8d4035351f5f6beb7d11fad80001fde23f9",
+          "packing": "pq2_0",
+          "treatment": "prism_required",
+          "requires": [
+            "pq2_0",
+            "hadamard"
+          ],
+          "min_prism_build": 10754,
+          "default": true,
+          "summary": "Recommended packing."
+        },
+        {
+          "file": "Ternary-Bonsai-2-9B-PTQ1_0.gguf",
+          "size": 1997486976,
+          "sha256": "3561df7ac7d26a71ffa991ac2db740b10841c3a350aa2676ccd3ff5d428b4e8b",
+          "packing": "ptq1_0",
+          "treatment": "prism_required",
+          "requires": [
+            "ptq1_0",
+            "hadamard"
+          ],
+          "min_prism_build": 10754,
+          "summary": "Smaller download and memory footprint."
+        },
+        {
+          "file": "Ternary-Bonsai-2-9B-Q2_0.gguf",
+          "size": 2556640128,
+          "sha256": "1f884aa56aacd2bbbb2e4b7abaead2b1102b74a9c75a23fc33dab916813a384d",
+          "packing": "q2_0_g64",
+          "treatment": "prism_required",
+          "requires": [
+            "q2_0_g64",
+            "hadamard"
+          ],
+          "min_prism_build": 10754,
+          "summary": "Group-64 layout; needs the Hadamard runtime, so it stays on PrismML."
+        },
+        {
+          "file": "Ternary-Bonsai-2-9B-PQ2_0-MTP-Q8_0.gguf",
+          "size": 2675410720,
+          "sha256": "c79fcdfaf6b7bf47089b50dadcfd11f9ce7d3e96adf3bbefde7912e5ef69e22b",
+          "treatment": "excluded",
+          "summary": "PQ2_0 with a built-in MTP draft head; speculative decoding is off for Prism."
+        },
+        {
+          "file": "Ternary-Bonsai-2-9B-DFlash2-Q8_0.gguf",
+          "size": 1574233856,
+          "sha256": "95149abdd584f7a69ea5ead38790d5481454428d2c1616527ff0d45422a762b4",
+          "treatment": "excluded",
+          "summary": "DFlash2 drafter; speculative decoding is off for Prism."
+        }
+      ],
+      "projectors": [
+        {
+          "file": "Ternary-Bonsai-2-9B-mmproj-Q8_0.gguf",
+          "size": 624229664,
+          "sha256": "e0cb6f6988cea323ef798cd77d019bbb819af75582f034eaab0e7232314953db",
+          "default": true
+        },
+        {
+          "file": "Ternary-Bonsai-2-9B-mmproj-BF16.gguf",
+          "size": 921704864,
+          "sha256": "3e6d1a8bf1266eda94c52221a7d1d8f302524c7ea0d62bee088b36d6a3a0ef79"
+        }
+      ]
+    },
+    {
+      "id": "ternary-bonsai-2-4b",
+      "title": "Ternary Bonsai 2 4B",
+      "repo": "prism-ml/Ternary-Bonsai-2-4B-gguf",
+      "revision": "8d6557168168f91ea6697a4a49ed2ef622b53adb",
+      "default_packing": "pq2_0",
+      "sampling": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "min_p": 0.0
+      },
+      "default_ctx": 32768,
+      "files": [
+        {
+          "file": "Ternary-Bonsai-2-4B-PQ2_0.gguf",
+          "size": 1146465120,
+          "sha256": "d406b1e912c0d2a4c124ad10bf38a76ae662fdc4d24b176451403dc7b7f30409",
+          "packing": "pq2_0",
+          "treatment": "prism_required",
+          "requires": [
+            "pq2_0",
+            "hadamard"
+          ],
+          "min_prism_build": 10754,
+          "default": true,
+          "summary": "Recommended packing."
+        },
+        {
+          "file": "Ternary-Bonsai-2-4B-PTQ1_0.gguf",
+          "size": 949549920,
+          "sha256": "56711263ec9a9ffeaa74a3a0e58dece8127cf9268404746c721113ca76994d60",
+          "packing": "ptq1_0",
+          "treatment": "prism_required",
+          "requires": [
+            "ptq1_0",
+            "hadamard"
+          ],
+          "min_prism_build": 10754,
+          "summary": "Smaller download and memory footprint."
+        },
+        {
+          "file": "Ternary-Bonsai-2-4B-Q2_0.gguf",
+          "size": 1212103520,
+          "sha256": "64a5183b44921bdb5ac4a6f5f92007821d6ebe5c66997d3c147fd214ab9433d4",
+          "packing": "q2_0_g64",
+          "treatment": "prism_required",
+          "requires": [
+            "q2_0_g64",
+            "hadamard"
+          ],
+          "min_prism_build": 10754,
+          "summary": "Group-64 layout; needs the Hadamard runtime, so it stays on PrismML."
+        },
+        {
+          "file": "Ternary-Bonsai-2-4B-PQ2_0-MTP-Q8_0.gguf",
+          "size": 1274642176,
+          "sha256": "0acf517de1dc3d85c403a60df6b8b07a4878ac174f368d4390be98406a4d6c0d",
+          "treatment": "excluded",
+          "summary": "PQ2_0 with a built-in MTP draft head; speculative decoding is off for Prism."
+        },
+        {
+          "file": "Ternary-Bonsai-2-4B-DFlash2-BF16.gguf",
+          "size": 1575278208,
+          "sha256": "4402be311018d01e31ecd0a894326e2f7bd28bc27a288c5b949799fe000808d8",
+          "treatment": "excluded",
+          "summary": "DFlash2 drafter; speculative decoding is off for Prism."
+        }
+      ],
+      "projectors": [
+        {
+          "file": "Ternary-Bonsai-2-4B-mmproj-Q8_0.gguf",
+          "size": 366894624,
+          "sha256": "db939d5f9b7014137810205e91d05e5f54afd72b0b3af9d33bd7d82f7906a55d",
+          "default": true
+        },
+        {
+          "file": "Ternary-Bonsai-2-4B-mmproj-BF16.gguf",
+          "size": 675569184,
+          "sha256": "e039156b6979f47d92597875e6fa2efe70aa2a26d135ed2abec09124e0c1448f"
+        }
+      ]
+    },
+    {
+      "id": "ternary-bonsai-2-2b",
+      "title": "Ternary Bonsai 2 2B",
+      "repo": "prism-ml/Ternary-Bonsai-2-2B-gguf",
+      "revision": "683f7be2629342a50987627b40881e54761a2430",
+      "default_packing": "pq2_0",
+      "sampling": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "min_p": 0.0
+      },
+      "default_ctx": 32768,
+      "files": [
+        {
+          "file": "Ternary-Bonsai-2-2B-PQ2_0.gguf",
+          "size": 517312992,
+          "sha256": "d5f01a4ecaf49239653308ee732ad1a0c5f802c0ddb997549fc7b694c8b45928",
+          "packing": "pq2_0",
+          "treatment": "prism_required",
+          "requires": [
+            "pq2_0",
+            "hadamard"
+          ],
+          "min_prism_build": 10754,
+          "default": true,
+          "summary": "Recommended packing."
+        },
+        {
+          "file": "Ternary-Bonsai-2-2B-PTQ1_0.gguf",
+          "size": 429183456,
+          "sha256": "36061ad406df8a4903a6db005be350c50fabfaf717f9ef0acf4b76adcd9929fa",
+          "packing": "ptq1_0",
+          "treatment": "prism_required",
+          "requires": [
+            "ptq1_0",
+            "hadamard"
+          ],
+          "min_prism_build": 10754,
+          "summary": "Smaller download and memory footprint."
+        },
+        {
+          "file": "Ternary-Bonsai-2-2B-Q2_0.gguf",
+          "size": 546689504,
+          "sha256": "c2893fa6f951daee8b7263d5f49b455e57989ef56417a22125b03566dc560650",
+          "packing": "q2_0_g64",
+          "treatment": "prism_required",
+          "requires": [
+            "q2_0_g64",
+            "hadamard"
+          ],
+          "min_prism_build": 10754,
+          "summary": "Group-64 layout; needs the Hadamard runtime, so it stays on PrismML."
+        }
+      ],
+      "projectors": [
+        {
+          "file": "Ternary-Bonsai-2-2B-mmproj-Q8_0.gguf",
+          "size": 364664352,
+          "sha256": "ac9934e8d7966d0d62442c202ec8fdad99a045dea79366c1a4a246a46f5c0533",
+          "default": true
+        },
+        {
+          "file": "Ternary-Bonsai-2-2B-mmproj-BF16.gguf",
+          "size": 671372832,
+          "sha256": "b48586d703bb776ad6f2e82e018d571e4e7aa12f3c1a9098d93db15f87008f5b"
         }
       ]
     },
