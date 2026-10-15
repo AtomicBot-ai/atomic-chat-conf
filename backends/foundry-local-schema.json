@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat Foundry Local Runtime Manifest",
+  "description": "Schema for the release catalog of the `foundry-local` engine build: microsoft/foundry-local release archives the core installs to run ONNX Runtime GenAI models. One archive per platform, pinned by size and sha256. A published release is never rewritten; a new upstream release is a new entry. Cores skip releases whose `min_core_version` is newer than themselves or whose `c_api_version` their host does not support.",
+  "type": "object",
+  "required": ["schema_version", "upstream_repo", "releases"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "upstream_repo": {
+      "const": "microsoft/foundry-local",
+      "description": "GitHub repository the archives are downloaded from: github.com/<upstream_repo>/releases/download/<tag>/<name>."
+    },
+    "releases": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Newest first by published_at.",
+      "items": { "$ref": "#/definitions/release" }
+    }
+  },
+  "definitions": {
+    "release": {
+      "type": "object",
+      "required": ["tag", "published_at", "min_core_version", "c_api_version", "notes_url", "assets"],
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "type": "string",
+          "pattern": "^v\\d+\\.\\d+\\.\\d+$",
+          "description": "Upstream release tag, e.g. v2.1.0."
+        },
+        "published_at": { "type": "string", "format": "date-time" },
+        "min_core_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Oldest atomic-chat-core that understands this entry. Older cores skip it."
+        },
+        "c_api_version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "FOUNDRY_LOCAL_API_VERSION from foundry_local_c.h of this release. A core whose host does not support it skips the release."
+        },
+        "notes_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Upstream release notes page shown next to an update offer."
+        },
+        "assets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/asset" }
+        }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "required": ["platform", "name", "size", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "platform": {
+          "type": "string",
+          "enum": ["win-x64", "win-arm64", "macos-arm64", "linux-x64", "linux-arm64"],
+          "description": "Host platform the core selects on; never derived from the asset name at runtime."
+        },
+        "name": { "type": "string", "pattern": "^foundry-local-[a-z0-9-]+\\.(zip|tgz)$" },
+        "size": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    }
+  }
+}
