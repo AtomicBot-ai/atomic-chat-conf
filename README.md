@@ -62,10 +62,10 @@ app/
 .github/
   workflows/validate.yml        # Validates every manifest on every PR
   workflows/mirror-upstream.yml # Mirrors + signs an upstream llama.cpp release
-  workflows/prism-release-watch.yml # Opens a PR listing a new PrismML release as candidate
   actions/windows-code-sign/    # Authenticode signing via DigiCert KeyLocker
   scripts/mirror.mjs            # Asset whitelist + manifest generation
   scripts/upstream-releases.mjs # Release list upkeep: add, approve, promote, withdraw, prune, check
+  scripts/prism-manifest.mjs    # PrismML release list: latest, add (as candidate), check
   entitlements.plist            # Entitlements for the signed macOS binaries
 Makefile                        # make mirror TAG=... and friends
 README.md
