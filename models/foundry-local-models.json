@@ -1,0 +1,13 @@
+{
+  "$schema": "./schema.foundry-local-models.json",
+  "schema_version": 1,
+  "updated_at": "2026-10-15T00:00:00Z",
+  "resolver": {
+    "url_template": "https://{region}.api.azureml.ms/modelregistry/v1.0/registry/models/nonazureaccount?assetId={asset_id}",
+    "regions": ["eastus", "westeurope", "eastus2", "westus2", "southeastasia"]
+  },
+  "catalog": {
+    "url": "https://api.catalog.azureml.ms/asset-gallery/v1.0/models"
+  },
+  "models": []
+}
