@@ -639,14 +639,23 @@ creates gets a password generated on the runner, so that one is not a secret.
    and ggml-org's `latest` is not a build at all. The pipeline fails loudly if
    a required asset is missing from the tag, which is the check that used to
    be manual. The tag lands as a candidate.
-2. Verify it (core's live tests against the candidate, or a build with
-   unverified builds allowed).
+2. Run `make upstream-verify TAG=<tag>`. It starts core's `engine-candidate`
+   workflow on the signed archives mirrored here (`candidate_id=conf-<tag>`):
+   core's suites and its live llama.cpp tests on five OSes, the current pin
+   beside the candidate. It waits for the run and prints the verdict: `pass`,
+   `fail` or `incomplete`, with what failed.
 3. On a branch, approve what passed and open a pull request:
    - every core runs it: `make upstream-promote TAG=<tag>` (also moves
      `backends/manifest.json`);
    - it needs a core change: `make upstream-approve TAG=<tag> MIN_CORE=<core>`,
      once that core is released;
    - some backends failed: add `ONLY=<archive>,<archive>` to approve the rest.
+
+   Both refuse a tag that no successful `engine-candidate` run names; `FORCE=1`
+   goes ahead anyway. Merge the approval before the next `make mirror`: a
+   newer tag replaces a release with nothing approved, so the mirror drops it
+   from the list (and, past `RETAIN`, deletes its mirrored release), and it can
+   no longer be approved.
 4. A release that turns out bad: `make upstream-withdraw TAG=<tag> REASON="..."`.
 
 Cores from 0.15.0 re-read the list every hour; older cores read
