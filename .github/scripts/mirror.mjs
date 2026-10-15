@@ -34,7 +34,7 @@ export const MIRROR_DOWNLOAD_BASE =
 // `required: false` marks a variant upstream only started shipping recently.
 // A tag that predates it still mirrors fine; the client's matrix simply will
 // not offer that tier for that tag.
-const WHITELIST = [
+export const WHITELIST = [
   { platform: 'windows', pattern: 'win-cpu-x64\\.zip', required: true },
   {
     platform: 'windows',
