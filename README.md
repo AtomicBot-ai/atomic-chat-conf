@@ -31,6 +31,8 @@ models/
   schema.embedding.json # JSON Schema (Draft-07) for the embedding catalog
   atomic-prism-models.json # Which Bonsai GGUF files need PrismML llama.cpp (atomic-prism)
   schema.atomic-prism-models.json # JSON Schema (Draft-07) for the Prism model rules
+  foundry-local-models.json # Foundry Local model sources: resolver, Microsoft catalog, curated models
+  schema.foundry-local-models.json # JSON Schema (Draft-07) for the Foundry Local model list
 backends/
   llamacpp-upstream-releases.json # Mirrored llama.cpp releases with min_core_version (cores >= 0.15.0)
   llamacpp-upstream-releases-schema.json # JSON Schema (Draft-07) for the release list
@@ -44,6 +46,8 @@ backends/
   sdcpp-schema.json        # JSON Schema (Draft-07) for the sd.cpp manifest
   mlx-manifest.json        # The pinned mlx-server build (read by core and the desktop Makefile)
   mlx-schema.json          # JSON Schema (Draft-07) for the MLX manifest
+  foundry-local-manifest.json # microsoft/foundry-local releases (read by core)
+  foundry-local-schema.json   # JSON Schema (Draft-07) for the Foundry Local manifest
 runtimes/
   tensorrt-llm.json  # TensorRT-LLM managed-engine runtime descriptor
   vllm.json          # vLLM managed-engine runtime descriptor (branch only until live acceptance)
@@ -799,6 +803,177 @@ gh release view mlxvlm-macos-arm64-07ba5a1 -R AtomicBot-ai/mlx-vlm --json tagNam
 Copy `tag_name`, `published_at` and `assets` into the manifest (keep
 `$schema` and `upstream_repo`), run `make validate`, open a PR, and merge once
 CI is green.
+
+## Foundry Local runtime manifest
+
+[`backends/foundry-local-manifest.json`](backends/foundry-local-manifest.json)
+lists the `microsoft/foundry-local` releases Atomic Chat core installs as the
+`foundry-local` engine build: the native Foundry Local library and ONNX
+Runtime GenAI that run the `foundry-local` provider's models. Schema:
+[`backends/foundry-local-schema.json`](backends/foundry-local-schema.json);
+integrity checks:
+[`.github/scripts/foundry-local-manifest-check.mjs`](.github/scripts/foundry-local-manifest-check.mjs).
+
+```json
+{
+  "$schema": "./foundry-local-schema.json",
+  "schema_version": 1,
+  "upstream_repo": "microsoft/foundry-local",
+  "releases": [
+    {
+      "tag": "v2.1.0",
+      "published_at": "2026-09-30T00:43:42Z",
+      "min_core_version": "0.18.0",
+      "c_api_version": 2,
+      "notes_url": "https://github.com/microsoft/foundry-local/releases/tag/v2.1.0",
+      "assets": [
+        { "platform": "macos-arm64", "name": "foundry-local-osx-arm64.tgz", "size": 52293589, "sha256": "2eeb…080a" }
+      ]
+    }
+  ]
+}
+```
+
+Core reads it from `main` with an hour's cache and a copy on disk, and installs
+a release only when the client asks (`POST /atomic/v1/engine-builds/foundry-local/install`).
+The archive is downloaded straight from the upstream GitHub release,
+`github.com/<upstream_repo>/releases/download/<tag>/<name>`, and checked
+against `size` and `sha256` before it is unpacked. `ATOMIC_FOUNDRY_LOCAL_MANIFEST_URL`
+(`https://` or `file://`) points core at another copy during development.
+
+### Fields
+
+- `schema_version` — `1`. `upstream_repo` — always `microsoft/foundry-local`.
+- `releases` — newest first by `published_at`. Each release names its upstream
+  `tag` (`vX.Y.Z`), the upstream `published_at`, `notes_url`, and:
+  - `min_core_version` — the oldest core that understands the entry. **Core
+    skips a release whose `min_core_version` is newer than itself**, so a
+    release that needs new core code can be listed without breaking cores
+    already installed.
+  - `c_api_version` — `FOUNDRY_LOCAL_API_VERSION` from
+    `sdk_v2/cpp/include/foundry_local/foundry_local_c.h` at that tag. **Core
+    skips a release whose `c_api_version` its host does not support**: a C API
+    bump changes the structures the host passes to the library.
+  - `assets` — one archive per platform, all five required: `win-x64`,
+    `win-arm64`, `macos-arm64`, `linux-x64`, `linux-arm64`. Core selects by
+    `platform`, never by parsing `name`. `size` and `sha256` come from the
+    GitHub asset `digest`; the pinned hash is the only check on what core
+    loads into its own process.
+
+Besides the schema, CI rejects a duplicate `tag`, a duplicate `platform` or
+asset name within a release, a release missing one of the five platforms, and
+releases out of `published_at` order.
+
+### A release is never rewritten
+
+Once a release entry is on `main`, its fields do not change: installed builds
+are identified by tag, and a different archive under the same tag would fail
+every install's `sha256` check. A new upstream release is a **new entry at the
+top**; a broken one is removed (new installs stop within the hour), not edited.
+
+### How to add a release
+
+```bash
+gh api repos/microsoft/foundry-local/releases/tags/v2.1.0 --jq '{tag: .tag_name, published_at, notes_url: .html_url, assets: [.assets[] | {name, size, sha256: (.digest | ltrimstr("sha256:"))}]}'
+gh api "repos/microsoft/foundry-local/contents/sdk_v2/cpp/include/foundry_local/foundry_local_c.h?ref=v2.1.0" --jq .content | base64 -d | grep 'define FOUNDRY_LOCAL_API_VERSION'
+```
+
+Map each asset to its `platform` (`osx-arm64` is `macos-arm64`), set
+`min_core_version` to the first core release that supports this release,
+insert the entry at the top of `releases`, run `make validate`, and open a PR.
+
+## Foundry Local model list
+
+[`models/foundry-local-models.json`](models/foundry-local-models.json) tells
+the app where Foundry Local models come from and which of them Atomic Chat has
+curated. Schema:
+[`models/schema.foundry-local-models.json`](models/schema.foundry-local-models.json);
+integrity checks:
+[`.github/scripts/foundry-local-models-check.mjs`](.github/scripts/foundry-local-models-check.mjs).
+
+> **The endpoints are undocumented.** Both the resolve endpoint and the
+> catalog are internal Microsoft APIs that answer without an account. They can
+> change without notice. Small changes (a host, a path, a region) are fixed by
+> editing this file, which reaches clients within the hour; a changed response
+> format needs an app release.
+
+**The list currently has no curated models** (`"models": []`): hashing the
+first ten models means downloading 212 GB, which has not been done yet. Until
+then the Hub shows the Microsoft catalog only, marked "Microsoft catalog, not
+verified by Atomic Chat".
+
+### Who reads it
+
+The app reads it from `main` with an hour's cache and keeps the last accepted
+copy when the fetch fails. In the Model Hub, under the "Foundry Local" format,
+it shows the curated models first and then the chat models of the Microsoft
+catalog at `catalog.url`. A catalog variant with the same `asset_id` and
+`version` as a curated one is shown as the curated entry. The app downloads a
+variant itself, from Azure Blob Storage, through the link `resolver` returns;
+core never downloads Foundry Local models.
+
+A curated file is checked by `size` and `sha256` from this list. A catalog
+variant has no hash anywhere (the API does not publish one, and Microsoft's own
+client checks size only), so it is checked by the sizes in its container
+listing — which is why only a curated entry counts as verified.
+
+### Fields
+
+- `schema_version` — `1`. The app ignores a list with a higher one and keeps
+  its last accepted copy.
+- `resolver.url_template` — the resolve URL, with `{region}` and `{asset_id}`
+  (URL-encoded by the app). The answer's `blobSasUri` is a read+list SAS link
+  to the variant's blob container that lives for a few hours; on a 403 the app
+  resolves again and resumes.
+- `resolver.regions` — tried in order until one answers.
+- `catalog.url` — the Microsoft catalog (`asset-gallery`) the app queries.
+- `models[]` — `id`, `name`, `description`, `task` (`chat`), `license`,
+  `context_length` (the largest of the variants), `tools`, `reasoning`, and
+  `variants[]`:
+  - `id` — unique across the list: it names the download and the folder
+    `<data>/foundry-local/models/<id>/`. The catalog name, lowercased.
+  - `device` (`cpu`, `gpu`, `npu`) and `execution_provider` (`cpu`, `cuda`,
+    `webgpu`, `openvino`, `qnn`, `vitisai`; never TensorRT-RTX).
+  - `platforms` — where the variant is offered: `cpu` on all five; `cuda` on
+    `win-x64` and `linux-x64`; `webgpu` on Windows and `macos-arm64`; `qnn`,
+    `openvino`, `vitisai` on the Windows platform the accelerator exists for.
+  - `context_length` — only when the variant's context is smaller than the
+    model's (NPU builds are compiled for 4K); the app uses it instead.
+  - `source` — `{kind: "azureml", asset_id, version, path_prefix}`: the full
+    asset id as the catalog spells it, its version, and the folder inside the
+    container (`kvTags.directoryPath`).
+  - `files[]` — `path` (relative to `path_prefix`, and to the variant folder
+    on disk), `size`, `sha256`. At least one.
+
+Besides the schema, CI rejects duplicate model or variant ids, the same asset
+twice, a duplicate file path within a variant, `.`/`..` path segments, a model
+without variants, a resolve template missing `{region}` or `{asset_id}`, a
+non-https `catalog.url`, a variant offered on a platform its execution
+provider does not run on, and a variant `context_length` not smaller than the
+model's.
+
+### New kinds of source go next to the old ones
+
+The app skips a variant whose `source.kind`, execution provider or device it
+does not know, and a model left with no variants; the rest of the list still
+applies. So a new kind of source (say, `hf`) is added as **extra variants next
+to the existing `azureml` ones**, never by converting them: released apps keep
+the variants they understand.
+
+### How to curate a model
+
+1. Find its variants in the catalog (`POST` to `catalog.url` with
+   `{"filters": [{"field": "labels", "operator": "eq", "values": ["latest"]}], "pageSize": 50}`,
+   following `continuationToken`); keep `deploymentOptions` "Foundry Local on
+   Devices" and drop `NvTensorRTRTXExecutionProvider`.
+2. Resolve each variant (`resolver.url_template`). Model fields come from
+   `modelEntity.kvTags`: `contextLength`, `supportsToolCalling`,
+   `supportsReasoning`, `license`; `path_prefix` is `directoryPath`.
+3. List the container (`<blobSasUri base>?restype=container&comp=list&prefix=<path_prefix>/&<sas>`)
+   for paths and sizes only.
+4. Download every file once and take `shasum -a 256`. Never copy a hash from
+   anywhere else: `blobManifestDigest` uses an unknown algorithm.
+5. Add the model, run `make validate`, open a PR.
 
 ## Runtime descriptors (`runtimes/`)
 
@@ -1675,6 +1850,18 @@ every push and pull request. It performs the following checks:
   `macos-arm64` asset with `sha256` and `size`, and an RFC 3339
   `published_at` (ajv ignores `format` here), plus that broken copies fail
   the schema.
+- `ajv` validates `backends/foundry-local-manifest.json` against
+  `backends/foundry-local-schema.json`, and
+  `.github/scripts/foundry-local-manifest-check.mjs` checks unique tags,
+  unique platforms and asset names per release, all five platforms in every
+  release, and releases ordered newest first by `published_at`.
+- `ajv` validates `models/foundry-local-models.json` against
+  `models/schema.foundry-local-models.json`, and
+  `.github/scripts/foundry-local-models-check.mjs` checks unique model and
+  variant ids and assets, unique and safe file paths, at least one variant per
+  model, the resolve template's `{region}` and `{asset_id}`, an https
+  `catalog.url`, platforms each execution provider runs on, and that a variant
+  `context_length` is smaller than its model's.
 - Cross-field integrity that the schema cannot express is checked by
   `node --test` over `.github/scripts/inventory-digest.test.mjs` and
   `.github/scripts/runtime-descriptor-integrity.test.mjs`, on every
@@ -1733,6 +1920,10 @@ node .github/scripts/upstream-releases.mjs check
 npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 npx ajv-cli@5 validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.json --strict=false
 npx ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.json --strict=false
+npx ajv-cli@5 validate -s backends/foundry-local-schema.json -d backends/foundry-local-manifest.json --strict=false
+node .github/scripts/foundry-local-manifest-check.mjs
+npx ajv-cli@5 validate -s models/schema.foundry-local-models.json -d models/foundry-local-models.json --strict=false
+node .github/scripts/foundry-local-models-check.mjs
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/vllm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true

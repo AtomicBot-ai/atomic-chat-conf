@@ -522,6 +522,26 @@ jobs:
       - name: Check MLX server manifest integrity
         run: node --test .github/scripts/mlx-manifest.test.mjs
 
+      - name: Validate Foundry Local runtime manifest against schema
+        run: |
+          ajv validate \
+            -s backends/foundry-local-schema.json \
+            -d backends/foundry-local-manifest.json \
+            --strict=false
+
+      - name: Check Foundry Local runtime manifest integrity
+        run: node .github/scripts/foundry-local-manifest-check.mjs
+
+      - name: Validate Foundry Local model list against schema
+        run: |
+          ajv validate \
+            -s models/schema.foundry-local-models.json \
+            -d models/foundry-local-models.json \
+            --strict=false
+
+      - name: Check Foundry Local model list integrity
+        run: node .github/scripts/foundry-local-models-check.mjs
+
       - name: Validate diffusion catalog against schema
         run: |
           ajv validate \
