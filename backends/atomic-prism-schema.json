@@ -101,7 +101,7 @@
         "validation": {
           "type": "string",
           "enum": ["candidate", "approved"],
-          "description": "approved: passed real-hardware acceptance and is recommended to users. candidate: published by the release watch, not yet verified."
+          "description": "approved: passed real-hardware acceptance and is recommended to users. candidate: listed, not yet verified."
         },
         "companion": {
           "type": "boolean",
