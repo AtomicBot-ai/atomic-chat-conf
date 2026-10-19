@@ -1,10 +1,103 @@
 {
   "$schema": "./llamacpp-upstream-releases-schema.json",
   "schema_version": 1,
-  "updated_at": "2026-10-13T13:52:11Z",
+  "updated_at": "2026-10-19T17:25:33Z",
   "upstream_repo": "ggml-org/llama.cpp",
   "download_base": "https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download",
   "releases": [
+    {
+      "tag": "b11734",
+      "commit": "f3fb2fcdbc93a8f677e893b8dbd36462b3190ffd",
+      "published_at": "2026-10-19T14:08:40Z",
+      "min_core_version": "0.18.2",
+      "notes_url": "https://github.com/ggml-org/llama.cpp/releases/tag/b11734",
+      "assets": [
+        {
+          "name": "llama-b11734-bin-macos-arm64.tar.gz",
+          "sha256": "dae3bfe38a913b6d24f71331eaa907140430e7508ae91ac3b9f0d71c69f169b3",
+          "size": 12376611,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-ubuntu-arm64.tar.gz",
+          "sha256": "29f2c5bb869e60ff25848d8f8b3b34dbe1b924c2266d4f54ee84c1106f148b23",
+          "size": 14023345,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-ubuntu-cuda-13.4-arm64.tar.gz",
+          "sha256": "63b491838ba26dbacd884ebcef20231904e927a73531f4e5aeb50098b45c10f4",
+          "size": 149745502,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-ubuntu-vulkan-arm64.tar.gz",
+          "sha256": "b48290f40c1590c387fc72af7f62059dd3fb02b8fec7a5f9fa575eb1dc7b2b0e",
+          "size": 24309561,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-ubuntu-vulkan-x64.tar.gz",
+          "sha256": "2c8b590c325960eb474c08c7a3b02b3c8eda054aa03352ed864948dc4ae1668d",
+          "size": 30615743,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-ubuntu-x64.tar.gz",
+          "sha256": "5d20cbcde04ef743b96e91b6173663b1925077a13fa86d0d98e69a5a5b59a16a",
+          "size": 17973484,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-win-cpu-arm64.zip",
+          "sha256": "18fadd0252b8a2919590253876d233ec01b4681b1c3f62bc6d4e71fd8ee82fe9",
+          "size": 10697598,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-win-cpu-x64.zip",
+          "sha256": "084d969c4076a03886b753612b5d9a6c67f2666bdf7fa8784c093d8f8857ce84",
+          "size": 17851374,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-win-cuda-12.4-x64.zip",
+          "sha256": "54307edf39eecc3031f496607d740d1d3a840cac15fc91e0b8aa7116dcfa487f",
+          "size": 265122713,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-win-cuda-13.4-arm64.zip",
+          "sha256": "7a6b7ea17d2ab643b1da2956e1e273c2fbf809ca2160b9525913b668e668a724",
+          "size": 145209435,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-win-cuda-13.4-x64.zip",
+          "sha256": "1e4f2c77b11437ad7a2865bac1d29a7c1dd65747a8a793be046dcba07dd7f175",
+          "size": 152756701,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-win-opencl-adreno-arm64.zip",
+          "sha256": "bdbb4553f9403273f7f2700cfee65e44982c22a828b48a1f1664fcad608cdb41",
+          "size": 11265988,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-win-rocm-10.0-x64.zip",
+          "sha256": "05db2bd3bf5a5fd811d383884539758957c9102fc6fba7d757624a7b669d3cfa",
+          "size": 256471800,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b11734-bin-win-vulkan-x64.zip",
+          "sha256": "8fb811df07311c2acecd365060cfe90cebfdd540f7035477ca30ffd377759de5",
+          "size": 29929790,
+          "validation": "candidate"
+        }
+      ]
+    },
     {
       "tag": "b11463",
       "commit": "d2a79e60464903f9832fbecdba48bd4cc6c47e75",
