@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-09-28T13:39:59Z",
+  "updated_at": "2026-10-19T12:15:00Z",
   "providers": [
     {
       "active": true,
@@ -743,6 +743,13 @@
         }
       ],
       "models": [
+        {
+          "id": "MiniMax-M3.1-Flash",
+          "name": "MiniMax-M3.1-Flash",
+          "version": "1.0",
+          "description": "Fast multimodal M-series model for coding, agentic workflows, and visual reasoning. 1M context window with image input; thinking is always on.",
+          "capabilities": ["completion", "tools", "vision", "reasoning"]
+        },
         {
           "id": "MiniMax-M3",
           "name": "MiniMax-M3",
