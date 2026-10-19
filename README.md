@@ -662,6 +662,29 @@ creates gets a password generated on the runner, so that one is not a secret.
    no longer be approved.
 4. A release that turns out bad: `make upstream-withdraw TAG=<tag> REASON="..."`.
 
+### Automatic updates
+
+The engine update pipeline
+([atomic-hatchet-pipeline](https://github.com/AtomicBot-ai/atomic-hatchet-pipeline),
+Hatchet task `engine-bump`) runs these steps itself once a day, for the newest
+llama.cpp build its checks call green:
+
+1. `mirror-upstream.yml` with `candidate_id=<id>` (it finds its run by
+   `[cid:<id>]` in the title) and `min_core_version` set to the latest core
+   release.
+2. Core's `engine-candidate` on the signed archives
+   (`repo=AtomicBot-ai/atomic-chat-conf`, `core_ref=<that core release>`).
+   Anything but `pass` stops here: the tag stays a candidate.
+3. [`upstream-approve.yml`](.github/workflows/upstream-approve.yml), the CI
+   counterpart of `make upstream-approve`: the same gate, then `approve` for
+   cores from `min_core_version` and a commit to main. It never promotes, so
+   `backends/manifest.json` and cores before 0.15.0 stay on their release.
+
+A re-run for a tag that is already approved changes nothing. Both workflows
+share the `mirror-upstream` concurrency group, so they never rewrite the
+release list at the same time. To stop automatic releases, turn them off in
+the pipeline (`PUBLISH_ENABLED=false`); a bad one is withdrawn as above.
+
 Cores from 0.15.0 re-read the list every hour; older cores read
 `backends/manifest.json` when they start. Do not edit `backends/manifest.json`
 by hand: CI refuses a tag the release list does not approve for every core.

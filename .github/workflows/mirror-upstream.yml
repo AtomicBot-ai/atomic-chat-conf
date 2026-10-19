@@ -1,4 +1,5 @@
 name: Mirror upstream llama.cpp
+run-name: Mirror upstream llama.cpp ${{ inputs.tag }} [cid:${{ inputs.candidate_id }}]
 
 # Takes a ggml-org/llama.cpp release tag, re-signs the Windows and macOS
 # binaries with Atomic Chat's certificates, publishes them as a release here,
@@ -37,6 +38,13 @@ on:
         description: "Oldest core the release runs on (e.g. 0.16.0); empty for every core"
         required: false
         default: ""
+        type: string
+      # The engine update pipeline (atomic-hatchet-pipeline) finds the run it
+      # started by this id in the title; `make mirror` leaves it at manual.
+      candidate_id:
+        description: "Id the caller finds this run by in its title"
+        required: false
+        default: "manual"
         type: string
 
 concurrency:
