@@ -1,0 +1,144 @@
+name: Approve upstream llama.cpp
+run-name: Approve upstream llama.cpp ${{ inputs.tag }} for core ${{ inputs.min_core_version || 'as listed' }} [cid:${{ inputs.candidate_id }}]
+
+# Step 3 of "How to update the backends manifest" (README) in CI: what
+# `make upstream-approve` does on a laptop, for the engine update pipeline
+# (AtomicBot-ai/atomic-hatchet-pipeline, engine-bump). That pipeline mirrors a
+# tag with mirror-upstream.yml, checks the signed archives with core's
+# engine-candidate workflow (repo=AtomicBot-ai/atomic-chat-conf) and starts
+# this workflow only when that run passed.
+#
+# Approves every archive of an already mirrored tag for cores from
+# min_core_version. It never promotes: backends/manifest.json, which cores
+# before 0.15.0 follow, stays where it is (`make upstream-promote` moves it).
+#
+# Pushed straight to main, like the mirror's own commit: the approval is what
+# was asked for, and the gate below refuses a tag no passing run backs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Mirrored tag to approve (e.g. b11732)"
+        required: true
+        type: string
+      min_core_version:
+        description: "Oldest core the release runs on (e.g. 0.18.2); empty keeps what the list says"
+        required: false
+        default: ""
+        type: string
+      candidate_id:
+        description: "Id the caller finds this run by in its title"
+        required: false
+        default: "manual"
+        type: string
+
+# The mirror rewrites the same release list: one writer at a time.
+concurrency:
+  group: mirror-upstream
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  approve:
+    name: Approve and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Inputs reach scripts through env only, never through `${{ }}` in `run:`.
+      - name: Check the inputs
+        env:
+          TAG: ${{ inputs.tag }}
+          MIN_CORE: ${{ inputs.min_core_version }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^b[0-9]+$ ]] || { echo "::error::tag must look like b11732"; exit 1; }
+          if [ -n "$MIN_CORE" ] && ! [[ "$MIN_CORE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::min_core_version must look like 0.18.2"
+            exit 1
+          fi
+
+      # `approve` rewrites updated_at even when nothing else changes: a re-run
+      # for a tag that is already approved would commit a timestamp only.
+      - name: Already approved?
+        id: state
+        env:
+          TAG: ${{ inputs.tag }}
+          MIN_CORE: ${{ inputs.min_core_version }}
+        run: |
+          set -euo pipefail
+          node -e "
+            const [tag, min] = process.argv.slice(1)
+            const list = require('./backends/llamacpp-upstream-releases.json')
+            const r = list.releases.find((x) => x.tag === tag)
+            if (!r) { console.error('::error::' + tag + ' is not listed: mirror it first'); process.exit(1) }
+            const done = !r.withdrawn && r.assets.every((a) => a.validation === 'approved')
+              && (!min || r.min_core_version === min)
+            console.log('done=' + done)
+          " "$TAG" "$MIN_CORE" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+      # The same gate as `make upstream-approve`: a successful engine-candidate
+      # run in core must name the tag. Core is public, so this token can read
+      # its runs.
+      - name: Refuse a tag no passing engine-candidate run names
+        if: steps.state.outputs.done != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: node .github/scripts/upstream-verify.mjs gate --tag "$TAG"
+
+      - name: Approve the tag
+        if: steps.state.outputs.done != 'true'
+        env:
+          TAG: ${{ inputs.tag }}
+          MIN_CORE: ${{ inputs.min_core_version }}
+        run: |
+          set -euo pipefail
+          node .github/scripts/upstream-releases.mjs approve --tag "$TAG" \
+            ${MIN_CORE:+--min-core-version "$MIN_CORE"}
+
+      - name: Drop releases the new one replaces
+        if: steps.state.outputs.done != 'true'
+        run: node .github/scripts/upstream-releases.mjs prune
+
+      - name: Validate the release list and the manifest
+        if: steps.state.outputs.done != 'true'
+        run: |
+          set -euo pipefail
+          npm install -g ajv-cli@5
+          ajv validate -s backends/schema.json -d backends/manifest.json --strict=false
+          ajv validate -s backends/llamacpp-upstream-releases-schema.json \
+            -d backends/llamacpp-upstream-releases.json --strict=false
+          node .github/scripts/upstream-releases.mjs check
+
+      # Someone may push to main between the checkout and here: rebase onto it
+      # and retry instead of failing an approval that is already decided.
+      - name: Commit the release list
+        if: steps.state.outputs.done != 'true'
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          MIN="$(node -e "
+            const l = require('./backends/llamacpp-upstream-releases.json')
+            console.log(l.releases.find((r) => r.tag === process.argv[1]).min_core_version)
+          " "$TAG")"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backends/llamacpp-upstream-releases.json
+          git commit -m "chore(upstream-releases): approve llama.cpp $TAG for core >= $MIN"
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected (attempt $attempt): rebasing onto main"
+            git pull --rebase
+          done
+          echo "::error::Could not push the approval of $TAG"
+          exit 1
