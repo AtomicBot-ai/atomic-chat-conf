@@ -5,8 +5,9 @@ run-name: Approve PrismML ${{ inputs.tag }} for core ${{ inputs.min_core_version
 # (AtomicBot-ai/atomic-hatchet-pipeline, engine-bump): what `make prism-approve`
 # does on a laptop. That pipeline lists the tag with prism-add.yml, checks it
 # with core's engine-candidate workflow (engine=atomic-prism,
-# repo=PrismML-Eng/llama.cpp, core_ref=<latest core release>) and starts this
-# workflow only when that run passed.
+# repo=PrismML-Eng/llama.cpp, core_ref=<the core the latest app release ships,
+# or the first newer one with the PrismML check>) and starts this workflow only
+# when that run passed.
 #
 # Approves every asset of a listed tag, GPU packs and their cudart companions
 # included, for cores from min_core_version. CI checks CPU builds only; the

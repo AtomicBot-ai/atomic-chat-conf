@@ -673,10 +673,12 @@ Hatchet task `engine-bump`) runs these steps itself once a day, for the newest
 llama.cpp build its checks call green:
 
 1. `mirror-upstream.yml` with `candidate_id=<id>` (it finds its run by
-   `[cid:<id>]` in the title) and `min_core_version` set to the latest core
-   release.
+   `[cid:<id>]` in the title) and `min_core_version` set to the core the
+   latest Atomic Chat release ships (`atomicCore.version` in its
+   `package.json`), so an approved build reaches users without an app release.
 2. Core's `engine-candidate` on the signed archives
-   (`repo=AtomicBot-ai/atomic-chat-conf`, `core_ref=<that core release>`).
+   (`repo=AtomicBot-ai/atomic-chat-conf`, `core_ref=<that core release>`, or
+   the first newer core release that can check the engine).
    Anything but `pass` stops here: the tag stays a candidate.
 3. [`upstream-approve.yml`](.github/workflows/upstream-approve.yml), the CI
    counterpart of `make upstream-approve`: the same gate, then `approve` for
@@ -804,9 +806,10 @@ engine `atomic-prism`) runs the same steps for a build its checks call green,
 once it is enabled there (`PUBLISH_ENGINES`):
 
 1. [`prism-add.yml`](.github/workflows/prism-add.yml) with `candidate_id=<id>`
-   and `min_core_version` set to the latest core release.
+   and `min_core_version` set to the core the latest Atomic Chat release ships.
 2. Core's `engine-candidate` on PrismML's archives
-   (`repo=PrismML-Eng/llama.cpp`, `core_ref=<that core release>`). Anything but
+   (`repo=PrismML-Eng/llama.cpp`, `core_ref=<that core release>`, or the first
+   newer one that has the PrismML check: v0.18.6 and later). Anything but
    `pass` stops here: the tag stays a candidate.
 3. [`prism-approve.yml`](.github/workflows/prism-approve.yml): the same gate,
    then `approve` for cores from `min_core_version` and a commit to main.
