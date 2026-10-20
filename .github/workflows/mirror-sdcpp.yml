@@ -1,4 +1,5 @@
 name: Mirror upstream stable-diffusion.cpp
+run-name: Mirror sd.cpp ${{ inputs.tag }} [cid:${{ inputs.candidate_id }}]
 
 # Takes a stable-diffusion.cpp release tag from source_repo (by default the
 # Atomic fork, AtomicBot-ai/stable-diffusion.cpp, which builds every engine
@@ -30,6 +31,14 @@ name: Mirror upstream stable-diffusion.cpp
 # fork commit the archives were built at. The release here and the manifest
 # are then tagged <tag>-a<rev> (the schema's Atomic-variant suffix), and every
 # client offers the update. Without it the bare tag reaches new installs only.
+#
+# A build reaches users through the staging manifest: this workflow with
+# manifest_path=backends/sdcpp-manifest.staging.json (the candidate slot, which
+# test builds read too), then core's engine-candidate on the signed release,
+# then sdcpp-approve.yml, which copies the staging manifest that check read into
+# the live one. The engine update pipeline (AtomicBot-ai/atomic-hatchet-pipeline)
+# runs all three and finds this run by `[cid:<candidate_id>]` in its title.
+# Writing the live manifest here directly skips the check.
 
 on:
   workflow_dispatch:
@@ -66,13 +75,24 @@ on:
         options:
           - backends/sdcpp-manifest.json
           - backends/sdcpp-manifest.staging.json
+      candidate_id:
+        description: "Id the caller finds this run by in its title"
+        required: false
+        default: "manual"
+        type: string
 
+# sdcpp-approve.yml shares the group: it reads the staging manifest and the
+# release this workflow rewrites.
 concurrency:
   group: mirror-sdcpp
   cancel-in-progress: false
 
 permissions:
   contents: write
+
+env:
+  # The name clients see: the release here and the manifest's tag_name.
+  RELEASE_TAG: ${{ inputs.atomic_rev != '' && format('{0}-a{1}', inputs.tag, inputs.atomic_rev) || inputs.tag }}
 
 jobs:
   select:
@@ -106,6 +126,21 @@ jobs:
               exit 1
             fi
           fi
+
+      # A re-run of a tag replaces its release assets (--clobber below) with
+      # freshly signed bytes, whose hashes no longer match what clients hold
+      # for the live tag. Read from main as it is now: the run may have waited
+      # behind an approval.
+      - name: Refuse the tag clients install
+        run: |
+          set -euo pipefail
+          git fetch --quiet --depth=1 origin main
+          LIVE="$(git show FETCH_HEAD:backends/sdcpp-manifest.json | jq -r .tag_name)"
+          if [ "$LIVE" = "$RELEASE_TAG" ]; then
+            echo "::error::$RELEASE_TAG is the tag backends/sdcpp-manifest.json serves; mirror the build under a new atomic_rev instead"
+            exit 1
+          fi
+          echo "Live tag: $LIVE; mirroring $RELEASE_TAG"
 
       # Backend ids are the contract with the client (backends/sdcpp-schema.json
       # enumerates them). Patterns rather than literal names: upstream moves the
@@ -402,9 +437,6 @@ jobs:
     name: Publish release and manifest
     needs: [select, sign-macos, sign-windows, passthrough]
     runs-on: ubuntu-latest
-    env:
-      # The name clients see: the release here and the manifest's tag_name.
-      RELEASE_TAG: ${{ inputs.atomic_rev != '' && format('{0}-a{1}', inputs.tag, inputs.atomic_rev) || inputs.tag }}
     steps:
       - uses: actions/checkout@v4
 
@@ -503,6 +535,8 @@ jobs:
           npm install -g ajv-cli@5
           ajv validate -s backends/sdcpp-schema.json -d "${{ inputs.manifest_path }}" --strict=false
 
+      # Someone may push to main between the checkout and here: rebase onto it
+      # and retry rather than fail with the release already up.
       - name: Commit manifest
         if: ${{ inputs.publish_manifest }}
         run: |
@@ -517,7 +551,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$MANIFEST"
           git commit -m "chore(sdcpp-manifest): mirror ${{ inputs.source_repo }} $RELEASE_TAG into $(basename "$MANIFEST")"
-          git push
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected (attempt $attempt): rebasing onto main"
+            git pull --rebase
+          done
+          echo "::error::Could not push $MANIFEST for $RELEASE_TAG"
+          exit 1
 
       - name: Prune old mirrored releases
         env:
