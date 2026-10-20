@@ -1,0 +1,58 @@
+[
+  {
+    "conclusion": "",
+    "createdAt": "2026-10-20T12:00:00Z",
+    "databaseId": 39500000107,
+    "displayTitle": "engine-candidate sd-cpp master-891-0f0f0f0-a0e0e0e0 [cid:conf-master-891-0f0f0f0-a0e0e0e0-hb-7] core@main",
+    "status": "in_progress",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39500000107"
+  },
+  {
+    "conclusion": "success",
+    "createdAt": "2026-10-20T11:30:00Z",
+    "databaseId": 39500000105,
+    "displayTitle": "engine-candidate sd-cpp master-890-1a2b3c4-a5d6e7f8 [cid:conf-master-890-1a2b3c4-a5d6e7f8-hb-5] core@main",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39500000105"
+  },
+  {
+    "conclusion": "success",
+    "createdAt": "2026-10-20T11:00:00Z",
+    "databaseId": 39500000106,
+    "displayTitle": "engine-candidate sd-cpp master-890-1a2b3c4-a5d6e7f8 [cid:manual] core@main",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39500000106"
+  },
+  {
+    "conclusion": "success",
+    "createdAt": "2026-10-20T10:00:00Z",
+    "databaseId": 39500000103,
+    "displayTitle": "engine-candidate sd-cpp master-883-137f740-a36f1b1a [cid:conf-master-883-137f740-a36f1b1a-hb-3] core@main",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39500000103"
+  },
+  {
+    "conclusion": "success",
+    "createdAt": "2026-10-20T09:30:00Z",
+    "databaseId": 39500000104,
+    "displayTitle": "engine-candidate llamacpp-upstream b11734 [cid:conf-b11734-hb-4] core@v0.18.2",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39500000104"
+  },
+  {
+    "conclusion": "failure",
+    "createdAt": "2026-10-20T09:00:00Z",
+    "databaseId": 39500000102,
+    "displayTitle": "engine-candidate sd-cpp master-883-137f740-a36f1b1a [cid:conf-master-883-137f740-a36f1b1a-hb-2] core@main",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39500000102"
+  },
+  {
+    "conclusion": "success",
+    "createdAt": "2026-10-20T08:00:00Z",
+    "databaseId": 39500000101,
+    "displayTitle": "engine-candidate sd-cpp master-883-137f740 [cid:hb-1] core@main",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39500000101"
+  }
+]

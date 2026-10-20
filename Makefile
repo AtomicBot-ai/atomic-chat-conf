@@ -200,6 +200,7 @@ validate:
 	@if [ -f backends/sdcpp-manifest.staging.json ]; then \
 		npx --yes ajv-cli@5 validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.staging.json --strict=false; fi
 	node .github/scripts/sdcpp-manifest-check.mjs
+	node --test .github/scripts/sdcpp-approve.test.mjs
 	npx --yes ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.json --strict=false
 	node --test .github/scripts/mlx-manifest.test.mjs
 	npx --yes ajv-cli@5 validate -s backends/foundry-local-schema.json -d backends/foundry-local-manifest.json --strict=false
