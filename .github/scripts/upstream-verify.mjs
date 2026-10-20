@@ -88,7 +88,8 @@ function gh(args) {
   }
 }
 
-function listRuns() {
+/** Recent engine-candidate runs in core, as `gh run list --json` gives them. */
+export function listRuns() {
   const args = ['run', 'list', '--repo', CORE_REPO, '--workflow', CANDIDATE_WORKFLOW, '--limit', '200']
   return JSON.parse(gh([...args, '--json', RUN_FIELDS]))
 }

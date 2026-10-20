@@ -1,0 +1,138 @@
+name: Approve a PrismML build
+run-name: Approve PrismML ${{ inputs.tag }} for core ${{ inputs.min_core_version || 'as listed' }} [cid:${{ inputs.candidate_id }}]
+
+# The last step of the PrismML update in CI, for the engine update pipeline
+# (AtomicBot-ai/atomic-hatchet-pipeline, engine-bump): what `make prism-approve`
+# does on a laptop. That pipeline lists the tag with prism-add.yml, checks it
+# with core's engine-candidate workflow (engine=atomic-prism,
+# repo=PrismML-Eng/llama.cpp, core_ref=<latest core release>) and starts this
+# workflow only when that run passed.
+#
+# Approves every asset of a listed tag, GPU packs and their cudart companions
+# included, for cores from min_core_version. CI checks CPU builds only; the
+# GPU packs go out with them, as for upstream llama.cpp.
+#
+# Pushed straight to main, like upstream-approve.yml: the gate below refuses a
+# tag no passing run backs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Listed PrismML tag to approve (e.g. prism-b10787-73bfe6c)"
+        required: true
+        type: string
+      min_core_version:
+        description: "Oldest core the release runs on (e.g. 0.18.2); empty keeps what the list says"
+        required: false
+        default: ""
+        type: string
+      candidate_id:
+        description: "Id the caller finds this run by in its title"
+        required: false
+        default: "manual"
+        type: string
+
+# The add and the approval rewrite the same list: one writer at a time.
+concurrency:
+  group: prism-manifest
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  approve:
+    name: Approve and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Inputs reach scripts through env only, never through `${{ }}` in `run:`.
+      - name: Check the inputs
+        env:
+          TAG: ${{ inputs.tag }}
+          MIN_CORE: ${{ inputs.min_core_version }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^prism-b[0-9]+-[0-9a-f]{7}$ ]] || { echo "::error::tag must look like prism-b10787-73bfe6c"; exit 1; }
+          if [ -n "$MIN_CORE" ] && ! [[ "$MIN_CORE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::min_core_version must look like 0.18.2"
+            exit 1
+          fi
+
+      # A re-run for a tag that is already approved must not commit a
+      # timestamp only, nor need a passing run again.
+      - name: Already approved?
+        id: state
+        env:
+          TAG: ${{ inputs.tag }}
+          MIN_CORE: ${{ inputs.min_core_version }}
+        run: |
+          set -euo pipefail
+          node -e "
+            const [tag, min] = process.argv.slice(1)
+            const list = require('./backends/atomic-prism-manifest.json')
+            const r = list.releases.find((x) => x.tag === tag)
+            if (!r) { console.error('::error::' + tag + ' is not listed: run prism-add.yml first'); process.exit(1) }
+            const done = !r.withdrawn && r.assets.every((a) => a.validation === 'approved')
+              && (!min || r.min_core_version === min)
+            console.log('done=' + done)
+          " "$TAG" "$MIN_CORE" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+      # A successful engine-candidate run in core must name the tag. Core is
+      # public, so this token can read its runs.
+      - name: Refuse a tag no passing engine-candidate run names
+        if: steps.state.outputs.done != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: node .github/scripts/prism-manifest.mjs gate --tag "$TAG"
+
+      - name: Approve the tag
+        if: steps.state.outputs.done != 'true'
+        env:
+          TAG: ${{ inputs.tag }}
+          MIN_CORE: ${{ inputs.min_core_version }}
+        run: |
+          set -euo pipefail
+          node .github/scripts/prism-manifest.mjs approve --tag "$TAG" \
+            ${MIN_CORE:+--min-core-version "$MIN_CORE"}
+
+      - name: Validate the manifest
+        if: steps.state.outputs.done != 'true'
+        run: |
+          set -euo pipefail
+          npm install -g ajv-cli@5
+          ajv validate -s backends/atomic-prism-schema.json \
+            -d backends/atomic-prism-manifest.json --strict=false
+          node .github/scripts/prism-manifest.mjs check
+
+      # Someone may push to main between the checkout and here: rebase onto it
+      # and retry instead of failing an approval that is already decided.
+      - name: Commit the manifest
+        if: steps.state.outputs.done != 'true'
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          MIN="$(node -e "
+            const m = require('./backends/atomic-prism-manifest.json')
+            console.log(m.releases.find((r) => r.tag === process.argv[1]).min_core_version)
+          " "$TAG")"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backends/atomic-prism-manifest.json
+          git commit -m "chore(prism): approve PrismML $TAG for core >= $MIN"
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected (attempt $attempt): rebasing onto main"
+            git pull --rebase
+          done
+          echo "::error::Could not push the approval of $TAG"
+          exit 1

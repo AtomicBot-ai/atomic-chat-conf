@@ -10,7 +10,8 @@ RETAIN ?= 3
 UPSTREAM_BASE = https://github.com/ggml-org/llama.cpp/releases/download
 
 .PHONY: help mirror mirror-select mirror-local-macos verify-release validate \
-	upstream-verify upstream-approve upstream-promote upstream-withdraw
+	upstream-verify upstream-approve upstream-promote upstream-withdraw \
+	prism-add prism-approve prism-withdraw
 
 help:
 	@echo "Targets:"
@@ -31,6 +32,14 @@ help:
 	@echo "                                (FORCE=1 skips the check)"
 	@echo "  make upstream-withdraw TAG=b10405 REASON=\"...\""
 	@echo "                                Pull a listed release from offers"
+	@echo "  make prism-add TAG=prism-b10787-73bfe6c [MIN_CORE=0.18.2]"
+	@echo "                                List a PrismML release as a candidate (no mirror: cores download"
+	@echo "                                from PrismML-Eng/llama.cpp)"
+	@echo "  make prism-approve TAG=prism-b10787-73bfe6c [MIN_CORE=0.18.2]"
+	@echo "                                Approve every asset of a listed PrismML release after core's"
+	@echo "                                engine-candidate passed on it (FORCE=1 skips the check)"
+	@echo "  make prism-withdraw TAG=prism-b10787-73bfe6c REASON=\"...\""
+	@echo "                                Pull a listed PrismML release from offers"
 	@echo "  make validate                 Validate every manifest against its schema"
 	@echo ""
 	@echo "Variables: RETAIN=$(RETAIN) (releases kept), REPO=$(REPO)"
@@ -132,6 +141,23 @@ upstream-promote:
 upstream-withdraw:
 	@test -n "$(TAG)" -a -n "$(REASON)" || { echo "Usage: make upstream-withdraw TAG=b10405 REASON=\"...\""; exit 1; }
 	node .github/scripts/upstream-releases.mjs withdraw --tag $(TAG) --reason "$(REASON)"
+
+# PrismML builds are listed from PrismML-Eng/llama.cpp as they are: there is
+# no mirror, cores download them from PrismML and check the sha256 listed here.
+# The engine update pipeline does the same in CI (prism-add.yml,
+# prism-approve.yml); these targets edit the file locally for a pull request.
+prism-add:
+	@test -n "$(TAG)" || { echo "Usage: make prism-add TAG=prism-b10787-73bfe6c [MIN_CORE=0.18.2]"; exit 1; }
+	node .github/scripts/prism-manifest.mjs add --tag $(TAG) $(if $(MIN_CORE),--min-core-version $(MIN_CORE),)
+
+prism-approve:
+	@test -n "$(TAG)" || { echo "Usage: make prism-approve TAG=prism-b10787-73bfe6c [MIN_CORE=0.18.2] [FORCE=1]"; exit 1; }
+	@node .github/scripts/prism-manifest.mjs gate --tag $(TAG) $(if $(FORCE),--force,)
+	node .github/scripts/prism-manifest.mjs approve --tag $(TAG) $(if $(MIN_CORE),--min-core-version $(MIN_CORE),)
+
+prism-withdraw:
+	@test -n "$(TAG)" -a -n "$(REASON)" || { echo "Usage: make prism-withdraw TAG=prism-b10787-73bfe6c REASON=\"...\""; exit 1; }
+	node .github/scripts/prism-manifest.mjs withdraw --tag $(TAG) --reason "$(REASON)"
 
 # Engine descriptors (runtimes/<engine_id>.json) are not named here: the
 # runtime-descriptor-*.test.mjs files discover every one of them, schema

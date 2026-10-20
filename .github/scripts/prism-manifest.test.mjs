@@ -3,12 +3,15 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import {
   addRelease,
+  approveRelease,
   backendForAsset,
   buildOf,
   checkPrismManifest,
   checkPrismModels,
   cudaRequirements,
+  prismGateRefusal,
   releaseEntry,
+  withdrawRelease,
 } from './prism-manifest.mjs'
 
 const TAG = 'prism-b10754-2459f68'
@@ -125,6 +128,50 @@ test('catches what the schema cannot', () => {
   assert.match(checkPrismManifest(badCommit).join('\n'), /does not match the tag/)
 })
 
+test('approves every asset of a listed release, companions included, and is idempotent', () => {
+  const base = { upstream_repo: 'PrismML-Eng/llama.cpp', releases: [releaseEntry(release)], updated_at: 'then' }
+  const first = approveRelease(base, TAG, { minCoreVersion: '0.19.0' }, 'now')
+  assert.equal(first.changed, true)
+  const [approved] = first.manifest.releases
+  assert.equal(approved.min_core_version, '0.19.0')
+  assert.deepEqual(approved.assets.map((a) => a.validation), ['approved', 'approved'])
+  assert.equal(first.manifest.updated_at, 'now')
+  assert.deepEqual(checkPrismManifest(first.manifest), [])
+  // A re-run changes nothing, not even updated_at
+  const again = approveRelease(first.manifest, TAG, { minCoreVersion: '0.19.0' }, 'later')
+  assert.equal(again.changed, false)
+  assert.equal(approveRelease(first.manifest, TAG, {}, 'later').changed, false)
+  // A newer core floor is still a change
+  assert.equal(approveRelease(first.manifest, TAG, { minCoreVersion: '0.20.0' }, 'later').changed, true)
+})
+
+test('refuses to approve what is not listed, is withdrawn or has a bad core version', () => {
+  const base = { releases: [releaseEntry(release)] }
+  assert.throws(() => approveRelease(base, 'prism-b1-0000000', {}, 'now'), /not listed/)
+  assert.throws(() => approveRelease(base, TAG, { minCoreVersion: 'v0.19' }, 'now'), /must look like/)
+  const withdrawn = withdrawRelease(base, TAG, 'crashes on load', 'now').manifest
+  assert.deepEqual(withdrawn.releases[0].withdrawn, { reason: 'crashes on load' })
+  assert.throws(() => approveRelease(withdrawn, TAG, {}, 'now'), /withdrawn: crashes on load/)
+  assert.throws(() => withdrawRelease(base, TAG, '', 'now'), /needs a --reason/)
+})
+
+test('the gate wants a successful engine-candidate run that names the tag', () => {
+  const run = (displayTitle, conclusion, createdAt = '2026-10-20T08:00:00Z') => ({
+    displayTitle,
+    conclusion,
+    status: 'completed',
+    createdAt,
+    url: `https://gh/${createdAt}`,
+  })
+  const title = `engine-candidate atomic-prism ${TAG} [cid:conf-${TAG}-hb-1] core@v0.19.0`
+  assert.equal(prismGateRefusal([run(title, 'success')], TAG), null)
+  assert.match(prismGateRefusal([], TAG), /no engine-candidate run names it/)
+  assert.match(prismGateRefusal([run(title, 'failure')], TAG), /concluded failure/)
+  // Another build of the fork does not count
+  const other = `engine-candidate atomic-prism prism-b10743-adfffbe [cid:x] core@main`
+  assert.match(prismGateRefusal([run(other, 'success')], TAG), /no engine-candidate run names it/)
+})
+
 test('model rules need one default, a replacement for legacy files and no duplicates', () => {
   const family = (files) => ({ families: [{ id: 'f', repo: 'o/r', files }], tensor_types: { 42: 'q2_0' } })
   const good = { file: 'a.gguf', treatment: 'prism_required', requires: ['pq2_0'], default: true, packing: 'pq2_0' }
@@ -142,7 +189,7 @@ test('the published manifests pass their integrity checks', () => {
   const manifest = read('../../backends/atomic-prism-manifest.json')
   assert.deepEqual(checkPrismManifest(manifest), [])
   assert.deepEqual(checkPrismModels(read('../../models/atomic-prism-models.json')), [])
-  // Nothing reaches users before real-hardware acceptance moves it to approved.
+  // Every asset is candidate or approved: there is no third state
   for (const r of manifest.releases) {
     for (const a of r.assets) assert.ok(['candidate', 'approved'].includes(a.validation))
   }
