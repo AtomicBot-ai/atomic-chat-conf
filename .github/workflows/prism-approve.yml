@@ -3,7 +3,7 @@ run-name: Approve PrismML ${{ inputs.tag }} for core ${{ inputs.min_core_version
 
 # The last step of the PrismML update in CI, for the engine update pipeline
 # (AtomicBot-ai/atomic-hatchet-pipeline, engine-bump): what `make prism-approve`
-# does on a laptop. That pipeline lists the tag with prism-add.yml, checks it
+# does on a laptop. That pipeline mirrors and signs the tag with mirror-prism.yml, checks it
 # with core's engine-candidate workflow (engine=atomic-prism,
 # repo=PrismML-Eng/llama.cpp, core_ref=<the core the latest app release ships,
 # or the first newer one with the PrismML check>) and starts this workflow only
@@ -79,7 +79,7 @@ jobs:
             const [tag, min] = process.argv.slice(1)
             const list = require('./backends/atomic-prism-manifest.json')
             const r = list.releases.find((x) => x.tag === tag)
-            if (!r) { console.error('::error::' + tag + ' is not listed: run prism-add.yml first'); process.exit(1) }
+            if (!r) { console.error('::error::' + tag + ' is not listed: run mirror-prism.yml first'); process.exit(1) }
             const done = !r.withdrawn && r.assets.every((a) => a.validation === 'approved')
               && (!min || r.min_core_version === min)
             console.log('done=' + done)

@@ -67,7 +67,7 @@ app/
   workflows/validate.yml        # Validates every manifest on every PR
   workflows/mirror-upstream.yml # Mirrors + signs an upstream llama.cpp release
   workflows/upstream-approve.yml # Approves a mirrored llama.cpp tag (engine update pipeline)
-  workflows/prism-add.yml       # Lists a PrismML release as candidate (engine update pipeline)
+  workflows/mirror-prism.yml    # Mirrors + signs a PrismML release, lists it as candidate (engine update pipeline)
   workflows/prism-approve.yml   # Approves a listed PrismML release (engine update pipeline)
   actions/windows-code-sign/    # Authenticode signing via DigiCert KeyLocker
   scripts/mirror.mjs            # Asset whitelist + manifest generation
@@ -768,9 +768,18 @@ upstream llama.cpp does not load). Schema:
 
 - Tags are `prism-b<build>-<sha7>`; `<build>` is the upstream llama.cpp build
   the fork is cut from, so `prism-b10787-…` is older than upstream `b11734`.
-- There is no mirror and no signing: cores download every archive from
-  PrismML's own releases and check it against the `sha256` listed here (GitHub's
-  asset digest). An archive without a digest is never listed.
+- PrismML ships its macOS binaries ad-hoc-signed and its Windows binaries
+  unsigned, so they are mirrored and signed like upstream llama.cpp and
+  sd.cpp: [`mirror-prism.yml`](.github/workflows/mirror-prism.yml) signs the
+  Windows binaries (DigiCert KeyLocker, after dropping every tool but
+  `llama-server`) and the macOS ones (Developer ID, hardened runtime),
+  publishes the desktop archives as a release here under the PrismML tag and
+  lists them with their own `sha256`. Linux archives and the cudart companions
+  pass through byte-for-byte.
+- `download_base` is one for the whole manifest. It points here only once
+  every listed tag is mirrored; builds listed before signing began are mirrored
+  as they are (`SIGN=0`), keeping the hashes clients hold. An approved build is
+  never re-signed.
 - Per release: `min_core_version`, optional `withdrawn`; per asset:
   `candidate` or `approved`. A core offers the newest release it meets whose
   asset for its machine is approved (or a candidate, with "Allow unverified
@@ -782,11 +791,11 @@ upstream llama.cpp does not load). Schema:
 
 ### How to update the PrismML manifest
 
-1. `make prism-add TAG=prism-b10787-73bfe6c MIN_CORE=0.18.2` — list the
-   release as `candidate`.
+1. `make prism-mirror TAG=prism-b10787-73bfe6c MIN_CORE=0.18.2` — mirror
+   and sign the release and list it as `candidate` (runs CI).
 2. Run core's `engine-candidate` workflow with `engine=atomic-prism`,
-   `tag=<tag>`, `repo=PrismML-Eng/llama.cpp` and `core_ref` set to the core
-   release the build is for. It must pass.
+   `tag=<tag>`, `repo=AtomicBot-ai/atomic-chat-conf` (the signed archives) and
+   `core_ref` set to the core release the build is for. It must pass.
 3. `make prism-approve TAG=… MIN_CORE=0.18.2` — refuses a tag no passing
    engine-candidate run names (`FORCE=1` skips that), then approves every
    asset, GPU packs and companions included: CI checks CPU builds only.
@@ -805,16 +814,19 @@ The engine update pipeline
 engine `atomic-prism`) runs the same steps for a build its checks call green,
 once it is enabled there (`PUBLISH_ENGINES`):
 
-1. [`prism-add.yml`](.github/workflows/prism-add.yml) with `candidate_id=<id>`
-   and `min_core_version` set to the core the latest Atomic Chat release ships.
-2. Core's `engine-candidate` on PrismML's archives
-   (`repo=PrismML-Eng/llama.cpp`, `core_ref=<that core release>`, or the first
-   newer one that has the PrismML check: v0.18.6 and later). Anything but
+1. [`mirror-prism.yml`](.github/workflows/mirror-prism.yml) with
+   `candidate_id=<id>` and `min_core_version` set to the core the latest Atomic
+   Chat release ships: sign, release here, list as candidate.
+2. Core's `engine-candidate` on the signed archives
+   (`repo=AtomicBot-ai/atomic-chat-conf`, `core_ref=<that core release>`, or the
+   first newer one that has the PrismML check: v0.18.6 and later). Anything but
    `pass` stops here: the tag stays a candidate.
 3. [`prism-approve.yml`](.github/workflows/prism-approve.yml): the same gate,
    then `approve` for cores from `min_core_version` and a commit to main.
 
 Both workflows push to main and share the `prism-manifest` concurrency group.
+The mirror publishes the release before it touches the manifest, so a listed
+archive is always downloadable.
 A re-run for a tag that is already listed or approved changes nothing.
 
 ## MLX server manifest

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { test } from 'node:test'
 import {
   addRelease,
@@ -9,8 +11,12 @@ import {
   checkPrismManifest,
   checkPrismModels,
   cudaRequirements,
+  hashFiles,
+  MIRROR_DOWNLOAD_BASE,
   prismGateRefusal,
   releaseEntry,
+  upsertMirrored,
+  useMirror,
   withdrawRelease,
 } from './prism-manifest.mjs'
 
@@ -193,4 +199,67 @@ test('the published manifests pass their integrity checks', () => {
   for (const r of manifest.releases) {
     for (const a of r.assets) assert.ok(['candidate', 'approved'].includes(a.validation))
   }
+})
+
+test('a mirrored entry takes the hashes of the signed files, not PrismML\'s digests', () => {
+  const signed = {
+    [`llama-${TAG}-bin-win-cuda-12.4-x64.zip`]: { sha256: 'e'.repeat(64), size: 30 },
+    'cudart-llama-bin-win-cuda-12.4-x64.zip': { sha256: 'b'.repeat(64), size: 2 },
+  }
+  const entry = releaseEntry(release, { hashes: signed })
+  assert.deepEqual(
+    entry.assets.map((a) => [a.backend, a.sha256[0], a.size]),
+    [
+      ['win-cuda-12.4-x64', 'e', 30],
+      ['win-cudart-12.4-x64', 'b', 2],
+    ]
+  )
+  assert.throws(() => releaseEntry(release, { hashes: {} }), /was not mirrored/)
+})
+
+test('hashes the files a mirror run left in a directory', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'prism-mirror-'))
+  try {
+    writeFileSync(join(dir, 'a.zip'), 'abc')
+    assert.deepEqual(hashFiles(dir), {
+      'a.zip': { sha256: 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad', size: 3 },
+    })
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('re-mirroring a candidate replaces its hashes; an approved archive may not change', () => {
+  const listed = releaseEntry(release) // PrismML's digests, as add listed it
+  const base = { upstream_repo: 'PrismML-Eng/llama.cpp', releases: [listed], updated_at: 'then' }
+  const signed = releaseEntry(release, {
+    hashes: {
+      [`llama-${TAG}-bin-win-cuda-12.4-x64.zip`]: { sha256: 'e'.repeat(64), size: 30 },
+      'cudart-llama-bin-win-cuda-12.4-x64.zip': { sha256: 'b'.repeat(64), size: 2 },
+    },
+  })
+  const first = upsertMirrored(base, signed, { minCoreVersion: '0.18.2' }, 'now')
+  assert.equal(first.changed, true)
+  const [r] = first.manifest.releases
+  assert.equal(r.min_core_version, '0.18.2')
+  assert.deepEqual(r.assets.map((a) => [a.sha256[0], a.validation]), [['e', 'candidate'], ['b', 'candidate']])
+  assert.equal(upsertMirrored(first.manifest, signed, {}, 'later').changed, false)
+
+  const approved = approveRelease(base, TAG, {}, 'now').manifest
+  assert.throws(() => upsertMirrored(approved, signed, {}, 'now'), /approved, its bytes may not change/)
+  // A byte-for-byte copy of an approved release changes nothing
+  assert.equal(upsertMirrored(approved, listed, {}, 'now').changed, false)
+
+  const fresh = upsertMirrored({ releases: [] }, signed, { minCoreVersion: '0.18.2' }, 'now')
+  assert.equal(fresh.manifest.releases[0].min_core_version, '0.18.2')
+})
+
+test('download_base moves to the mirror only once every listed tag is there', () => {
+  const manifest = { releases: [{ tag: 'prism-b2-0000000' }, { tag: 'prism-b1-0000000' }] }
+  const partial = useMirror(manifest, ['prism-b2-0000000'], 'now')
+  assert.equal(partial.changed, false)
+  assert.deepEqual(partial.missing, ['prism-b1-0000000'])
+  const all = useMirror(manifest, ['prism-b1-0000000', 'prism-b2-0000000', 'b11734'], 'now')
+  assert.equal(all.manifest.download_base, MIRROR_DOWNLOAD_BASE)
+  assert.equal(useMirror(all.manifest, ['prism-b1-0000000', 'prism-b2-0000000'], 'later').changed, false)
 })

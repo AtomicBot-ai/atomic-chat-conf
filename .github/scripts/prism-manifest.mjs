@@ -5,7 +5,16 @@
 //   node .github/scripts/prism-manifest.mjs latest
 //       prints the newest PrismML release tag
 //   node .github/scripts/prism-manifest.mjs add --tag prism-b10754-2459f68 [--min-core-version x.y.z]
-//       appends that release as `candidate` (no-op when it is already listed)
+//       appends that release as `candidate` with PrismML's own digests (no-op
+//       when it is already listed). Refused once the manifest points at the
+//       signed mirror: a tag listed without mirroring would 404
+//   node .github/scripts/prism-manifest.mjs mirrored --tag prism-b10787-73bfe6c --dir dist [--min-core-version x.y.z]
+//       lists the archives mirror-prism.yml put in dist, with their own sha256
+//       and size: a new tag as `candidate`, a listed one with its hashes
+//       replaced (refused for an approved archive whose bytes would change)
+//   node .github/scripts/prism-manifest.mjs use-mirror --mirrored <file of tags>
+//       points download_base at this repository's releases once every listed
+//       tag is mirrored here
 //   node .github/scripts/prism-manifest.mjs gate --tag prism-b10754-2459f68 [--force]
 //       fail unless a successful engine-candidate run in core names the tag
 //   node .github/scripts/prism-manifest.mjs approve --tag prism-b10754-2459f68 [--min-core-version x.y.z]
@@ -17,16 +26,22 @@
 //
 // Approval follows a passing engine-candidate run (engine=atomic-prism) in
 // core: `gate` refuses a tag no such run names. The engine update pipeline
-// (AtomicBot-ai/atomic-hatchet-pipeline) runs add, the check and approve
-// through prism-add.yml and prism-approve.yml. GPU packs are approved with the
-// CPU ones: CI runs CPU only.
+// (AtomicBot-ai/atomic-hatchet-pipeline) mirrors and signs a build with
+// mirror-prism.yml, checks it and approves it with prism-approve.yml. GPU packs
+// are approved with the CPU ones: CI runs CPU only.
+//
+// download_base is one for the whole manifest, so it moves to the mirror only
+// once every listed tag is there; builds listed before signing began are
+// mirrored byte-for-byte (sign=false), keeping the hashes clients hold.
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { listRuns, namesTag, verifiedRun } from './upstream-verify.mjs'
 
 export const UPSTREAM_REPO = 'PrismML-Eng/llama.cpp'
+export const MIRROR_DOWNLOAD_BASE = 'https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download'
 export const DEFAULT_MIN_CORE_VERSION = '0.10.0'
 export const TAG_RE = /^prism-b(\d+)-[0-9a-f]{7}$/
 const VERSION_RE = /^\d+\.\d+\.\d+$/
@@ -98,6 +113,8 @@ function sha256FromDigest(digest) {
  * than listed unverified.
  */
 export function releaseEntry(release, options = {}) {
+  // options.hashes: { name: { sha256, size } } of mirrored files, in place of
+  // PrismML's digests; every selected asset must be among them
   const tag = release.tag_name
   if (!TAG_RE.test(tag ?? '')) throw new Error(`Not a PrismML release tag: ${tag}`)
   const commit = release.target_commitish
@@ -108,12 +125,14 @@ export function releaseEntry(release, options = {}) {
   for (const asset of release.assets ?? []) {
     const id = backendForAsset(asset.name, tag)
     if (!id) continue
-    const sha256 = sha256FromDigest(asset.digest)
+    const mirrored = options.hashes?.[asset.name]
+    if (options.hashes && !mirrored) throw new Error(`Asset ${asset.name} was not mirrored`)
+    const sha256 = mirrored?.sha256 ?? sha256FromDigest(asset.digest)
     if (!sha256) throw new Error(`Asset ${asset.name} has no sha256 digest`)
     assets.push({
       backend: id.backend,
       name: asset.name,
-      size: asset.size,
+      size: mirrored?.size ?? asset.size,
       sha256,
       validation: 'candidate',
       ...(id.companion ? { companion: true } : {}),
@@ -143,6 +162,55 @@ export function addRelease(manifest, entry, now) {
   if (manifest.releases.some((r) => r.tag === entry.tag)) return { manifest, added: false }
   const releases = [...manifest.releases, entry].sort((a, b) => buildOf(b.tag) - buildOf(a.tag))
   return { manifest: { ...manifest, updated_at: now, releases }, added: true }
+}
+
+/** sha256 and size of every file in `dir`, by name: what mirror-prism.yml publishes. */
+export function hashFiles(dir) {
+  const out = {}
+  for (const name of readdirSync(dir).sort()) {
+    const path = join(dir, name)
+    if (!statSync(path).isFile()) continue
+    const bytes = readFileSync(path)
+    out[name] = { sha256: createHash('sha256').update(bytes).digest('hex'), size: bytes.length }
+  }
+  return out
+}
+
+/**
+ * The manifest with a mirrored entry in it: a new tag listed as `candidate`; a
+ * listed one gets the mirrored hashes and sizes, each asset keeping its
+ * validation. An approved archive whose bytes change is refused: clients
+ * already hold its hash.
+ */
+export function upsertMirrored(manifest, entry, options, now) {
+  const listed = manifest.releases.find((r) => r.tag === entry.tag)
+  if (!listed) {
+    const fresh = { ...entry, min_core_version: options.minCoreVersion ?? entry.min_core_version }
+    return { manifest: addRelease(manifest, fresh, now).manifest, changed: true }
+  }
+  const assets = listed.assets.map((old) => {
+    const mirrored = entry.assets.find((a) => a.backend === old.backend)
+    if (!mirrored) throw new Error(`${entry.tag}: ${old.backend} was not mirrored`)
+    if (old.validation === 'approved' && old.sha256 !== mirrored.sha256) {
+      throw new Error(`${entry.tag}: ${old.backend} is approved, its bytes may not change`)
+    }
+    return { ...old, sha256: mirrored.sha256, size: mirrored.size }
+  })
+  const min = options.minCoreVersion ?? listed.min_core_version
+  const same =
+    min === listed.min_core_version &&
+    assets.every((a, i) => a.sha256 === listed.assets[i].sha256 && a.size === listed.assets[i].size)
+  if (same) return { manifest, changed: false }
+  return { manifest: withRelease(manifest, { ...listed, min_core_version: min, assets }, now), changed: true }
+}
+
+/** download_base on the mirror once every listed tag is among `mirroredTags`. */
+export function useMirror(manifest, mirroredTags, now) {
+  const missing = manifest.releases.map((r) => r.tag).filter((t) => !mirroredTags.includes(t))
+  if (missing.length > 0 || manifest.download_base === MIRROR_DOWNLOAD_BASE) {
+    return { manifest, changed: false, missing }
+  }
+  return { manifest: { ...manifest, download_base: MIRROR_DOWNLOAD_BASE, updated_at: now }, changed: true, missing }
 }
 
 function listedRelease(manifest, tag) {
@@ -335,13 +403,45 @@ async function main(argv) {
     process.stdout.write(`${release.tag_name}\n`)
     return 0
   }
+  if (command === 'mirrored') {
+    const tag = argValue(argv, '--tag')
+    const dir = argValue(argv, '--dir')
+    if (!TAG_RE.test(tag ?? '') || !dir) throw new Error('Usage: mirrored --tag prism-b<build>-<sha7> --dir <dir>')
+    const entry = releaseEntry(await fetchRelease(`tags/${tag}`), { hashes: hashFiles(dir) })
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+    const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+    const result = upsertMirrored(manifest, entry, { minCoreVersion: argValue(argv, '--min-core-version') }, now)
+    if (result.changed) writeFileSync(manifestPath, `${JSON.stringify(result.manifest, null, 2)}\n`)
+    process.stdout.write(result.changed ? `listed the mirror of ${tag}\n` : `${tag}: already listed as mirrored\n`)
+    return 0
+  }
+  if (command === 'use-mirror') {
+    const file = argValue(argv, '--mirrored')
+    if (!file) throw new Error('Usage: use-mirror --mirrored <file with one mirrored tag per line>')
+    const mirrored = readFileSync(file, 'utf8').split('\n').map((t) => t.trim()).filter(Boolean)
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+    const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+    const result = useMirror(manifest, mirrored, now)
+    if (result.changed) writeFileSync(manifestPath, `${JSON.stringify(result.manifest, null, 2)}\n`)
+    process.stdout.write(
+      result.changed
+        ? `download_base now ${MIRROR_DOWNLOAD_BASE}\n`
+        : result.missing.length > 0
+          ? `download_base unchanged: not mirrored yet: ${result.missing.join(', ')}\n`
+          : 'download_base already points at the mirror\n'
+    )
+    return 0
+  }
   if (command === 'add') {
     const tag = argValue(argv, '--tag')
     if (!TAG_RE.test(tag ?? '')) throw new Error('Usage: add --tag prism-b<build>-<sha7>')
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+    if (manifest.download_base) {
+      throw new Error(`Archives come from ${manifest.download_base}: mirror ${tag} with mirror-prism.yml (make prism-mirror)`)
+    }
     const entry = releaseEntry(await fetchRelease(`tags/${tag}`), {
       minCoreVersion: argValue(argv, '--min-core-version'),
     })
-    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
     const result = addRelease(manifest, entry, new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'))
     if (result.added) writeFileSync(manifestPath, `${JSON.stringify(result.manifest, null, 2)}\n`)
     process.stdout.write(result.added ? `added ${tag}\n` : `${tag} is already listed\n`)
@@ -385,7 +485,7 @@ async function main(argv) {
     return errors.length === 0 ? 0 : 1
   }
   process.stderr.write(
-    'Usage: prism-manifest.mjs latest | add|gate|approve|withdraw --tag <tag> [...] | check (see the header)\n'
+    'Usage: prism-manifest.mjs latest | add|mirrored|gate|approve|withdraw --tag <tag> [...] | use-mirror | check (see the header)\n'
   )
   return 2
 }
