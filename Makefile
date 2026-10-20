@@ -11,7 +11,7 @@ UPSTREAM_BASE = https://github.com/ggml-org/llama.cpp/releases/download
 
 .PHONY: help mirror mirror-select mirror-local-macos verify-release validate \
 	upstream-verify upstream-approve upstream-promote upstream-withdraw \
-	prism-add prism-approve prism-withdraw
+	prism-mirror prism-approve prism-withdraw
 
 help:
 	@echo "Targets:"
@@ -32,9 +32,9 @@ help:
 	@echo "                                (FORCE=1 skips the check)"
 	@echo "  make upstream-withdraw TAG=b10405 REASON=\"...\""
 	@echo "                                Pull a listed release from offers"
-	@echo "  make prism-add TAG=prism-b10787-73bfe6c [MIN_CORE=0.18.2]"
-	@echo "                                List a PrismML release as a candidate (no mirror: cores download"
-	@echo "                                from PrismML-Eng/llama.cpp)"
+	@echo "  make prism-mirror TAG=prism-b10787-73bfe6c [MIN_CORE=0.18.2] [SIGN=0]"
+	@echo "                                Mirror + sign a PrismML release and list it as a candidate (runs"
+	@echo "                                CI). SIGN=0 copies it as is (builds clients already hold)"
 	@echo "  make prism-approve TAG=prism-b10787-73bfe6c [MIN_CORE=0.18.2]"
 	@echo "                                Approve every asset of a listed PrismML release after core's"
 	@echo "                                engine-candidate passed on it (FORCE=1 skips the check)"
@@ -142,13 +142,16 @@ upstream-withdraw:
 	@test -n "$(TAG)" -a -n "$(REASON)" || { echo "Usage: make upstream-withdraw TAG=b10405 REASON=\"...\""; exit 1; }
 	node .github/scripts/upstream-releases.mjs withdraw --tag $(TAG) --reason "$(REASON)"
 
-# PrismML builds are listed from PrismML-Eng/llama.cpp as they are: there is
-# no mirror, cores download them from PrismML and check the sha256 listed here.
-# The engine update pipeline does the same in CI (prism-add.yml,
-# prism-approve.yml); these targets edit the file locally for a pull request.
-prism-add:
-	@test -n "$(TAG)" || { echo "Usage: make prism-add TAG=prism-b10787-73bfe6c [MIN_CORE=0.18.2]"; exit 1; }
-	node .github/scripts/prism-manifest.mjs add --tag $(TAG) $(if $(MIN_CORE),--min-core-version $(MIN_CORE),)
+# PrismML builds are mirrored and signed in CI like upstream ones
+# (mirror-prism.yml): signing needs native runners. The engine update pipeline
+# runs the same workflow, then prism-approve.yml; the approve and withdraw
+# targets edit the file locally for a pull request.
+prism-mirror:
+	@test -n "$(TAG)" || { echo "Usage: make prism-mirror TAG=prism-b10787-73bfe6c [MIN_CORE=0.18.2] [SIGN=0]"; exit 1; }
+	@echo "$(TAG)" | grep -Eq '^prism-b[0-9]+-[0-9a-f]{7}$$' || { echo "TAG must look like prism-b10787-73bfe6c"; exit 1; }
+	gh workflow run mirror-prism.yml --repo $(REPO) \
+		-f tag=$(TAG) -f min_core_version=$(MIN_CORE) \
+		-f sign=$(if $(filter 0,$(SIGN)),false,true)
 
 prism-approve:
 	@test -n "$(TAG)" || { echo "Usage: make prism-approve TAG=prism-b10787-73bfe6c [MIN_CORE=0.18.2] [FORCE=1]"; exit 1; }

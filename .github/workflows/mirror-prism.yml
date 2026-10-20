@@ -1,0 +1,462 @@
+name: Mirror a PrismML build
+run-name: Mirror PrismML ${{ inputs.tag }}${{ inputs.sign && ' (signed)' || ' (as is)' }} for core ${{ inputs.min_core_version || 'as listed' }} [cid:${{ inputs.candidate_id }}]
+
+# Takes a PrismML-Eng/llama.cpp release, re-signs its Windows and macOS
+# binaries with Atomic Chat's certificates, publishes the desktop archives as a
+# release here and lists them in backends/atomic-prism-manifest.json with their
+# own sha256, as `candidate`. Same reasoning as mirror-upstream.yml and
+# mirror-sdcpp.yml: the client downloads these archives at runtime and must not
+# run ad-hoc-signed (macOS) or unsigned (Windows) binaries. Linux archives and
+# the NVIDIA-signed cudart companions pass through byte-for-byte.
+#
+# sign=false mirrors byte-for-byte: for builds listed before signing began,
+# whose hashes clients already hold. download_base is one for the whole
+# manifest, so it moves here only once every listed tag is mirrored; until then
+# clients keep downloading from PrismML.
+#
+# Step 1 of the PrismML update for the engine update pipeline
+# (AtomicBot-ai/atomic-hatchet-pipeline): it then checks the signed archives
+# with core's engine-candidate (repo=AtomicBot-ai/atomic-chat-conf) and approves
+# them with prism-approve.yml. `make prism-mirror` runs it by hand.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "PrismML release tag (e.g. prism-b10787-73bfe6c)"
+        required: true
+        type: string
+      min_core_version:
+        description: "Oldest core the release is listed for (e.g. 0.18.2); empty keeps what is listed (a new tag: the script's default)"
+        required: false
+        default: ""
+        type: string
+      candidate_id:
+        description: "Id the caller finds this run by in its title"
+        required: false
+        default: "manual"
+        type: string
+      sign:
+        description: "Sign the macOS and Windows binaries; off copies the archives as they are (builds clients already hold)"
+        required: false
+        default: true
+        type: boolean
+
+# The mirror, the add and the approval rewrite the same list: one writer at a time.
+concurrency:
+  group: prism-manifest
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  select:
+    name: Select assets
+    runs-on: ubuntu-latest
+    outputs:
+      windows: ${{ steps.pick.outputs.windows }}
+      macos: ${{ steps.pick.outputs.macos }}
+      passthrough: ${{ steps.pick.outputs.passthrough }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Inputs reach scripts through env only, never through `${{ }}` in `run:`.
+      - name: Check the inputs
+        env:
+          TAG: ${{ inputs.tag }}
+          MIN_CORE: ${{ inputs.min_core_version }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^prism-b[0-9]+-[0-9a-f]{7}$ ]] || { echo "::error::tag must look like prism-b10787-73bfe6c"; exit 1; }
+          if [ -n "$MIN_CORE" ] && ! [[ "$MIN_CORE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::min_core_version must look like 0.18.2"
+            exit 1
+          fi
+
+      # The same assets the manifest lists (backendForAsset): the desktop builds
+      # core installs, no arm64, Android or XCFramework.
+      - name: Resolve mirrored assets
+        id: pick
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          SIGN: ${{ inputs.sign }}
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'EOF'
+          import { readFileSync, writeFileSync } from 'node:fs'
+          import { backendForAsset, UPSTREAM_REPO } from './.github/scripts/prism-manifest.mjs'
+          const tag = process.env.TAG
+          const sign = process.env.SIGN === 'true'
+          const manifest = JSON.parse(readFileSync('backends/atomic-prism-manifest.json', 'utf8'))
+          const listed = manifest.releases.find((r) => r.tag === tag)
+          // Re-signing changes the bytes; clients already hold an approved hash
+          if (sign && listed?.assets.some((a) => a.validation === 'approved')) {
+            throw new Error(`${tag} has approved archives: mirror it as is (sign=false), never re-sign it`)
+          }
+          const resp = await fetch(`https://api.github.com/repos/${UPSTREAM_REPO}/releases/tags/${tag}`, {
+            headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'atomic-chat-conf-mirror-prism', Authorization: `Bearer ${process.env.GITHUB_TOKEN}` },
+          })
+          if (!resp.ok) throw new Error(`GitHub API ${resp.status} for ${UPSTREAM_REPO} ${tag}`)
+          const release = await resp.json()
+          const assets = []
+          for (const asset of release.assets ?? []) {
+            const id = backendForAsset(asset.name, tag)
+            if (!id) continue
+            const platform = !sign || id.companion
+              ? 'passthrough'
+              : asset.name.endsWith('.zip')
+                ? 'windows'
+                : id.backend.startsWith('macos-') ? 'macos' : 'passthrough'
+            assets.push({ backend: id.backend, name: asset.name, size: asset.size, platform, url: asset.browser_download_url })
+          }
+          if (assets.length === 0) throw new Error(`${tag} has no desktop assets`)
+          assets.sort((a, b) => a.backend.localeCompare(b.backend))
+          writeFileSync('assets.json', JSON.stringify({ tag, assets }, null, 2) + '\n')
+          for (const a of assets) console.error(`  ${a.platform.padEnd(12)} ${a.backend.padEnd(22)} ${a.name} (${(a.size / 1024 ** 2).toFixed(1)} MiB)`)
+          EOF
+          for platform in windows macos passthrough; do
+            echo "$platform=$(jq -c "[.assets[] | select(.platform == \"$platform\")]" assets.json)" >> "$GITHUB_OUTPUT"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prism-selection
+          path: assets.json
+          retention-days: 1
+
+  sign-macos:
+    name: Sign macOS (${{ matrix.asset.name }})
+    needs: select
+    if: needs.select.outputs.macos != '[]'
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        asset: ${{ fromJSON(needs.select.outputs.macos) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Import code signing certificate
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          # The keychain lives and dies with this job, so its password is
+          # generated here rather than kept as a secret.
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 24)
+
+          echo -n "$APPLE_CERTIFICATE" | base64 --decode -o "$CERTIFICATE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          if [ -z "$IDENTITY" ]; then
+            echo "::error::No Developer ID Application identity in the imported keychain"
+            exit 1
+          fi
+          echo "CODESIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+          echo "Signing identity: $IDENTITY"
+
+      - name: Download PrismML archive
+        env:
+          NAME: ${{ matrix.asset.name }}
+          URL: ${{ matrix.asset.url }}
+        run: curl -fSL --retry 5 --retry-delay 3 -o "$NAME" "$URL"
+
+      - name: Sign Mach-O binaries
+        env:
+          NAME: ${{ matrix.asset.name }}
+        run: |
+          set -euo pipefail
+          mkdir extract
+          tar -xzf "$NAME" -C extract
+          # PrismML ships one top-level llama-<tag>/ directory, as upstream does;
+          # the core's extractor expects it.
+          root="$(cd extract && ls -1)"
+          if [ "$(printf '%s\n' "$root" | wc -l)" -ne 1 ]; then
+            echo "::error::expected exactly one top-level directory, got: $root"
+            exit 1
+          fi
+
+          signed=0
+          # -type f skips the version symlinks (libggml.dylib -> libggml.0.dylib);
+          # signing the target covers them.
+          while IFS= read -r bin; do
+            if file "$bin" | grep -q "Mach-O"; then
+              codesign --force --options runtime --timestamp \
+                --entitlements .github/entitlements.plist \
+                --sign "$CODESIGN_IDENTITY" "$bin"
+              codesign --verify --strict "$bin"
+              signed=$((signed + 1))
+            fi
+          done < <(find "extract/$root" -type f)
+
+          if [ "$signed" -eq 0 ]; then
+            echo "::error::no Mach-O binaries found in $NAME"
+            exit 1
+          fi
+          echo "Signed $signed Mach-O binaries"
+          "extract/$root/llama-server" --version 2>&1 | head -3 || true
+
+      - name: Repack
+        env:
+          NAME: ${{ matrix.asset.name }}
+        run: |
+          set -euo pipefail
+          root="$(cd extract && ls -1)"
+          rm -f "$NAME"
+          tar -czf "$NAME" -C extract "$root"
+          rm -rf extract
+
+      - name: Verify signatures survived the round trip
+        env:
+          NAME: ${{ matrix.asset.name }}
+        run: |
+          set -euo pipefail
+          mkdir verify
+          tar -xzf "$NAME" -C verify
+          root="$(cd verify && ls -1)"
+          codesign -dv --verbose=2 "verify/$root/llama-server" 2>&1 | grep -E "Authority|TeamIdentifier|flags"
+          codesign --verify --strict "verify/$root/llama-server"
+          rm -rf verify
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mirrored-${{ matrix.asset.name }}
+          path: ${{ matrix.asset.name }}
+          retention-days: 1
+
+  sign-windows:
+    name: Sign Windows (${{ matrix.asset.name }})
+    needs: select
+    if: needs.select.outputs.windows != '[]'
+    runs-on: windows-latest
+    strategy:
+      # One job per archive: the CUDA and HIP archives are hundreds of
+      # megabytes each and signing them in sequence would blow the job timeout.
+      fail-fast: false
+      matrix:
+        asset: ${{ fromJSON(needs.select.outputs.windows) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download PrismML archive
+        shell: pwsh
+        env:
+          NAME: ${{ matrix.asset.name }}
+          URL: ${{ matrix.asset.url }}
+        run: curl.exe -fSL --retry 5 --retry-delay 3 -o "$env:NAME" "$env:URL"
+
+      - name: Extract
+        shell: pwsh
+        env:
+          NAME: ${{ matrix.asset.name }}
+        run: |
+          New-Item -ItemType Directory -Force -Path extract | Out-Null
+          7z x "$env:NAME" -oextract -bso0 -bsp0
+          Remove-Item "$env:NAME"
+
+      # The core only ever runs llama-server, and every signed file costs a
+      # KeyLocker signature, so drop the other tools before signing: each extra
+      # .exe and its -impl.dll. Shared DLLs stay. Same as mirror-upstream.yml.
+      - name: Drop tools the app never runs
+        shell: pwsh
+        run: |
+          if (-not (Get-ChildItem -Path extract -Recurse -Filter "llama-server.exe")) {
+            throw "llama-server.exe missing from the archive"
+          }
+          $drop = Get-ChildItem -Path extract -Recurse -File | Where-Object {
+            ($_.Extension -eq '.exe' -and $_.Name -ne 'llama-server.exe') -or
+            ($_.Name -like '*-impl.dll' -and $_.Name -ne 'llama-server-impl.dll')
+          }
+          foreach ($f in $drop) { Write-Host "Dropping: $($f.Name)"; Remove-Item -LiteralPath $f.FullName }
+          Write-Host "Dropped $(@($drop).Count) file(s)"
+          if (-not (Get-ChildItem -Path extract -Recurse -Filter "llama-server-impl.dll")) {
+            throw "llama-server-impl.dll missing from the archive"
+          }
+
+      - name: Sign binaries
+        uses: ./.github/actions/windows-code-sign
+        with:
+          path: extract
+          sm-api-key: ${{ secrets.SM_API_KEY }}
+          sm-client-cert-b64: ${{ secrets.SM_CLIENT_CERT_FILE_B64 }}
+          sm-client-cert-password: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
+
+      - name: Repack
+        shell: pwsh
+        env:
+          NAME: ${{ matrix.asset.name }}
+        run: |
+          # 7-Zip, not Compress-Archive: the latter is single-threaded and needs
+          # double-digit minutes on the CUDA archives.
+          Push-Location extract
+          7z a -tzip -mx=5 -mmt=on "..\$env:NAME" * -bso0 -bsp0
+          if ($LASTEXITCODE -ne 0) { throw "7z failed to repack" }
+          Pop-Location
+          Remove-Item -Recurse -Force extract
+
+      - name: Verify signatures survived the round trip
+        shell: pwsh
+        env:
+          NAME: ${{ matrix.asset.name }}
+        run: |
+          New-Item -ItemType Directory -Force -Path verify | Out-Null
+          7z x "$env:NAME" -overify -bso0 -bsp0
+          $server = Get-ChildItem -Path verify -Recurse -Filter "llama-server.exe" | Select-Object -First 1
+          if (-not $server) { throw "llama-server.exe missing from the repacked archive" }
+          signtool verify /pa $server.FullName
+          if ($LASTEXITCODE -ne 0) { throw "repacked llama-server.exe is not signed" }
+          Remove-Item -Recurse -Force verify
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mirrored-${{ matrix.asset.name }}
+          path: ${{ matrix.asset.name }}
+          retention-days: 1
+
+  passthrough:
+    name: Pass through (${{ matrix.asset.name }})
+    needs: select
+    if: needs.select.outputs.passthrough != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        asset: ${{ fromJSON(needs.select.outputs.passthrough) }}
+    steps:
+      # No Linux code-signing mechanism exists here, the cudart companions hold
+      # NVIDIA's own signed DLLs, and sign=false copies everything as it is.
+      - name: Download PrismML archive
+        env:
+          NAME: ${{ matrix.asset.name }}
+          URL: ${{ matrix.asset.url }}
+        run: curl -fSL --retry 5 --retry-delay 3 -o "$NAME" "$URL"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mirrored-${{ matrix.asset.name }}
+          path: ${{ matrix.asset.name }}
+          retention-days: 1
+
+  publish:
+    name: Publish release and manifest
+    needs: [select, sign-macos, sign-windows, passthrough]
+    # A platform with nothing to sign skips its job; any failure stops here.
+    if: ${{ !cancelled() && needs.select.result == 'success' && !contains(needs.*.result, 'failure') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Collect mirrored assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: mirrored-*
+          path: dist
+          merge-multiple: true
+
+      - name: Collect the selection
+        uses: actions/download-artifact@v4
+        with:
+          name: prism-selection
+          path: selection
+
+      - name: Every selected archive is here
+        run: |
+          set -euo pipefail
+          jq -r '.assets[].name' selection/assets.json | while read -r name; do
+            [ -f "dist/$name" ] || { echo "::error::$name was selected but not mirrored"; exit 1; }
+          done
+          ls -la dist
+
+      # The release must exist and hold every asset BEFORE the manifest moves:
+      # clients resolve download URLs from the manifest, so the reverse order
+      # would hand them 404s for as long as the upload took.
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          SIGN: ${{ inputs.sign }}
+        run: |
+          set -euo pipefail
+          {
+            printf 'Mirror of [PrismML-Eng/llama.cpp %s](https://github.com/PrismML-Eng/llama.cpp/releases/tag/%s): the desktop archives the atomic-prism provider installs.\n\n' "$TAG" "$TAG"
+            if [ "$SIGN" = true ]; then
+              printf 'Windows binaries are Authenticode-signed and macOS binaries carry a Developer ID signature with hardened runtime. Linux archives and the CUDA runtime companions are mirrored byte-for-byte.\n\n'
+            else
+              printf 'Mirrored byte-for-byte, as PrismML published them: a build listed before signing began, whose hashes clients already hold.\n\n'
+            fi
+            printf 'Consumed by Atomic Chat through `backends/atomic-prism-manifest.json`.\n'
+          } > notes.md
+          TITLE="PrismML llama.cpp $TAG ($([ "$SIGN" = true ] && echo 'signed mirror' || echo 'mirror'))"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG exists; replacing its assets and notes"
+            gh release upload "$TAG" dist/* --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file notes.md
+          else
+            gh release create "$TAG" dist/* --title "$TITLE" --notes-file notes.md
+          fi
+
+      - name: List the mirrored archives
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          MIN_CORE: ${{ inputs.min_core_version }}
+        run: |
+          set -euo pipefail
+          node .github/scripts/prism-manifest.mjs mirrored --tag "$TAG" --dir dist \
+            ${MIN_CORE:+--min-core-version "$MIN_CORE"}
+          # Every tag released here; download_base moves once all listed ones are
+          gh release list --limit 300 --json tagName --jq '.[].tagName' > mirrored-tags.txt
+          node .github/scripts/prism-manifest.mjs use-mirror --mirrored mirrored-tags.txt
+
+      - name: Validate the manifest
+        run: |
+          set -euo pipefail
+          npm install -g ajv-cli@5
+          ajv validate -s backends/atomic-prism-schema.json \
+            -d backends/atomic-prism-manifest.json --strict=false
+          node .github/scripts/prism-manifest.mjs check
+
+      # Someone may push to main between the checkout and here: rebase onto it
+      # and retry instead of failing.
+      - name: Commit the manifest
+        env:
+          TAG: ${{ inputs.tag }}
+          SIGN: ${{ inputs.sign }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- backends/atomic-prism-manifest.json; then
+            echo "The manifest already lists the mirror of $TAG; nothing to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backends/atomic-prism-manifest.json
+          git commit -m "chore(prism): mirror PrismML $TAG$([ "$SIGN" = true ] && echo ' (signed)' || echo ' as is')"
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected (attempt $attempt): rebasing onto main"
+            git pull --rebase
+          done
+          echo "::error::Could not push the mirror of $TAG"
+          exit 1
