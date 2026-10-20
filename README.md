@@ -66,10 +66,13 @@ app/
 .github/
   workflows/validate.yml        # Validates every manifest on every PR
   workflows/mirror-upstream.yml # Mirrors + signs an upstream llama.cpp release
+  workflows/upstream-approve.yml # Approves a mirrored llama.cpp tag (engine update pipeline)
+  workflows/prism-add.yml       # Lists a PrismML release as candidate (engine update pipeline)
+  workflows/prism-approve.yml   # Approves a listed PrismML release (engine update pipeline)
   actions/windows-code-sign/    # Authenticode signing via DigiCert KeyLocker
   scripts/mirror.mjs            # Asset whitelist + manifest generation
   scripts/upstream-releases.mjs # Release list upkeep: add, approve, promote, withdraw, prune, check
-  scripts/prism-manifest.mjs    # PrismML release list: latest, add (as candidate), check
+  scripts/prism-manifest.mjs    # PrismML release list: latest, add, gate, approve, withdraw, check
   entitlements.plist            # Entitlements for the signed macOS binaries
 Makefile                        # make mirror TAG=... and friends
 README.md
@@ -751,6 +754,65 @@ set stays expressible without a schema change.
 > PR, and merge once CI is green. Consumers pin an immutable commit of this
 > repository, so a merge alone does not upgrade anyone — the Atomic Chat
 > client must bump its pinned revision in a deliberate compatibility change.
+
+## PrismML backends manifest
+
+[`backends/atomic-prism-manifest.json`](backends/atomic-prism-manifest.json)
+lists the builds of PrismML's llama.cpp fork
+([PrismML-Eng/llama.cpp](https://github.com/PrismML-Eng/llama.cpp)) the
+`atomic-prism` provider runs Bonsai models on (PQ2_0, PTQ1_0 tensor types
+upstream llama.cpp does not load). Schema:
+[`backends/atomic-prism-schema.json`](backends/atomic-prism-schema.json).
+
+- Tags are `prism-b<build>-<sha7>`; `<build>` is the upstream llama.cpp build
+  the fork is cut from, so `prism-b10787-…` is older than upstream `b11734`.
+- There is no mirror and no signing: cores download every archive from
+  PrismML's own releases and check it against the `sha256` listed here (GitHub's
+  asset digest). An archive without a digest is never listed.
+- Per release: `min_core_version`, optional `withdrawn`; per asset:
+  `candidate` or `approved`. A core offers the newest release it meets whose
+  asset for its machine is approved (or a candidate, with "Allow unverified
+  PrismML builds" on). Windows CUDA packs need their `cudart` companion approved
+  with them.
+- [`models/atomic-prism-models.json`](models/atomic-prism-models.json) says
+  which Bonsai files need PrismML and from which build (`min_prism_build`).
+  It is edited by hand.
+
+### How to update the PrismML manifest
+
+1. `make prism-add TAG=prism-b10787-73bfe6c MIN_CORE=0.18.2` — list the
+   release as `candidate`.
+2. Run core's `engine-candidate` workflow with `engine=atomic-prism`,
+   `tag=<tag>`, `repo=PrismML-Eng/llama.cpp` and `core_ref` set to the core
+   release the build is for. It must pass.
+3. `make prism-approve TAG=… MIN_CORE=0.18.2` — refuses a tag no passing
+   engine-candidate run names (`FORCE=1` skips that), then approves every
+   asset, GPU packs and companions included: CI checks CPU builds only.
+4. Open a PR and merge once CI is green. A bad release is pulled with
+   `make prism-withdraw TAG=… REASON="…"`.
+
+When a new Bonsai packing needs a newer build, raise `min_prism_build` in the
+model rules by hand. Core keeps an offline copy of this manifest
+(`src/backend/catalog/prism-manifest-baseline.json`); re-copy it there when it
+matters for offline first runs.
+
+### Automatic PrismML updates
+
+The engine update pipeline
+([atomic-hatchet-pipeline](https://github.com/AtomicBot-ai/atomic-hatchet-pipeline),
+engine `atomic-prism`) runs the same steps for a build its checks call green,
+once it is enabled there (`PUBLISH_ENGINES`):
+
+1. [`prism-add.yml`](.github/workflows/prism-add.yml) with `candidate_id=<id>`
+   and `min_core_version` set to the latest core release.
+2. Core's `engine-candidate` on PrismML's archives
+   (`repo=PrismML-Eng/llama.cpp`, `core_ref=<that core release>`). Anything but
+   `pass` stops here: the tag stays a candidate.
+3. [`prism-approve.yml`](.github/workflows/prism-approve.yml): the same gate,
+   then `approve` for cores from `min_core_version` and a commit to main.
+
+Both workflows push to main and share the `prism-manifest` concurrency group.
+A re-run for a tag that is already listed or approved changes nothing.
 
 ## MLX server manifest
 

@@ -4,21 +4,32 @@
 //
 //   node .github/scripts/prism-manifest.mjs latest
 //       prints the newest PrismML release tag
-//   node .github/scripts/prism-manifest.mjs add --tag prism-b10754-2459f68
+//   node .github/scripts/prism-manifest.mjs add --tag prism-b10754-2459f68 [--min-core-version x.y.z]
 //       appends that release as `candidate` (no-op when it is already listed)
+//   node .github/scripts/prism-manifest.mjs gate --tag prism-b10754-2459f68 [--force]
+//       fail unless a successful engine-candidate run in core names the tag
+//   node .github/scripts/prism-manifest.mjs approve --tag prism-b10754-2459f68 [--min-core-version x.y.z]
+//       every asset of a listed release, companions included, becomes `approved`
+//   node .github/scripts/prism-manifest.mjs withdraw --tag prism-b10754-2459f68 --reason "..."
+//       marks a release withdrawn: cores stop offering it and move off it
 //   node .github/scripts/prism-manifest.mjs check
 //       integrity checks for both Prism manifests (CI and `make validate`)
 //
-// A release is never approved here: moving an asset from `candidate` to
-// `approved` is a reviewed edit made after real-hardware acceptance.
+// Approval follows a passing engine-candidate run (engine=atomic-prism) in
+// core: `gate` refuses a tag no such run names. The engine update pipeline
+// (AtomicBot-ai/atomic-hatchet-pipeline) runs add, the check and approve
+// through prism-add.yml and prism-approve.yml. GPU packs are approved with the
+// CPU ones: CI runs CPU only.
 
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { listRuns, namesTag, verifiedRun } from './upstream-verify.mjs'
 
 export const UPSTREAM_REPO = 'PrismML-Eng/llama.cpp'
 export const DEFAULT_MIN_CORE_VERSION = '0.10.0'
 export const TAG_RE = /^prism-b(\d+)-[0-9a-f]{7}$/
+const VERSION_RE = /^\d+\.\d+\.\d+$/
 export const CAPABILITIES = ['q1_0', 'q2_0_g64', 'pq2_0', 'ptq1_0', 'hadamard', 'vision']
 
 // Driver floors follow atomic-chat-core's CUDA_DRIVER_FLOORS (src/backend/select/features.ts),
@@ -132,6 +143,68 @@ export function addRelease(manifest, entry, now) {
   if (manifest.releases.some((r) => r.tag === entry.tag)) return { manifest, added: false }
   const releases = [...manifest.releases, entry].sort((a, b) => buildOf(b.tag) - buildOf(a.tag))
   return { manifest: { ...manifest, updated_at: now, releases }, added: true }
+}
+
+function listedRelease(manifest, tag) {
+  const release = manifest.releases.find((r) => r.tag === tag)
+  if (!release) throw new Error(`${tag} is not listed: add it first`)
+  return release
+}
+
+function withRelease(manifest, release, now) {
+  return {
+    ...manifest,
+    updated_at: now,
+    releases: manifest.releases.map((r) => (r.tag === release.tag ? release : r)),
+  }
+}
+
+/**
+ * The manifest with every asset of `tag` approved, companions included, and
+ * min_core_version moved when given. `changed` is false when there is nothing
+ * to do, so a re-run commits nothing.
+ */
+export function approveRelease(manifest, tag, options, now) {
+  const release = listedRelease(manifest, tag)
+  if (release.withdrawn) throw new Error(`${tag} is withdrawn: ${release.withdrawn.reason}`)
+  const min = options.minCoreVersion
+  if (min !== undefined && !VERSION_RE.test(min)) {
+    throw new Error(`--min-core-version must look like 0.18.2 (got "${min}")`)
+  }
+  const done =
+    release.assets.every((a) => a.validation === 'approved') &&
+    (min === undefined || release.min_core_version === min)
+  if (done) return { manifest, changed: false }
+  const approved = {
+    ...release,
+    min_core_version: min ?? release.min_core_version,
+    assets: release.assets.map((a) => ({ ...a, validation: 'approved' })),
+  }
+  return { manifest: withRelease(manifest, approved, now), changed: true }
+}
+
+/** The manifest with `tag` withdrawn for `reason`. */
+export function withdrawRelease(manifest, tag, reason, now) {
+  if (!reason) throw new Error('A withdrawal needs a --reason')
+  const release = listedRelease(manifest, tag)
+  return { manifest: withRelease(manifest, { ...release, withdrawn: { reason } }, now), changed: true }
+}
+
+/** Why `tag` may not be approved yet, or null when a successful engine-candidate run names it. */
+export function prismGateRefusal(runs, tag) {
+  if (verifiedRun(runs, tag)) return null
+  const last = [...runs]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .find((r) => namesTag(r.displayTitle, tag))
+  const seen = !last
+    ? 'no engine-candidate run names it'
+    : last.status === 'completed'
+      ? `its last engine-candidate run concluded ${last.conclusion}: ${last.url}`
+      : `its last engine-candidate run is ${last.status}: ${last.url}`
+  return (
+    `${tag} is not verified: ${seen}. Run core's engine-candidate with engine=atomic-prism ` +
+    `and tag=${tag}, or add FORCE=1 to go ahead anyway.`
+  )
 }
 
 /** Integrity rules the JSON Schema cannot express. Returns a list of errors. */
@@ -274,6 +347,34 @@ async function main(argv) {
     process.stdout.write(result.added ? `added ${tag}\n` : `${tag} is already listed\n`)
     return 0
   }
+  if (['approve', 'withdraw', 'gate'].includes(command)) {
+    const tag = argValue(argv, '--tag')
+    if (!TAG_RE.test(tag ?? '')) throw new Error(`Usage: ${command} --tag prism-b<build>-<sha7>`)
+    if (command === 'gate') {
+      if (argv.includes('--force')) {
+        process.stderr.write(`FORCE=1: going ahead with ${tag} without checking for an engine-candidate run\n`)
+        return 0
+      }
+      const runs = listRuns()
+      const refusal = prismGateRefusal(runs, tag)
+      if (refusal) {
+        process.stderr.write(`${refusal}\n`)
+        return 1
+      }
+      const run = verifiedRun(runs, tag)
+      process.stdout.write(`${tag} verified: ${run.displayTitle}\n${run.url}\n`)
+      return 0
+    }
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+    const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+    const result =
+      command === 'approve'
+        ? approveRelease(manifest, tag, { minCoreVersion: argValue(argv, '--min-core-version') }, now)
+        : withdrawRelease(manifest, tag, argValue(argv, '--reason'), now)
+    if (result.changed) writeFileSync(manifestPath, `${JSON.stringify(result.manifest, null, 2)}\n`)
+    process.stdout.write(result.changed ? `${command} ${tag}: done\n` : `${tag}: nothing to ${command}\n`)
+    return 0
+  }
   if (command === 'check') {
     const errors = [
       ...checkPrismManifest(JSON.parse(readFileSync(manifestPath, 'utf8'))),
@@ -283,7 +384,9 @@ async function main(argv) {
     if (errors.length === 0) process.stdout.write('Prism manifests OK\n')
     return errors.length === 0 ? 0 : 1
   }
-  process.stderr.write('Usage: prism-manifest.mjs latest | add --tag <tag> [--min-core-version x.y.z] | check\n')
+  process.stderr.write(
+    'Usage: prism-manifest.mjs latest | add|gate|approve|withdraw --tag <tag> [...] | check (see the header)\n'
+  )
   return 2
 }
 
