@@ -564,6 +564,18 @@ jobs:
           node --test .github/scripts/litert-lm-manifest-check.test.mjs
           node .github/scripts/litert-lm-manifest-check.mjs
 
+      - name: Validate LiteRT-LM model list against schema
+        run: |
+          ajv validate \
+            -s models/schema.litert-lm-models.json \
+            -d models/litert-lm-models.json \
+            --strict=false
+
+      - name: Check LiteRT-LM model list integrity
+        run: |
+          node --test .github/scripts/litert-lm-models-check.test.mjs
+          node .github/scripts/litert-lm-models-check.mjs
+
       - name: Validate diffusion catalog against schema
         run: |
           ajv validate \

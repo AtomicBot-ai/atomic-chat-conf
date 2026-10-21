@@ -33,6 +33,8 @@ models/
   schema.atomic-prism-models.json # JSON Schema (Draft-07) for the Prism model rules
   foundry-local-models.json # Foundry Local model sources: resolver, Microsoft catalog, curated models
   schema.foundry-local-models.json # JSON Schema (Draft-07) for the Foundry Local model list
+  litert-lm-models.json # LiteRT-LM models: Hugging Face listing rules, curated models
+  schema.litert-lm-models.json # JSON Schema (Draft-07) for the LiteRT-LM model list
 backends/
   llamacpp-upstream-releases.json # Mirrored llama.cpp releases with min_core_version (cores >= 0.15.0)
   llamacpp-upstream-releases-schema.json # JSON Schema (Draft-07) for the release list
@@ -1297,6 +1299,120 @@ release that supports this one. Insert the entry at the top of `releases`,
 run `make validate`, and open a PR with the `shasum -a 256` output in its
 description.
 
+## LiteRT-LM model list
+
+[`models/litert-lm-models.json`](models/litert-lm-models.json) tells the app
+and `atc` which LiteRT-LM models Atomic Chat has checked and where to find the
+rest on Hugging Face. Schema:
+[`models/schema.litert-lm-models.json`](models/schema.litert-lm-models.json);
+integrity checks:
+[`.github/scripts/litert-lm-models-check.mjs`](.github/scripts/litert-lm-models-check.mjs).
+
+```json
+{
+  "$schema": "./schema.litert-lm-models.json",
+  "schema_version": 1,
+  "updated_at": "2026-10-21T00:00:00Z",
+  "huggingface": {
+    "orgs": ["litert-community"],
+    "filter": "litert-lm",
+    "backends": { "macos-arm64": ["cpu", "gpu"], "win-x64": ["cpu", "gpu", "npu"] }
+  },
+  "models": [
+    {
+      "id": "gemma-4-e2b", "name": "Gemma 4 E2B", "description": "…", "task": "chat", "license": "…",
+      "repo": "litert-community/gemma-4-E2B-it-litert-lm", "revision": "<40 hex>", "gated": false,
+      "context_length": 32768, "tools": true, "reasoning": true, "vision": true,
+      "variants": [
+        { "id": "gemma-4-e2b-gpu", "backend": "gpu", "platforms": ["macos-arm64", "win-x64"],
+          "file": { "path": "gemma-4-E2B-it-gpu.litertlm", "size": 0, "sha256": "…" } },
+        { "id": "gemma-4-e2b-npu-lnl", "backend": "npu", "npu": "intel-lnl", "platforms": ["win-x64"],
+          "file": { "path": "gemma-4-E2B-it_intel_LNL.litertlm", "size": 0, "sha256": "…" } }
+      ]
+    }
+  ]
+}
+```
+
+The core never downloads LiteRT-LM models. The client downloads a variant's
+file from `https://huggingface.co/<repo>/resolve/<revision>/<path>` into
+`<data>/litert-lm/models/<variant id>/`, checks `size` and `sha256`, asks the
+core to check the file (`POST /atomic/v1/models/litert-lm/check`) and writes
+`model.yml` last. For a `gated` repository it sends the user's HF token, and
+only to Hugging Face hosts. `VITE_LITERT_LM_MODELS_URL` (app, dev builds) and
+`ATC_LITERT_LM_MODELS_URL` (`atc`) point a client at another copy during
+development.
+
+### Fields
+
+- `schema_version` — `1`; a client keeps the last list it accepted when this
+  is higher than it knows. `updated_at` — when the list last changed.
+- `huggingface` — where models beyond the curated ones come from:
+  - `orgs` — organisations the client lists, `filter` — always `litert-lm`,
+    the model tag it filters on.
+  - `backends` — for each platform, the backends the client may offer for
+    Hugging Face models there. Only `macos-arm64`, `linux-x64`,
+    `linux-arm64` and `win-x64`; `npu` only on `win-x64`.
+- `models` — curated models, shown first in the order listed; may be empty.
+  Each has `id`, `name`, `description`, `task` (`chat`), `license`, the
+  Hugging Face `repo` and the full commit `revision` its files are pinned to,
+  `gated`, the default `context_length` (the host never goes above the file's
+  own maximum), the `tools`, `reasoning` and `vision` flags, and `variants`:
+  - `id` — unique across the list: it names the download task and the folder
+    on disk.
+  - `backend` — `cpu`, `gpu` or `npu`; `npu` — the NPU generation an `npu`
+    variant's file is compiled for ahead of time, `intel-lnl` (Lunar Lake) or
+    `intel-ptl` (Panther Lake). Required on `npu` variants, forbidden on
+    others.
+  - `platforms` — where the variant is offered. `npu` runs only on `win-x64`.
+  - `min_runtime_version` — optional, the oldest LiteRT-LM the file loads in,
+    when it is known before the download; the core reads the real one from
+    the file.
+  - `file` — `path` inside the repository (the file keeps its name in the
+    variant folder), `size` and `sha256`.
+
+A client hides a variant whose backend, NPU target or platform it does not
+know, and a model left with no variants, instead of dropping the list. Besides
+the schema, CI rejects duplicate model or variant ids, two curated models for
+one repo, unsafe file paths, a backend on a platform where it does not run,
+and an unknown platform or backend in `huggingface.backends`.
+
+### Hugging Face models
+
+The client lists `GET /api/models?author=<org>&filter=litert-lm` for every
+org, shows those models after the curated ones marked "Hugging Face, not
+checked by Atomic Chat", and uses the curated entry instead for a repo the
+list already has. Variants come from the `.litertlm` file names of the repo at
+the commit of the listing:
+
+- a `-gpu` or `_gpu` suffix — `gpu`;
+- `_intel_LNL` or `_intel_PTL` — `npu` with `intel-lnl` or `intel-ptl`;
+- no suffix — `cpu`, and also `gpu` when the repo has no GPU-suffixed file;
+- `-web`, `_web`, other chip suffixes (`_sm<n>`, `_mt<n>`,
+  `_Google_Tensor_*` and the like) and `.task` files are never offered;
+- a variant whose backend `huggingface.backends` does not allow on the host
+  platform is not offered.
+
+Size and `sha256` come from the LFS metadata of the repo tree, so these files
+are checked too.
+
+### Closing a platform with data
+
+A backend that turns out bad on a platform is closed without a release of the
+app or `atc`, within the hour of the merge: remove the platform from the
+`platforms` of the curated variants with that backend, and remove the backend
+from that platform in `huggingface.backends` for Hugging Face models.
+
+### How to curate a model
+
+Pin `revision` to the repo's current commit
+(`curl -fsS https://huggingface.co/api/models/<repo> | jq -r .sha`), pick the
+files by the rule above, and download each one from its `resolve/<revision>`
+URL. Count `sha256` and `size` yourself (`shasum -a 256`, `stat`): do not copy
+them from Hugging Face. Fill the model's flags from its model card, run
+`make validate`, and open a PR with the `shasum -a 256` table in its
+description.
+
 ## Runtime descriptors (`runtimes/`)
 
 A runtime descriptor tells atomic-chat-core which container image a
@@ -2389,6 +2505,15 @@ every push and pull request. It performs the following checks:
   `published_at`, and that no release on the base branch changed content;
   `node --test` over `.github/scripts/litert-lm-manifest-check.test.mjs`
   checks that broken copies fail.
+- `ajv` validates `models/litert-lm-models.json` against
+  `models/schema.litert-lm-models.json` (which also requires `npu` on an NPU
+  variant and forbids it on others), and
+  `.github/scripts/litert-lm-models-check.mjs` checks unique model and variant
+  ids and repos, safe file paths, that each variant's backend runs on its
+  platforms (`npu` only on `win-x64`), and that `huggingface.backends` names
+  only the four platforms and backends that run there; `node --test` over
+  `.github/scripts/litert-lm-models-check.test.mjs` checks that broken copies
+  fail.
 - Cross-field integrity that the schema cannot express is checked by
   `node --test` over `.github/scripts/inventory-digest.test.mjs` and
   `.github/scripts/runtime-descriptor-integrity.test.mjs`, on every
@@ -2453,6 +2578,8 @@ npx ajv-cli@5 validate -s models/schema.foundry-local-models.json -d models/foun
 node .github/scripts/foundry-local-models-check.mjs
 npx ajv-cli@5 validate -s backends/litert-lm-schema.json -d backends/litert-lm-manifest.json --strict=false
 node .github/scripts/litert-lm-manifest-check.mjs
+npx ajv-cli@5 validate -s models/schema.litert-lm-models.json -d models/litert-lm-models.json --strict=false
+node .github/scripts/litert-lm-models-check.mjs
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/vllm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
