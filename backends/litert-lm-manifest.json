@@ -1,0 +1,54 @@
+{
+  "$schema": "./litert-lm-schema.json",
+  "schema_version": 1,
+  "releases": [
+    {
+      "version": "0.18.1",
+      "published_at": "2026-10-19T22:44:33Z",
+      "min_core_version": "0.19.0",
+      "abi": 1,
+      "notes_url": "https://github.com/google-ai-edge/LiteRT-LM/releases/tag/v0.18.1",
+      "assets": [
+        {
+          "platform": "macos-arm64",
+          "url": "https://files.pythonhosted.org/packages/cd/4d/24cd2263121f0a1e573a2a1680331e97a5ee6d9579ce46ca8c60b5151efd/litert_lm_api-0.18.1-py3-none-macosx_12_0_arm64.whl",
+          "name": "litert_lm_api-0.18.1-py3-none-macosx_12_0_arm64.whl",
+          "size": 21430663,
+          "sha256": "e599ccc4943b1b1c8a49b1de9e524fa2dac4ae23ddf166f42d79a48b3a4b55cb"
+        },
+        {
+          "platform": "linux-x64",
+          "url": "https://files.pythonhosted.org/packages/42/73/130210891a494372d3440de3639f9435d9f8522a4a056f6152be34b3361a/litert_lm_api-0.18.1-py3-none-manylinux_2_27_x86_64.whl",
+          "name": "litert_lm_api-0.18.1-py3-none-manylinux_2_27_x86_64.whl",
+          "size": 47051755,
+          "sha256": "b2fe9b9a87afe991a7b0d29615b0bfc3d41c7a0ac28e9c54436676482bca2e5b"
+        },
+        {
+          "platform": "linux-arm64",
+          "url": "https://files.pythonhosted.org/packages/9e/be/f06e161cd395024608650ddf4800346f16587c366ebd0af17945b7b44df6/litert_lm_api-0.18.1-py3-none-manylinux_2_27_aarch64.whl",
+          "name": "litert_lm_api-0.18.1-py3-none-manylinux_2_27_aarch64.whl",
+          "size": 46425916,
+          "sha256": "9c0e02bf7596693d9adbf6bfbb1bf08ae60c61abf9fa22dff19e5afe6af276f2"
+        },
+        {
+          "platform": "win-x64",
+          "url": "https://files.pythonhosted.org/packages/a2/86/ccc1ca0c26ff1aa7e812800964bb510a1dd376e38c03526d0939173e8911/litert_lm_api-0.18.1-py3-none-win_amd64.whl",
+          "name": "litert_lm_api-0.18.1-py3-none-win_amd64.whl",
+          "size": 26403799,
+          "sha256": "2c786288b0e41291e52a611a51a6ab6ec755a3196b86c60d5269779010042895"
+        }
+      ],
+      "accelerators": [
+        {
+          "id": "openvino",
+          "platform": "win-x64",
+          "version": "2026.4.1",
+          "url": "https://files.pythonhosted.org/packages/d0/44/66a61b7cfccea1dfa20e95a04b4157f07a0e4dc3f7e894b22a92abb8822b/openvino-2026.4.1-22982-cp312-cp312-win_amd64.whl",
+          "name": "openvino-2026.4.1-22982-cp312-cp312-win_amd64.whl",
+          "size": 84964415,
+          "sha256": "4e04316abff1b99e29b8cbd38deaef9bde4739eba216d982d4b3981e456ecd87"
+        }
+      ]
+    }
+  ]
+}
