@@ -1,0 +1,135 @@
+name: Approve a stable-diffusion.cpp build
+run-name: Approve sd.cpp ${{ inputs.tag }} [cid:${{ inputs.candidate_id }}]
+
+# The last step of "Updating stable-diffusion.cpp" (README): a signed build
+# that core's engine-candidate passed moves from the staging manifest to
+# backends/sdcpp-manifest.json, which every core reads within the hour. The
+# engine update pipeline (AtomicBot-ai/atomic-hatchet-pipeline, engine-bump,
+# engine sd-cpp) mirrors the fork's tag with mirror-sdcpp.yml
+# (manifest_path=backends/sdcpp-manifest.staging.json), checks the signed
+# release with engine-candidate (repo=AtomicBot-ai/atomic-chat-conf) and starts
+# this workflow only when that run passed, with conf_sha set to the commit of
+# this repository the run read (results.json conf.sha).
+#
+# The live manifest gets the staging manifest of conf_sha, not of main: a newer
+# candidate may hold the slot by now. Pushed straight to main, like
+# upstream-approve.yml: the checks below refuse what no passing run backs. A
+# bad build is rolled back by reverting the approval commit.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Signed mirror tag to approve (e.g. master-883-137f740-a36f1b1a)"
+        required: true
+        type: string
+      conf_sha:
+        description: "Commit whose backends/sdcpp-manifest.staging.json goes live (conf.sha in the passing run's results.json)"
+        required: true
+        type: string
+      candidate_id:
+        description: "Id the caller finds this run by in its title"
+        required: false
+        default: "manual"
+        type: string
+
+# The mirror rewrites the staging manifest and prunes releases: one writer at a
+# time, and no release of the tag replaced while it is being approved.
+concurrency:
+  group: mirror-sdcpp
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  approve:
+    name: Approve and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # conf_sha is an older commit of main; its staging manifest is read
+          # with git show.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Inputs reach scripts through env only, never through `${{ }}` in `run:`.
+      - name: Check the inputs
+        env:
+          TAG: ${{ inputs.tag }}
+          CONF_SHA: ${{ inputs.conf_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^master-[0-9]+-[0-9a-f]{7}-a[0-9a-f]{7}$ ]] || { echo "::error::tag must look like master-883-137f740-a36f1b1a"; exit 1; }
+          [[ "$CONF_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::conf_sha must be a full 40-character commit hash"; exit 1; }
+
+      # Main as it is now, not as it was when the run was queued: a run that
+      # waited behind an approval of the same tag has nothing left to do, and
+      # a re-run must not commit a timestamp only.
+      - name: Already live?
+        id: state
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main
+          LIVE="$(git show FETCH_HEAD:backends/sdcpp-manifest.json | jq -r .tag_name)"
+          echo "backends/sdcpp-manifest.json on main: $LIVE"
+          if [ "$LIVE" = "$TAG" ]; then echo "done=true"; else echo "done=false"; fi >> "$GITHUB_OUTPUT"
+
+      - name: Check the staged manifest against the release
+        if: steps.state.outputs.done != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          CONF_SHA: ${{ inputs.conf_sha }}
+        run: node .github/scripts/sdcpp-approve.mjs check --tag "$TAG" --conf-sha "$CONF_SHA"
+
+      # A successful engine-candidate run in core must name the tag, and its
+      # results.json must say it passed sd-cpp on this repository's release of
+      # it. Core is public, so this token can read its runs and artifacts.
+      - name: Refuse a tag no passing engine-candidate run backs
+        if: steps.state.outputs.done != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: node .github/scripts/upstream-verify.mjs gate --engine sd-cpp --tag "$TAG"
+
+      - name: Write the live manifest
+        if: steps.state.outputs.done != 'true'
+        env:
+          TAG: ${{ inputs.tag }}
+          CONF_SHA: ${{ inputs.conf_sha }}
+        run: node .github/scripts/sdcpp-approve.mjs approve --tag "$TAG" --conf-sha "$CONF_SHA"
+
+      - name: Validate the live manifest
+        if: steps.state.outputs.done != 'true'
+        run: |
+          set -euo pipefail
+          npm install -g ajv-cli@5
+          ajv validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.json --strict=false
+          node .github/scripts/sdcpp-manifest-check.mjs
+
+      # Someone may push to main between the checkout and here: rebase onto it
+      # and retry instead of failing an approval that is already decided.
+      - name: Commit the live manifest
+        if: steps.state.outputs.done != 'true'
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backends/sdcpp-manifest.json
+          git commit -m "chore(sdcpp-manifest): approve $TAG"
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected (attempt $attempt): rebasing onto main"
+            git pull --rebase
+          done
+          echo "::error::Could not push the approval of $TAG"
+          exit 1

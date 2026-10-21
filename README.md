@@ -43,6 +43,7 @@ backends/
   atomic-prism-manifest.json # PrismML llama.cpp releases (candidate / approved per asset)
   atomic-prism-schema.json   # JSON Schema (Draft-07) for the PrismML manifest
   sdcpp-manifest.json      # stable-diffusion.cpp build catalog (read by core)
+  sdcpp-manifest.staging.json # sd.cpp candidate slot: test builds, then sdcpp-approve.yml
   sdcpp-schema.json        # JSON Schema (Draft-07) for the sd.cpp manifest
   mlx-manifest.json        # The pinned mlx-server build (read by core and the desktop Makefile)
   mlx-schema.json          # JSON Schema (Draft-07) for the MLX manifest
@@ -69,10 +70,14 @@ app/
   workflows/upstream-approve.yml # Approves a mirrored llama.cpp tag (engine update pipeline)
   workflows/mirror-prism.yml    # Mirrors + signs a PrismML release, lists it as candidate (engine update pipeline)
   workflows/prism-approve.yml   # Approves a listed PrismML release (engine update pipeline)
+  workflows/mirror-sdcpp.yml    # Mirrors + signs an sd.cpp build from the Atomic fork into a manifest
+  workflows/sdcpp-approve.yml   # Moves a checked sd.cpp build from staging to the live manifest
   actions/windows-code-sign/    # Authenticode signing via DigiCert KeyLocker
   scripts/mirror.mjs            # Asset whitelist + manifest generation
   scripts/upstream-releases.mjs # Release list upkeep: add, approve, promote, withdraw, prune, check
   scripts/prism-manifest.mjs    # PrismML release list: latest, add, gate, approve, withdraw, check
+  scripts/upstream-verify.mjs   # engine-candidate check of a mirrored tag, and the approval gate
+  scripts/sdcpp-approve.mjs     # sd.cpp approval: check the staged manifest, write the live one
   entitlements.plist            # Entitlements for the signed macOS binaries
 Makefile                        # make mirror TAG=... and friends
 README.md
@@ -828,6 +833,115 @@ Both workflows push to main and share the `prism-manifest` concurrency group.
 The mirror publishes the release before it touches the manifest, so a listed
 archive is always downloadable.
 A re-run for a tag that is already listed or approved changes nothing.
+
+## Updating stable-diffusion.cpp
+
+Core installs `sd-server` from
+[`backends/sdcpp-manifest.json`](backends/sdcpp-manifest.json) (schema:
+[`backends/sdcpp-schema.json`](backends/sdcpp-schema.json)): one `tag_name`,
+one archive per backend id with its `sha256` and `size`, downloaded from this
+repository's releases (`download_base`). Cores re-read it within the hour.
+
+- Every archive is built by the Atomic fork,
+  [AtomicBot-ai/stable-diffusion.cpp](https://github.com/AtomicBot-ai/stable-diffusion.cpp)
+  (workflow `Release (Atomic)`: a release `master-<n>-<sha7>` per leejet tag),
+  and signed here by [`mirror-sdcpp.yml`](.github/workflows/mirror-sdcpp.yml):
+  Authenticode on Windows, Developer ID on macOS; Linux archives and the
+  cudart companion pass through byte-for-byte. With `atomic_rev` (the fork
+  commit the archives were built at, 7 hex) the release here and the manifest
+  are tagged `master-<n>-<sha7>-a<rev>`.
+- Core moves an installed engine only to a higher build number `<n>`, or from
+  a bare tag to the `-a<rev>` rebuild of it; two rebuilds of one tag are
+  equal, and it never moves back.
+- [`backends/sdcpp-manifest.staging.json`](backends/sdcpp-manifest.staging.json)
+  is the candidate slot: the mirror writes it, test builds of the app read it
+  (`ATOMIC_SDCPP_MANIFEST_URL`), core's `engine-candidate` checks the build it
+  names, and [`sdcpp-approve.yml`](.github/workflows/sdcpp-approve.yml) copies
+  it into the live manifest. It names the newest candidate, passed or not.
+
+### By hand
+
+1. In the fork, run `Release (Atomic)` with `upstream_tag=master-<n>-<sha7>`
+   and `publish=true`. Note the fork commit it built: that is `atomic_rev`.
+2. Mirror into the staging slot:
+
+   ```bash
+   gh workflow run mirror-sdcpp.yml --repo AtomicBot-ai/atomic-chat-conf \
+     -f tag=master-<n>-<sha7> -f atomic_rev=<rev> \
+     -f manifest_path=backends/sdcpp-manifest.staging.json
+   ```
+
+   It publishes the signed release `master-<n>-<sha7>-a<rev>` here, then
+   commits the staging manifest to main.
+3. Run core's `engine-candidate` with `engine=sd-cpp`,
+   `repo=AtomicBot-ai/atomic-chat-conf`, `tag=master-<n>-<sha7>-a<rev>` and
+   `conf_ref` at or after the mirror's commit. It must pass. Its
+   `results.json` (artifact `engine-candidate-results`) records the conf
+   commit it read as `conf.sha`.
+4. Approve:
+
+   ```bash
+   gh workflow run sdcpp-approve.yml --repo AtomicBot-ai/atomic-chat-conf \
+     -f tag=master-<n>-<sha7>-a<rev> -f conf_sha=<conf.sha>
+   ```
+
+`sdcpp-approve.yml` does nothing when the live manifest already names the tag.
+Otherwise it refuses unless:
+
+- `backends/sdcpp-manifest.staging.json` at `conf_sha`, a commit of main,
+  names the tag, downloads from this repository, and lists every archive with
+  the `size` and `sha256` of this repository's release of the tag (the
+  release's `digest`);
+- a successful `engine-candidate` run in core has the tag as a word of its
+  title (the fork's `master-<n>-<sha7>` run does not count), and its
+  `results.json` says `status: pass`, `engine: sd-cpp`, `candidate.repo`
+  `AtomicBot-ai/atomic-chat-conf` and `candidate.tag` the tag
+  (`upstream-verify.mjs gate --engine sd-cpp`).
+
+Then it writes that staging manifest, with a new `updated_at`, to
+`backends/sdcpp-manifest.json`, validates it like CI does and pushes
+`chore(sdcpp-manifest): approve <tag>` to main. The live manifest gets the
+staging manifest of `conf_sha`, not of main, so a newer candidate in the slot
+does not matter.
+
+The mirror refuses the tag the live manifest names: a re-run re-signs every
+archive in place, and clients already hold the old hashes. Mirroring with
+`manifest_path=backends/sdcpp-manifest.json` still writes the live manifest
+directly, without the check; it is for emergencies only.
+
+### Automatic sd.cpp updates
+
+The engine update pipeline
+([atomic-hatchet-pipeline](https://github.com/AtomicBot-ai/atomic-hatchet-pipeline),
+Hatchet task `engine-bump`, engine `sd-cpp`) runs the same steps for a fork
+build its checks call green, once it is enabled there (`PUBLISH_ENGINES`):
+
+1. `mirror-sdcpp.yml` with `tag`, `atomic_rev`,
+   `manifest_path=backends/sdcpp-manifest.staging.json`,
+   `publish_manifest=true` and `candidate_id=<id>` (it finds its run by
+   `[cid:<id>]` in the title).
+2. Core's `engine-candidate` on the signed release
+   (`repo=AtomicBot-ai/atomic-chat-conf`, `tag=master-<n>-<sha7>-a<rev>`, the
+   staging manifest at `conf_ref`). Anything but `pass` stops here: the build
+   stays in the staging slot and never goes live.
+3. `sdcpp-approve.yml` with `tag`, `conf_sha` (the run's `results.json`
+   `conf.sha`) and `candidate_id`.
+
+Every core gets the build: sd.cpp has no `min_core_version`. Both workflows
+share the `mirror-sdcpp` concurrency group, so the release and the manifests
+are never rewritten at the same time. To stop automatic releases, turn them off
+in the pipeline.
+
+### Rolling back
+
+Revert the approval commit (`chore(sdcpp-manifest): approve <tag>`) on main.
+The live manifest names the previous tag again, and cores that have not
+installed the bad build yet stop being offered it. Cores that have installed
+it stay on it, because core never moves an engine back; they leave it only for
+a newer build number, so the fix is the next build through the steps above.
+The revert works only while the previous tag's release still exists here: the
+mirror prunes all but the newest `retain` sd.cpp releases (3 by default),
+keeping only the tags the manifests name.
 
 ## MLX server manifest
 
@@ -2119,6 +2233,8 @@ every push and pull request. It performs the following checks:
   and unique, archive names that carry their release's tag, and a
   `backends/manifest.json` that names an approved release with
   `min_core_version` `0.0.0` and the same hashes.
+  `.github/scripts/upstream-verify.test.mjs` checks the approval gates, for
+  llama.cpp and sd.cpp, against fixture runs in core.
 - `ajv` validates `backends/turboquant-manifest.json` against
   `backends/turboquant-schema.json`.
 - Every TurboQuant `tag` must look like `b<build>-<semver>` and all entries must
@@ -2137,6 +2253,8 @@ every push and pull request. It performs the following checks:
   `backends/sdcpp-schema.json`, and `.github/scripts/sdcpp-manifest-check.mjs`
   checks, for both, the tag, unique backend ids and asset names, the required backends,
   the CUDA runtime companion, and `sha256`/`size` pairing.
+  `.github/scripts/sdcpp-approve.test.mjs` checks the approval against a
+  fixture release: the staged archives must match it by size and digest.
 - `ajv` validates `backends/mlx-manifest.json` against
   `backends/mlx-schema.json`, and `node --test` over
   `.github/scripts/mlx-manifest.test.mjs` checks the tag pattern, exactly one

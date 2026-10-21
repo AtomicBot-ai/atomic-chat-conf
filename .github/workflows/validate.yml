@@ -476,9 +476,11 @@ jobs:
 
       # Includes the rule older cores depend on: backends/manifest.json names an
       # approved release of the list that every core runs, with the same bytes.
+      # upstream-verify.test.mjs covers the approval gates (llama.cpp and sd.cpp).
       - name: Check upstream llama.cpp release list integrity
         run: |
           node --test .github/scripts/upstream-releases.test.mjs
+          node --test .github/scripts/upstream-verify.test.mjs
           node .github/scripts/upstream-releases.mjs check
 
       - name: Validate PrismML backends manifest against schema
@@ -500,8 +502,9 @@ jobs:
           node --test .github/scripts/prism-manifest.test.mjs
           node .github/scripts/prism-manifest.mjs check
 
-      # The staging manifest is what test builds read before an arm64 tag goes
-      # live (mirror-sdcpp.yml manifest_path); it obeys the same rules.
+      # The staging manifest is the candidate slot (mirror-sdcpp.yml
+      # manifest_path) that test builds read and sdcpp-approve.yml copies into
+      # the live one; it obeys the same rules.
       - name: Validate sd.cpp backends manifests against schema
         run: |
           for m in backends/sdcpp-manifest.json backends/sdcpp-manifest.staging.json; do
@@ -510,7 +513,9 @@ jobs:
           done
 
       - name: Check sd.cpp backends manifest integrity
-        run: node .github/scripts/sdcpp-manifest-check.mjs
+        run: |
+          node .github/scripts/sdcpp-manifest-check.mjs
+          node --test .github/scripts/sdcpp-approve.test.mjs
 
       - name: Validate MLX server manifest against schema
         run: |

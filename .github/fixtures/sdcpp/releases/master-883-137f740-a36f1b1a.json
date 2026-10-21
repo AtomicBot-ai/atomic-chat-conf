@@ -1,0 +1,76 @@
+{
+  "assets": [
+    {
+      "digest": "sha256:fe20366827d357c00797eebb58244dddab7fd9a348d70090c3871004c320f38d",
+      "name": "cudart-sd-bin-win-cu12-x64.zip",
+      "size": 563452046
+    },
+    {
+      "digest": "sha256:56a8e614bec7a9659875020e2d3d78fcd5fc53765044ff38c868bfaf3ff3e395",
+      "name": "sd-master-137f740-bin-Darwin-macOS-26.6.2-arm64.zip",
+      "size": 34338631
+    },
+    {
+      "digest": "sha256:1314b7154b5ffa12add7a5ddf9aa8e928f185109040eebf5060f73c75d83a940",
+      "name": "sd-master-137f740-bin-Linux-Ubuntu-24.04-aarch64-cuda13.zip",
+      "size": 603693280
+    },
+    {
+      "digest": "sha256:2fbfb1ef7c758ceedcf1ac51cd8f80107c076c8a13160603fd7a65ac2f215efe",
+      "name": "sd-master-137f740-bin-Linux-Ubuntu-24.04-aarch64.zip",
+      "size": 20947364
+    },
+    {
+      "digest": "sha256:d3dbc188ebab9e46485d3eec878612d2b62b49e799386124cddf5ad2be3b8fdd",
+      "name": "sd-master-137f740-bin-Linux-Ubuntu-24.04-x86_64-cuda12.zip",
+      "size": 718645269
+    },
+    {
+      "digest": "sha256:c8940e3c0416199b24626b76fd2273a87ac4030b14080af8f23d87783a80e4e6",
+      "name": "sd-master-137f740-bin-Linux-Ubuntu-24.04-x86_64-rocm-7.14.0.zip",
+      "size": 256666973
+    },
+    {
+      "digest": "sha256:0972d8e978462c38f38371cd8f2376ebb5183fd869c22234a79bed6cc0e0c1bf",
+      "name": "sd-master-137f740-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
+      "size": 37401766
+    },
+    {
+      "digest": "sha256:dc1af0b244302cd083d69d974424ba5f2dbe8f1b7f3b04be3db8103477dae47c",
+      "name": "sd-master-137f740-bin-Linux-Ubuntu-24.04-x86_64.zip",
+      "size": 24520937
+    },
+    {
+      "digest": "sha256:093259059dd18870395e869745b492533c38df95f96b804727624240b01f830a",
+      "name": "sd-master-137f740-bin-win-cpu-arm64.zip",
+      "size": 16092295
+    },
+    {
+      "digest": "sha256:df9aae5591e33548a428ae822797eca209a651d41163a05fa8738684e0b6b46b",
+      "name": "sd-master-137f740-bin-win-cpu-x64.zip",
+      "size": 17659940
+    },
+    {
+      "digest": "sha256:836823a26c0721c90f0dd88c2bbc931399c24790d4f3333a2487ec4c48c6c074",
+      "name": "sd-master-137f740-bin-win-cuda12-x64.zip",
+      "size": 331362223
+    },
+    {
+      "digest": "sha256:9e8c3aad7dea5d7db2999504573b7703db6c06b7ef2dc2203c73404156e647f9",
+      "name": "sd-master-137f740-bin-win-cuda13-arm64.zip",
+      "size": 208687376
+    },
+    {
+      "digest": "sha256:5ce539316bf831404f6142dcaa895ddd5c5398c61bac4aba987c16033ed388fc",
+      "name": "sd-master-137f740-bin-win-cuda13-x64.zip",
+      "size": 530924340
+    },
+    {
+      "digest": "sha256:a61d12deac8a39d60ab41afe6717c1f770e53da3aa0af8b1567d404c27cc2eaa",
+      "name": "sd-master-137f740-bin-win-vulkan-x64.zip",
+      "size": 32417764
+    }
+  ],
+  "draft": false,
+  "tag_name": "master-883-137f740-a36f1b1a"
+}
