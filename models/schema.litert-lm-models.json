@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat LiteRT-LM model list",
+  "description": "Models of the `litert-lm` provider, plus where the app and `atc` find the rest. A client downloads a variant's file itself from https://huggingface.co/<repo>/resolve/<revision>/<path> into <data>/litert-lm/models/<variant id>/, checks size and sha256, asks the core to check the file and writes model.yml last. Models of the `huggingface` organisations tagged `filter` are shown after the curated ones, with variants built from their `.litertlm` file names and offered only for the backends `huggingface.backends` allows on the host platform; a curated model with the same repo wins. A client hides a variant whose backend, NPU target or platform it does not know, and a model left with no variants, so new kinds are added next to the old ones.",
+  "type": "object",
+  "required": ["schema_version", "updated_at", "huggingface", "models"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "huggingface": {
+      "type": "object",
+      "required": ["orgs", "filter", "backends"],
+      "additionalProperties": false,
+      "properties": {
+        "orgs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+$" },
+          "description": "Hugging Face organisations whose models the client lists (`author=`)."
+        },
+        "filter": {
+          "const": "litert-lm",
+          "description": "Hugging Face model tag the listing filters on (`filter=`)."
+        },
+        "backends": {
+          "type": "object",
+          "description": "Platform -> backends the client may offer for Hugging Face models there. Removing one closes it for every client within the hour, without a release.",
+          "additionalProperties": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "$ref": "#/definitions/backend" }
+          }
+        }
+      }
+    },
+    "models": {
+      "type": "array",
+      "description": "Curated models, shown first in the order listed. May be empty: clients then show Hugging Face models only.",
+      "items": { "$ref": "#/definitions/model" }
+    }
+  },
+  "definitions": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+    "backend": { "type": "string", "enum": ["cpu", "gpu", "npu"] },
+    "model": {
+      "type": "object",
+      "required": ["id", "name", "description", "task", "license", "repo", "revision", "gated", "context_length", "tools", "reasoning", "vision", "variants"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "task": { "type": "string", "enum": ["chat"] },
+        "license": { "type": "string", "minLength": 1 },
+        "repo": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "revision": {
+          "type": "string",
+          "description": "The full commit the files are pinned to; URLs are https://huggingface.co/<repo>/resolve/<revision>/<path>.",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "gated": {
+          "type": "boolean",
+          "description": "The repository requires accepting its terms; the client sends the user's HF token, to Hugging Face hosts only."
+        },
+        "context_length": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Default context. The host never exceeds the file's own maximum."
+        },
+        "tools": { "type": "boolean", "description": "The model supports tool calling." },
+        "reasoning": { "type": "boolean", "description": "The model has a thinking mode." },
+        "vision": { "type": "boolean", "description": "The model accepts images." },
+        "variants": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/variant" }
+        }
+      }
+    },
+    "variant": {
+      "type": "object",
+      "required": ["id", "backend", "platforms", "file"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id",
+          "description": "Unique across the list: names the download task and the folder <data>/litert-lm/models/<id>."
+        },
+        "backend": { "$ref": "#/definitions/backend" },
+        "npu": {
+          "type": "string",
+          "enum": ["intel-lnl", "intel-ptl"],
+          "description": "NPU generation the file is compiled for ahead of time: Lunar Lake, Panther Lake. Only on `npu` variants."
+        },
+        "platforms": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["macos-arm64", "linux-x64", "linux-arm64", "win-x64"] },
+          "description": "Removing a platform closes the variant there for every client within the hour, without a release."
+        },
+        "min_runtime_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+          "description": "Oldest LiteRT-LM the file loads in, when known before download. The core reads the real one from the file."
+        },
+        "file": { "$ref": "#/definitions/file" }
+      },
+      "if": { "properties": { "backend": { "const": "npu" } }, "required": ["backend"] },
+      "then": { "required": ["npu"] },
+      "else": { "not": { "required": ["npu"] } }
+    },
+    "file": {
+      "type": "object",
+      "required": ["path", "size", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path inside the repository; the file keeps its name inside the variant folder.",
+          "pattern": "^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*\\.litertlm$"
+        },
+        "size": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    }
+  }
+}

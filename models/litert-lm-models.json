@@ -1,0 +1,16 @@
+{
+  "$schema": "./schema.litert-lm-models.json",
+  "schema_version": 1,
+  "updated_at": "2026-10-21T00:00:00Z",
+  "huggingface": {
+    "orgs": ["litert-community"],
+    "filter": "litert-lm",
+    "backends": {
+      "macos-arm64": ["cpu", "gpu"],
+      "linux-x64": ["cpu", "gpu"],
+      "linux-arm64": ["cpu", "gpu"],
+      "win-x64": ["cpu", "gpu", "npu"]
+    }
+  },
+  "models": []
+}
