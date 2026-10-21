@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.diffusion.json",
   "schema_version": 1,
-  "updated_at": "2026-10-09T17:00:00Z",
+  "updated_at": "2026-10-21T12:00:00Z",
   "families": [
     {
       "id": "z-image",
@@ -164,6 +164,74 @@
         "negative_prompt": false,
         "guidance": false,
         "workflows": ["create", "transform"]
+      }
+    },
+    {
+      "id": "flux.3-klein",
+      "name": "FLUX.3 Image Klein",
+      "developer": "Black Forest Labs",
+      "modality": "image",
+      "description": "Black Forest Labs' 5.6B text-to-image and editing model, distilled to 16 steps at CFG 1, with the Qwen3-VL-4B text encoder and the FLUX.2 autoencoder. It is trained on long scene captions: a detailed prompt gives a much better picture than a short one. AD_Q5_K is recommended; AD_Q4_K is the low-memory option and Q8_0 the closest to the original. The text encoder is the AD_Q4_K build (2.5 GB), measured closer to the original pictures than the common Q4_K_M. NON-COMMERCIAL LICENSE: the FLUX Kommunity License allows non-commercial use, and commercial use of outputs only for Qualifying Users (under US$5M annual revenue), under its terms. Official model: https://huggingface.co/black-forest-labs/flux-3-image-klein. GGUF packaging and measurements by Atomic Chat: https://huggingface.co/AtomicChat/FLUX-3-Image-Klein-GGUF.",
+      "license": "flux-kommunity-license",
+      "engines": ["sdcpp"],
+      "transformer": {
+        "repo": "AtomicChat/FLUX-3-Image-Klein-GGUF",
+        "quants": [
+          {
+            "id": "ad_q4_k",
+            "label": "AD_Q4_K",
+            "filename": "FLUX-3-Image-Klein-AD-Q4_K.gguf",
+            "bytes": 3651828704,
+            "sha256": "94f36a35a004a5913b214c4adc56b4dc9416634a0db6769468bd7df9b2a4a042"
+          },
+          {
+            "id": "ad_q5_k",
+            "label": "AD_Q5_K",
+            "filename": "FLUX-3-Image-Klein-AD-Q5_K.gguf",
+            "bytes": 4436515808,
+            "sha256": "2a7b09de30849a87e4ed5da5a789c2c5b596779aa6d367c133028c78f02cadd9",
+            "recommended": true
+          },
+          {
+            "id": "q8_0",
+            "label": "Q8_0",
+            "filename": "FLUX-3-Image-Klein-Q8_0.gguf",
+            "bytes": 5991734240,
+            "sha256": "1d61b4607076e7cd0e89afed0d548ddc79e2da22df2ca08ff533aa9796063319"
+          }
+        ]
+      },
+      "vae": {
+        "repo": "AtomicChat/FLUX-3-Image-Klein-GGUF",
+        "filename": "vae/ae.safetensors",
+        "bytes": 336211292,
+        "sha256": "868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3"
+      },
+      "text_encoders": [
+        {
+          "repo": "AtomicChat/FLUX-3-Image-Klein-GGUF",
+          "filename": "text_encoders/Qwen3-VL-4B-Instruct-AD-Q4_K.gguf",
+          "bytes": 2488823776,
+          "sha256": "bc0dd21e0de0f6ce36660229ba00f0fc4d38b9b6426be46fc2976beccdeb764b",
+          "field": "llm"
+        }
+      ],
+      "defaults": {
+        "steps": 16,
+        "cfg_scale": 1.0,
+        "sampling_method": "euler",
+        "width": 1024,
+        "height": 1024
+      },
+      "ranges": {
+        "steps": [1, 50],
+        "dims": [256, 2048],
+        "dim_multiple": 16
+      },
+      "capabilities": {
+        "negative_prompt": false,
+        "guidance": false,
+        "workflows": ["create"]
       }
     },
     {
