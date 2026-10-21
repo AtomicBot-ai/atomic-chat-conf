@@ -49,6 +49,8 @@ backends/
   mlx-schema.json          # JSON Schema (Draft-07) for the MLX manifest
   foundry-local-manifest.json # microsoft/foundry-local releases (read by core)
   foundry-local-schema.json   # JSON Schema (Draft-07) for the Foundry Local manifest
+  litert-lm-manifest.json  # LiteRT-LM library wheels on PyPI per platform, plus OpenVINO (read by core)
+  litert-lm-schema.json    # JSON Schema (Draft-07) for the LiteRT-LM manifest
 runtimes/
   tensorrt-llm.json  # TensorRT-LLM managed-engine runtime descriptor
   vllm.json          # vLLM managed-engine runtime descriptor (branch only until live acceptance)
@@ -1189,6 +1191,112 @@ the variants they understand.
    anywhere else: `blobManifestDigest` uses an unknown algorithm.
 5. Add the model, run `make validate`, open a PR.
 
+## LiteRT-LM runtime manifest
+
+[`backends/litert-lm-manifest.json`](backends/litert-lm-manifest.json) lists
+the LiteRT-LM releases Atomic Chat core installs as the `litert-lm` engine
+build: Google's native LiteRT-LM library, which runs the `litert-lm`
+provider's `.litertlm` models. Google ships no desktop binaries on GitHub, so
+the source is the `litert-lm-api` wheels on PyPI; the core unpacks a wheel as
+a zip and keeps only its native files. Schema:
+[`backends/litert-lm-schema.json`](backends/litert-lm-schema.json); integrity
+checks:
+[`.github/scripts/litert-lm-manifest-check.mjs`](.github/scripts/litert-lm-manifest-check.mjs).
+
+```json
+{
+  "$schema": "./litert-lm-schema.json",
+  "schema_version": 1,
+  "releases": [
+    {
+      "version": "0.18.1",
+      "published_at": "2026-10-19T22:44:33Z",
+      "min_core_version": "0.19.0",
+      "abi": 1,
+      "notes_url": "https://github.com/google-ai-edge/LiteRT-LM/releases/tag/v0.18.1",
+      "assets": [
+        { "platform": "macos-arm64", "url": "https://files.pythonhosted.org/packages/cd/4d/…/litert_lm_api-0.18.1-py3-none-macosx_12_0_arm64.whl", "name": "litert_lm_api-0.18.1-py3-none-macosx_12_0_arm64.whl", "size": 21430663, "sha256": "e599…55cb" }
+      ],
+      "accelerators": [
+        { "id": "openvino", "platform": "win-x64", "version": "2026.4.1", "url": "https://files.pythonhosted.org/packages/d0/44/…/openvino-2026.4.1-22982-cp312-cp312-win_amd64.whl", "name": "openvino-2026.4.1-22982-cp312-cp312-win_amd64.whl", "size": 84964415, "sha256": "4e04…cd87" }
+      ]
+    }
+  ]
+}
+```
+
+Core reads it from `main` with an hour's cache and a copy on disk, and installs
+a release only when the client asks (`POST /atomic/v1/engine-builds/litert-lm/install`
+or `POST /atomic/v1/engines/litert-lm/update`). The wheel is downloaded from
+its `url` and checked against `size` and `sha256` before it is unpacked; the
+core then loads it once in a probe run and only after that offers the build.
+`ATOMIC_LITERT_LM_MANIFEST_URL` (`https://` or `file://`) points core at
+another copy during development.
+
+### Fields
+
+- `schema_version` — `1`.
+- `releases` — newest first by `published_at`. Each release names the
+  LiteRT-LM `version` (the PyPI version of `litert-lm-api`), its PyPI upload
+  time as `published_at`, `notes_url`, and:
+  - `min_core_version` — the oldest core that understands the entry. **Core
+    skips a release whose `min_core_version` is newer than itself.**
+  - `abi` — our number, not Google's: the set and signatures of the C API
+    functions the core's binding reads. It goes up when they change, which
+    can happen within a LiteRT-LM minor version (0.18.1 was such a fix).
+    **Core skips a release whose `abi` it does not support**, and the active
+    build is the newest installed one with a supported `abi`.
+  - `assets` — one `litert-lm-api` wheel per platform, all four required:
+    `macos-arm64` (`macosx_12_0_arm64`), `linux-x64` (`manylinux_2_27_x86_64`),
+    `linux-arm64` (`manylinux_2_27_aarch64`), `win-x64` (`win_amd64`). There
+    are no wheels for macOS x64 or Windows arm64, so the provider does not
+    exist there. Core selects by `platform`, never by parsing `name`. `url`
+    is the explicit `files.pythonhosted.org` link from the PyPI JSON API: the
+    path holds hash directories the version does not determine, so it is not a
+    template.
+  - `accelerators` — optional, `win-x64` only: the `openvino` wheel with the
+    OpenVINO `version`. Intel NPU models need its native libraries; core
+    downloads it only on `POST /atomic/v1/runtimes/litert-lm/accelerators/prepare`,
+    never with the build, since it is 85 MB that only NPU owners need. Any
+    `cp3xx` wheel will do: core takes only `openvino/libs`, which is the same
+    in each.
+
+Besides the schema (which already rejects an asset without `size` or
+`sha256`, a URL outside PyPI and an unknown platform), CI rejects a duplicate
+`version`, a duplicate `platform` or asset name within a release, a release
+missing one of the four platforms, an accelerator listed twice or outside
+`win-x64`, releases out of `published_at` order, and a published release whose
+content changed.
+
+### A release is never rewritten
+
+Once a release entry is on `main`, its fields do not change: the core keeps an
+installed build under its version, and a different wheel under the same
+version would fail every install's `sha256` check. CI compares every release
+with the same `version` on the base branch and fails when the content differs.
+A fix is a **new release at the top**; a broken one is removed (new installs
+stop within the hour), not edited.
+
+### How to add a release
+
+Take the URLs, sizes and upload time from the PyPI JSON API, then download
+every wheel and count `sha256` yourself: the hash in the manifest is the only
+check on what core loads into its own process, so it must not be a copy of
+the one PyPI reports.
+
+```bash
+curl -fsS https://pypi.org/pypi/litert-lm-api/0.18.1/json | jq '[.urls[] | select(.filename | test("macosx_12_0_arm64|manylinux_2_27|win_amd64")) | {name: .filename, url, size, sha256: .digests.sha256, published_at: .upload_time_iso_8601}]'
+curl -fsS https://pypi.org/pypi/openvino/2026.4.1/json | jq '.urls[] | select(.filename | endswith("-cp312-cp312-win_amd64.whl")) | {name: .filename, url, size, sha256: .digests.sha256}'
+curl -fLO "<url>" && shasum -a 256 "<name>"
+```
+
+Map each wheel to its `platform`, set `published_at` to the earliest upload
+time of the release, `abi` to the number core's binding supports for it (a
+new number when the C API changed), and `min_core_version` to the first core
+release that supports this one. Insert the entry at the top of `releases`,
+run `make validate`, and open a PR with the `shasum -a 256` output in its
+description.
+
 ## Runtime descriptors (`runtimes/`)
 
 A runtime descriptor tells atomic-chat-core which container image a
@@ -2273,6 +2381,14 @@ every push and pull request. It performs the following checks:
   model, the resolve template's `{region}` and `{asset_id}`, an https
   `catalog.url`, platforms each execution provider runs on, and that a variant
   `context_length` is smaller than its model's.
+- `ajv` validates `backends/litert-lm-manifest.json` against
+  `backends/litert-lm-schema.json`, and
+  `.github/scripts/litert-lm-manifest-check.mjs` checks unique versions,
+  unique platforms and asset names per release, all four platforms in every
+  release, accelerators only on `win-x64`, releases ordered newest first by
+  `published_at`, and that no release on the base branch changed content;
+  `node --test` over `.github/scripts/litert-lm-manifest-check.test.mjs`
+  checks that broken copies fail.
 - Cross-field integrity that the schema cannot express is checked by
   `node --test` over `.github/scripts/inventory-digest.test.mjs` and
   `.github/scripts/runtime-descriptor-integrity.test.mjs`, on every
@@ -2335,6 +2451,8 @@ npx ajv-cli@5 validate -s backends/foundry-local-schema.json -d backends/foundry
 node .github/scripts/foundry-local-manifest-check.mjs
 npx ajv-cli@5 validate -s models/schema.foundry-local-models.json -d models/foundry-local-models.json --strict=false
 node .github/scripts/foundry-local-models-check.mjs
+npx ajv-cli@5 validate -s backends/litert-lm-schema.json -d backends/litert-lm-manifest.json --strict=false
+node .github/scripts/litert-lm-manifest-check.mjs
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/vllm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true

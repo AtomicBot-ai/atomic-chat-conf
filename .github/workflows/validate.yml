@@ -547,6 +547,23 @@ jobs:
       - name: Check Foundry Local model list integrity
         run: node .github/scripts/foundry-local-models-check.mjs
 
+      - name: Validate LiteRT-LM runtime manifest against schema
+        run: |
+          ajv validate \
+            -s backends/litert-lm-schema.json \
+            -d backends/litert-lm-manifest.json \
+            --strict=false
+
+      - name: Check LiteRT-LM runtime manifest integrity
+        env:
+          # Published releases are compared with the base: the target branch
+          # on a PR, the pre-push tip on a push (an empty or all-zeros ref
+          # means nothing to compare).
+          LITERT_LM_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: |
+          node --test .github/scripts/litert-lm-manifest-check.test.mjs
+          node .github/scripts/litert-lm-manifest-check.mjs
+
       - name: Validate diffusion catalog against schema
         run: |
           ajv validate \
