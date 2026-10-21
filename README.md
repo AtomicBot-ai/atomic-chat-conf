@@ -1,9 +1,13 @@
 # Atomic Chat — Configuration Registry
 
-This repository hosts **runtime configuration** consumed by the Atomic Chat
-desktop client. The client fetches the manifest at startup and refreshes it
-periodically, so changes here propagate to all installed Atomic Chat clients (macOS,
-Windows, Linux) without an application release.
+This repository hosts **runtime configuration** for Atomic Chat Desktop and
+Atomic Chat Mobile. The desktop client fetches the manifest at startup and
+refreshes it periodically, so changes here propagate to installed desktop clients
+(macOS, Windows, Linux) without an application release.
+
+Mobile uses separate [production and dev catalogs](models/README.mobile.md).
+That document defines the mobile schema, metadata reuse and coordinated admin
+cutover; existing desktop manifests retain their current contracts.
 
 > **TL;DR for non-developers** — to add a new model or provider, edit
 > [`providers/registry.json`](providers/registry.json) on GitHub, open a Pull
@@ -25,6 +29,10 @@ models/
   schema.json        # JSON Schema (Draft-07) for the recommended-models manifest
   staff-picks.json   # Curated Staff Picks list shown by default in Hub
   schema.staff-picks.json # JSON Schema (Draft-07) for the staff-picks manifest
+  mobile.json        # Mobile production catalog (exact download artifacts)
+  mobile-dev.json    # Independent mobile dev catalog
+  schema.mobile.json # JSON Schema (Draft-07) shared by both mobile catalogs
+  README.mobile.md   # Mobile contract, metadata reuse and admin migration
   decision.json      # Decision models (TurboQuant checkpoints and llama.cpp GGUFs)
   schema.decision.json # JSON Schema (Draft-07) for the decision catalog
   embedding.json     # Embedding models served on /v1/embeddings (llama.cpp GGUFs)
@@ -2207,6 +2215,11 @@ every push and pull request. It performs the following checks:
   `models/schema.staff-picks.json`.
 - Every `model_name` and every `order` in the staff-picks manifest must be
   unique, and `description_key`, when present, must start with `hub:`.
+- `ajv` validates both mobile catalogs against `models/schema.mobile.json`.
+  `.github/scripts/mobile-catalog-check.mjs` checks unique ids, valid UTC dates,
+  safe model/projector paths and engine-specific artifacts;
+  `.github/scripts/mobile-catalog.test.mjs` exercises valid catalogs and rejects
+  invalid copies, including local download state and desktop platform values.
 - `ajv` validates `models/decision.json` against `models/schema.decision.json`
   (an upstream model must be `gguf`, name a `decision_type` and pin a `b<build>`
   tag; a checkpoint model a TurboQuant tag).
@@ -2321,6 +2334,9 @@ If you want to run the schema checks individually before pushing:
 npx ajv-cli@5 validate -s providers/schema.json -d providers/registry.json --strict=false
 npx ajv-cli@5 validate -s models/schema.json    -d models/recommended.json   --strict=false
 npx ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
+npx ajv-cli@5 validate -s models/schema.mobile.json -d 'models/mobile*.json' --strict=false
+node .github/scripts/mobile-catalog-check.mjs
+node --test .github/scripts/mobile-catalog.test.mjs
 npx ajv-cli@5 validate -s models/schema.decision.json -d models/decision.json --strict=false
 node .github/scripts/decision-catalog-check.mjs
 npx ajv-cli@5 validate -s models/schema.embedding.json -d models/embedding.json --strict=false

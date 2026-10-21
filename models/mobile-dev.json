@@ -1,0 +1,24 @@
+{
+  "$schema": "./schema.mobile.json",
+  "schema_version": 1,
+  "updated_at": "2026-10-21T00:00:00Z",
+  "models": [
+    {
+      "id": "LiquidAI/LFM2.5-2.6B-GGUF/LFM2.5-2.6B-Q4_K_M.gguf",
+      "name": "LFM2.5-2.6B",
+      "description": "Hello",
+      "size": 1674454848,
+      "iconUrl": "liquid",
+      "engine": "llama",
+      "mmprojRemoteId": null,
+      "forceCpu": false,
+      "supportsThinking": false,
+      "badges": [],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    }
+  ]
+}

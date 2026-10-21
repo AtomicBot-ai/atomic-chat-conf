@@ -298,6 +298,19 @@ jobs:
           console.log(`  updated_at: ${data.updated_at}`)
           EOF
 
+      - name: Validate mobile catalogs against schema
+        run: |
+          ajv validate \
+            -s models/schema.mobile.json \
+            -d 'models/mobile*.json' \
+            --strict=false
+
+      - name: Check mobile catalog integrity
+        run: node .github/scripts/mobile-catalog-check.mjs
+
+      - name: Test mobile catalog validation
+        run: node --test .github/scripts/mobile-catalog.test.mjs
+
       - name: Validate backends manifest against schema
         run: |
           ajv validate \
