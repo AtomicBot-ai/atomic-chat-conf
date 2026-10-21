@@ -181,6 +181,9 @@ validate:
 	node .github/scripts/media-catalog-check.mjs
 	npx --yes ajv-cli@5 validate -s models/schema.json -d models/recommended.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.staff-picks.json -d models/staff-picks.json --strict=false
+	npx --yes ajv-cli@5 validate -s models/schema.mobile.json -d 'models/mobile*.json' --strict=false
+	node .github/scripts/mobile-catalog-check.mjs
+	node --test .github/scripts/mobile-catalog.test.mjs
 	npx --yes ajv-cli@5 validate -s models/schema.diffusion.json -d models/diffusion.json --strict=false
 	npx --yes ajv-cli@5 validate -s models/schema.decision.json -d models/decision.json --strict=false
 	node .github/scripts/decision-catalog-check.mjs

@@ -1,0 +1,453 @@
+{
+  "$schema": "./schema.mobile.json",
+  "schema_version": 1,
+  "updated_at": "2026-10-21T00:00:00Z",
+  "models": [
+    {
+      "id": "LiquidAI/LFM2.5-VL-3B-GGUF/LFM2.5-VL-3B-Q4_0.gguf",
+      "name": "LFM2.5-VL-3B",
+      "description": "A lightweight vision-language model that reads screens, documents and the physical world",
+      "size": 1593894112,
+      "iconUrl": "liquid",
+      "engine": "llama",
+      "mmprojRemoteId": "LiquidAI/LFM2.5-VL-3B-GGUF/mmproj-LFM2.5-VL-3B-Q8_0.gguf",
+      "mmprojSize": 583109120,
+      "forceCpu": false,
+      "supportsThinking": false,
+      "badges": [
+        {
+          "label": "vision",
+          "tone": "blue"
+        },
+        {
+          "label": "fast",
+          "tone": "orange"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "LiquidAI/LFM2.5-2.6B-GGUF/LFM2.5-2.6B-Q4_K_M.gguf",
+      "name": "LFM2.5-2.6B",
+      "description": "On-device agentic model: plans, calls tools, handles multi-step tasks on your phone.",
+      "size": 1674454848,
+      "iconUrl": "liquid",
+      "engine": "llama",
+      "mmprojRemoteId": null,
+      "forceCpu": false,
+      "supportsThinking": true,
+      "badges": [
+        {
+          "label": "thinking",
+          "tone": "purple"
+        },
+        {
+          "label": "agentic",
+          "tone": "blue"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "LiquidAI/LFM2.5-VL-1.6B-GGUF/LFM2.5-VL-1.6B-Q4_0.gguf",
+      "name": "LFM 2.5 VL (1.6B)",
+      "description": "An updated vision-language model with enhanced multilingual vision understanding.",
+      "size": 695752480,
+      "iconUrl": "liquid",
+      "engine": "llama",
+      "mmprojRemoteId": "LiquidAI/LFM2.5-VL-1.6B-GGUF/mmproj-LFM2.5-VL-1.6b-Q8_0.gguf",
+      "mmprojSize": 583109888,
+      "badges": [
+        {
+          "label": "vision",
+          "tone": "blue"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "LiquidAI/LFM2.5-1.2B-Thinking-GGUF/LFM2.5-1.2B-Thinking-Q4_K_M.gguf",
+      "name": "LFM 2.5 Thinking (1.2B)",
+      "description": "A reasoning model optimized for math, programming, and complex problem-solving.",
+      "size": 730895360,
+      "iconUrl": "liquid",
+      "engine": "llama",
+      "mmprojRemoteId": null,
+      "supportsThinking": true,
+      "badges": [
+        {
+          "label": "thinking",
+          "tone": "purple"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "LiquidAI/LFM2-700M-GGUF/LFM2-700M-Q4_K_M.gguf",
+      "name": "LFM 2 (700M)",
+      "description": "Hybrid model for fast everyday chat and lightweight tasks. Onboarding default.",
+      "size": 468624320,
+      "iconUrl": "liquid",
+      "engine": "llama",
+      "mmprojRemoteId": null,
+      "badges": [
+        {
+          "label": "fast",
+          "tone": "green"
+        },
+        {
+          "label": "everyday",
+          "tone": "orange"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": true
+    },
+    {
+      "id": "unsloth/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf",
+      "name": "Gemma 4 E2B IT",
+      "description": "A smaller, faster Gemma 4. Same multimodal abilities — text, photos, audio.",
+      "size": 3106736256,
+      "iconUrl": "google",
+      "engine": "llama",
+      "mmprojRemoteId": "unsloth/gemma-4-E2B-it-GGUF/mmproj-F16.gguf",
+      "mmprojSize": 985654080,
+      "supportsThinking": true,
+      "badges": [
+        {
+          "label": "vision",
+          "tone": "blue"
+        },
+        {
+          "label": "fast",
+          "tone": "green"
+        },
+        {
+          "label": "thinking",
+          "tone": "purple"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "unsloth/gemma-4-E4B-it-qat-mobile-GGUF/gemma-4-E4B-it-qat-UD-Q2_K_XL.gguf",
+      "name": "Gemma 4 E4B IT (QAT)",
+      "description": "The most powerful on-device Gemma 4. Quantization-aware, mobile-tuned build with multimodal vision.",
+      "size": 3219530176,
+      "iconUrl": "google",
+      "engine": "llama",
+      "mmprojRemoteId": "unsloth/gemma-4-E4B-it-qat-mobile-GGUF/mmproj-F16.gguf",
+      "mmprojSize": 990372672,
+      "forceCpu": true,
+      "supportsThinking": true,
+      "badges": [
+        {
+          "label": "vision",
+          "tone": "blue"
+        },
+        {
+          "label": "thinking",
+          "tone": "purple"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "unsloth/gemma-4-E2B-it-qat-mobile-GGUF/gemma-4-E2B-it-qat-UD-Q2_K_XL.gguf",
+      "name": "Gemma 4 E2B IT (QAT)",
+      "description": "A smaller, faster Gemma 4. Quantization-aware, mobile-tuned build with multimodal vision.",
+      "size": 2186184768,
+      "iconUrl": "google",
+      "engine": "llama",
+      "mmprojRemoteId": "unsloth/gemma-4-E2B-it-qat-mobile-GGUF/mmproj-F16.gguf",
+      "mmprojSize": 985654080,
+      "forceCpu": true,
+      "supportsThinking": true,
+      "badges": [
+        {
+          "label": "vision",
+          "tone": "blue"
+        },
+        {
+          "label": "fast",
+          "tone": "green"
+        },
+        {
+          "label": "thinking",
+          "tone": "purple"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "ggml-org/gemma-3-1b-it-GGUF/gemma-3-1b-it-Q4_K_M.gguf",
+      "name": "Gemma 3 (1B)",
+      "description": "A fast model with improved memory consumption. Optimized for basic dialogue tasks. Onboarding default.",
+      "size": 806058240,
+      "iconUrl": "google",
+      "engine": "llama",
+      "mmprojRemoteId": null,
+      "badges": [
+        {
+          "label": "fast",
+          "tone": "green"
+        },
+        {
+          "label": "everyday",
+          "tone": "orange"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": true
+    },
+    {
+      "id": "unsloth/Qwen3.5-4B-GGUF/Qwen3.5-4B-Q4_K_M.gguf",
+      "name": "Qwen 3.5 (4B)",
+      "description": "Powerful hybrid reasoning with vision. Best Qwen for demanding tasks.",
+      "size": 2740937888,
+      "iconUrl": "qwen",
+      "engine": "llama",
+      "mmprojRemoteId": "unsloth/Qwen3.5-4B-GGUF/mmproj-F16.gguf",
+      "mmprojSize": 672423616,
+      "supportsThinking": true,
+      "badges": [
+        {
+          "label": "thinking",
+          "tone": "purple"
+        },
+        {
+          "label": "vision",
+          "tone": "blue"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "unsloth/Qwen3.5-2B-GGUF/Qwen3.5-2B-Q4_K_M.gguf",
+      "name": "Qwen 3.5 (2B)",
+      "description": "Lightweight model with strong vision and hybrid reasoning. Great for general-purpose conversation.",
+      "size": 1280835840,
+      "iconUrl": "qwen",
+      "engine": "llama",
+      "mmprojRemoteId": "unsloth/Qwen3.5-2B-GGUF/mmproj-F16.gguf",
+      "mmprojSize": 668227264,
+      "supportsThinking": true,
+      "badges": [
+        {
+          "label": "thinking",
+          "tone": "purple"
+        },
+        {
+          "label": "vision",
+          "tone": "blue"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "unsloth/Qwen3.5-0.8B-GGUF/Qwen3.5-0.8B-Q4_K_M.gguf",
+      "name": "Qwen 3.5 (0.8B)",
+      "description": "Small model with good vision and hybrid reasoning. Great for simple conversation and fast answers.",
+      "size": 532517120,
+      "iconUrl": "qwen",
+      "engine": "llama",
+      "mmprojRemoteId": "unsloth/Qwen3.5-0.8B-GGUF/mmproj-F16.gguf",
+      "mmprojSize": 204987232,
+      "supportsThinking": true,
+      "badges": [
+        {
+          "label": "thinking",
+          "tone": "purple"
+        },
+        {
+          "label": "vision",
+          "tone": "blue"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": true
+    },
+    {
+      "id": "ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf",
+      "name": "SmolLM 3 (3B)",
+      "description": "Great for complex reasoning, long conversations, and use in English, French, Spanish, German, Italian, and Portuguese.",
+      "size": 1915305312,
+      "iconUrl": "huggingface",
+      "engine": "llama",
+      "mmprojRemoteId": null,
+      "supportsThinking": true,
+      "badges": [
+        {
+          "label": "thinking",
+          "tone": "purple"
+        },
+        {
+          "label": "multilingual",
+          "tone": "green"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "prism-ml/Ternary-Bonsai-8B-gguf/Ternary-Bonsai-8B-Q2_0.gguf",
+      "name": "Ternary Bonsai (8B)",
+      "description": "Ternary-weight 8B model. Compact 8B-class reasoning at a fraction of the memory.",
+      "size": 2182184672,
+      "iconUrl": "bonsai",
+      "engine": "llama",
+      "mmprojRemoteId": null,
+      "badges": [
+        {
+          "label": "efficient",
+          "tone": "green"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "prism-ml/Bonsai-8B-gguf/Bonsai-8B-Q1_0.gguf",
+      "name": "Bonsai (8B)",
+      "description": "1-bit quantized 8B model. Extremely lightweight for an 8B-class network.",
+      "size": 1158654496,
+      "iconUrl": "bonsai",
+      "engine": "llama",
+      "mmprojRemoteId": null,
+      "badges": [
+        {
+          "label": "fast",
+          "tone": "green"
+        },
+        {
+          "label": "everyday",
+          "tone": "orange"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "prism-ml/Bonsai-27B-gguf/Bonsai-27B-Q1_0.gguf",
+      "name": "Bonsai (27B)",
+      "description": "1-bit quantized 27B model with vision. Full 27B-class reasoning in under 4 GB.",
+      "size": 3803452480,
+      "iconUrl": "bonsai",
+      "engine": "llama",
+      "mmprojRemoteId": "prism-ml/Bonsai-27B-gguf/Bonsai-27B-mmproj-Q8_0.gguf",
+      "mmprojSize": 629246880,
+      "supportsThinking": true,
+      "badges": [
+        {
+          "label": "vision",
+          "tone": "blue"
+        },
+        {
+          "label": "thinking",
+          "tone": "purple"
+        },
+        {
+          "label": "efficient",
+          "tone": "green"
+        }
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "belgrat/realistic-vision-v5.1-coreml/realistic-vision-v5.1-coreml.zip",
+      "name": "Realistic Vision v5.1",
+      "description": "Photoreal SD 1.5 fine-tune. Great for portraits, faces, and product shots.",
+      "size": 1904935657,
+      "iconUrl": "realisticVision",
+      "engine": "coreml-diffusion",
+      "mmprojRemoteId": null,
+      "badges": [
+        {
+          "label": "image",
+          "tone": "purple"
+        }
+      ],
+      "platforms": [
+        "ios"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "Gatchamn/coreml-dreamshaper-8-8bit",
+      "name": "DreamShaper v8",
+      "description": "Stylized SD 1.5 fine-tune. Strong illustrative, fantasy, and concept-art output.",
+      "size": 1161814548,
+      "iconUrl": "dreamshaper",
+      "engine": "coreml-diffusion",
+      "mmprojRemoteId": null,
+      "badges": [
+        {
+          "label": "image",
+          "tone": "purple"
+        }
+      ],
+      "platforms": [
+        "ios"
+      ],
+      "isOnboarding": false
+    }
+  ]
+}
