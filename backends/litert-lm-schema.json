@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat LiteRT-LM Runtime Manifest",
+  "description": "Schema for the release catalog of the `litert-lm` engine build: Google's LiteRT-LM native library, shipped in the `litert-lm-api` PyPI wheels, which the core installs to run `.litertlm` models. One wheel per platform, pinned by an explicit PyPI URL, size and sha256; Windows releases may also list the `openvino` wheel the core unpacks for Intel NPUs on request. A published release is never rewritten; a fix is a new release on top. Cores skip releases whose `min_core_version` is newer than themselves or whose `abi` their binding does not support.",
+  "type": "object",
+  "required": ["schema_version", "releases"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "releases": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Newest first by published_at.",
+      "items": { "$ref": "#/definitions/release" }
+    }
+  },
+  "definitions": {
+    "release": {
+      "type": "object",
+      "required": ["version", "published_at", "min_core_version", "abi", "notes_url", "assets"],
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "LiteRT-LM version, the PyPI version of litert-lm-api, e.g. 0.18.1."
+        },
+        "published_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "PyPI upload time of the release. The core takes the newest installed release with a supported abi."
+        },
+        "min_core_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Oldest atomic-chat-core that understands this entry. Older cores skip it."
+        },
+        "abi": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Our number, not Google's: the set and signatures of the C API functions the core's binding reads. It changes when they change, even within a LiteRT-LM minor version. A core that does not know it skips the release."
+        },
+        "notes_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Upstream release notes page shown next to an update offer."
+        },
+        "assets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/asset" }
+        },
+        "accelerators": {
+          "type": "array",
+          "description": "Runtimes the core downloads only on an explicit prepare request, never with the build.",
+          "items": { "$ref": "#/definitions/accelerator" }
+        }
+      }
+    },
+    "pypi_url": {
+      "type": "string",
+      "pattern": "^https://files\\.pythonhosted\\.org/",
+      "description": "Direct file URL from the PyPI JSON API. Explicit, not a template: the path holds hash directories the version does not determine."
+    },
+    "size": { "type": "integer", "minimum": 1 },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "asset": {
+      "type": "object",
+      "required": ["platform", "url", "name", "size", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "platform": {
+          "type": "string",
+          "enum": ["macos-arm64", "linux-x64", "linux-arm64", "win-x64"],
+          "description": "Host platform the core selects on; never derived from the wheel name at runtime."
+        },
+        "url": { "$ref": "#/definitions/pypi_url" },
+        "name": { "type": "string", "pattern": "^litert_lm_api-[0-9.]+-.+\\.whl$" },
+        "size": { "$ref": "#/definitions/size" },
+        "sha256": { "$ref": "#/definitions/sha256" }
+      }
+    },
+    "accelerator": {
+      "type": "object",
+      "required": ["id", "platform", "version", "url", "name", "size", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "const": "openvino", "description": "Intel NPU runtime; the core unpacks only its openvino/libs." },
+        "platform": { "const": "win-x64" },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "OpenVINO version; names the folder the core unpacks it into."
+        },
+        "url": { "$ref": "#/definitions/pypi_url" },
+        "name": { "type": "string", "pattern": "^openvino-.+\\.whl$" },
+        "size": { "$ref": "#/definitions/size" },
+        "sha256": { "$ref": "#/definitions/sha256" }
+      }
+    }
+  }
+}

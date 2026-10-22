@@ -41,6 +41,8 @@ models/
   schema.atomic-prism-models.json # JSON Schema (Draft-07) for the Prism model rules
   foundry-local-models.json # Foundry Local model sources: resolver, Microsoft catalog, curated models
   schema.foundry-local-models.json # JSON Schema (Draft-07) for the Foundry Local model list
+  litert-lm-models.json # LiteRT-LM models: Hugging Face listing rules, curated models
+  schema.litert-lm-models.json # JSON Schema (Draft-07) for the LiteRT-LM model list
 backends/
   llamacpp-upstream-releases.json # Mirrored llama.cpp releases with min_core_version (cores >= 0.15.0)
   llamacpp-upstream-releases-schema.json # JSON Schema (Draft-07) for the release list
@@ -57,6 +59,8 @@ backends/
   mlx-schema.json          # JSON Schema (Draft-07) for the MLX manifest
   foundry-local-manifest.json # microsoft/foundry-local releases (read by core)
   foundry-local-schema.json   # JSON Schema (Draft-07) for the Foundry Local manifest
+  litert-lm-manifest.json  # LiteRT-LM library wheels on PyPI per platform, plus OpenVINO (read by core)
+  litert-lm-schema.json    # JSON Schema (Draft-07) for the LiteRT-LM manifest
 runtimes/
   tensorrt-llm.json  # TensorRT-LLM managed-engine runtime descriptor
   vllm.json          # vLLM managed-engine runtime descriptor (branch only until live acceptance)
@@ -1197,6 +1201,235 @@ the variants they understand.
    anywhere else: `blobManifestDigest` uses an unknown algorithm.
 5. Add the model, run `make validate`, open a PR.
 
+## LiteRT-LM runtime manifest
+
+[`backends/litert-lm-manifest.json`](backends/litert-lm-manifest.json) lists
+the LiteRT-LM releases Atomic Chat core installs as the `litert-lm` engine
+build: Google's native LiteRT-LM library, which runs the `litert-lm`
+provider's `.litertlm` models. Google ships no desktop binaries on GitHub, so
+the source is the `litert-lm-api` wheels on PyPI; the core unpacks a wheel as
+a zip and keeps only its native files. Schema:
+[`backends/litert-lm-schema.json`](backends/litert-lm-schema.json); integrity
+checks:
+[`.github/scripts/litert-lm-manifest-check.mjs`](.github/scripts/litert-lm-manifest-check.mjs).
+
+```json
+{
+  "$schema": "./litert-lm-schema.json",
+  "schema_version": 1,
+  "releases": [
+    {
+      "version": "0.18.1",
+      "published_at": "2026-10-19T22:44:33Z",
+      "min_core_version": "0.19.0",
+      "abi": 1,
+      "notes_url": "https://github.com/google-ai-edge/LiteRT-LM/releases/tag/v0.18.1",
+      "assets": [
+        { "platform": "macos-arm64", "url": "https://files.pythonhosted.org/packages/cd/4d/…/litert_lm_api-0.18.1-py3-none-macosx_12_0_arm64.whl", "name": "litert_lm_api-0.18.1-py3-none-macosx_12_0_arm64.whl", "size": 21430663, "sha256": "e599…55cb" }
+      ],
+      "accelerators": [
+        { "id": "openvino", "platform": "win-x64", "version": "2026.4.1", "url": "https://files.pythonhosted.org/packages/d0/44/…/openvino-2026.4.1-22982-cp312-cp312-win_amd64.whl", "name": "openvino-2026.4.1-22982-cp312-cp312-win_amd64.whl", "size": 84964415, "sha256": "4e04…cd87" }
+      ]
+    }
+  ]
+}
+```
+
+Core reads it from `main` with an hour's cache and a copy on disk, and installs
+a release only when the client asks (`POST /atomic/v1/engine-builds/litert-lm/install`
+or `POST /atomic/v1/engines/litert-lm/update`). The wheel is downloaded from
+its `url` and checked against `size` and `sha256` before it is unpacked; the
+core then loads it once in a probe run and only after that offers the build.
+`ATOMIC_LITERT_LM_MANIFEST_URL` (`https://` or `file://`) points core at
+another copy during development.
+
+### Fields
+
+- `schema_version` — `1`.
+- `releases` — newest first by `published_at`. Each release names the
+  LiteRT-LM `version` (the PyPI version of `litert-lm-api`), its PyPI upload
+  time as `published_at`, `notes_url`, and:
+  - `min_core_version` — the oldest core that understands the entry. **Core
+    skips a release whose `min_core_version` is newer than itself.**
+  - `abi` — our number, not Google's: the set and signatures of the C API
+    functions the core's binding reads. It goes up when they change, which
+    can happen within a LiteRT-LM minor version (0.18.1 was such a fix).
+    **Core skips a release whose `abi` it does not support**, and the active
+    build is the newest installed one with a supported `abi`.
+  - `assets` — one `litert-lm-api` wheel per platform, all four required:
+    `macos-arm64` (`macosx_12_0_arm64`), `linux-x64` (`manylinux_2_27_x86_64`),
+    `linux-arm64` (`manylinux_2_27_aarch64`), `win-x64` (`win_amd64`). There
+    are no wheels for macOS x64 or Windows arm64, so the provider does not
+    exist there. Core selects by `platform`, never by parsing `name`. `url`
+    is the explicit `files.pythonhosted.org` link from the PyPI JSON API: the
+    path holds hash directories the version does not determine, so it is not a
+    template.
+  - `accelerators` — optional, `win-x64` only: the `openvino` wheel with the
+    OpenVINO `version`. Intel NPU models need its native libraries; core
+    downloads it only on `POST /atomic/v1/runtimes/litert-lm/accelerators/prepare`,
+    never with the build, since it is 85 MB that only NPU owners need. Any
+    `cp3xx` wheel will do: core takes only `openvino/libs`, which is the same
+    in each.
+
+Besides the schema (which already rejects an asset without `size` or
+`sha256`, a URL outside PyPI and an unknown platform), CI rejects a duplicate
+`version`, a duplicate `platform` or asset name within a release, a release
+missing one of the four platforms, an accelerator listed twice or outside
+`win-x64`, releases out of `published_at` order, and a published release whose
+content changed.
+
+### A release is never rewritten
+
+Once a release entry is on `main`, its fields do not change: the core keeps an
+installed build under its version, and a different wheel under the same
+version would fail every install's `sha256` check. CI compares every release
+with the same `version` on the base branch and fails when the content differs.
+A fix is a **new release at the top**; a broken one is removed (new installs
+stop within the hour), not edited.
+
+### How to add a release
+
+Take the URLs, sizes and upload time from the PyPI JSON API, then download
+every wheel and count `sha256` yourself: the hash in the manifest is the only
+check on what core loads into its own process, so it must not be a copy of
+the one PyPI reports.
+
+```bash
+curl -fsS https://pypi.org/pypi/litert-lm-api/0.18.1/json | jq '[.urls[] | select(.filename | test("macosx_12_0_arm64|manylinux_2_27|win_amd64")) | {name: .filename, url, size, sha256: .digests.sha256, published_at: .upload_time_iso_8601}]'
+curl -fsS https://pypi.org/pypi/openvino/2026.4.1/json | jq '.urls[] | select(.filename | endswith("-cp312-cp312-win_amd64.whl")) | {name: .filename, url, size, sha256: .digests.sha256}'
+curl -fLO "<url>" && shasum -a 256 "<name>"
+```
+
+Map each wheel to its `platform`, set `published_at` to the earliest upload
+time of the release, `abi` to the number core's binding supports for it (a
+new number when the C API changed), and `min_core_version` to the first core
+release that supports this one. Insert the entry at the top of `releases`,
+run `make validate`, and open a PR with the `shasum -a 256` output in its
+description.
+
+## LiteRT-LM model list
+
+[`models/litert-lm-models.json`](models/litert-lm-models.json) tells the app
+and `atc` which LiteRT-LM models Atomic Chat has checked and where to find the
+rest on Hugging Face. Schema:
+[`models/schema.litert-lm-models.json`](models/schema.litert-lm-models.json);
+integrity checks:
+[`.github/scripts/litert-lm-models-check.mjs`](.github/scripts/litert-lm-models-check.mjs).
+
+```json
+{
+  "$schema": "./schema.litert-lm-models.json",
+  "schema_version": 1,
+  "updated_at": "2026-10-22T00:00:00Z",
+  "huggingface": {
+    "orgs": ["litert-community"],
+    "filter": "litert-lm",
+    "backends": { "macos-arm64": ["cpu", "gpu"], "linux-x64": ["cpu", "gpu"], "linux-arm64": ["cpu", "gpu"], "win-x64": ["cpu", "gpu"] }
+  },
+  "models": [
+    {
+      "id": "gemma-4-e2b", "name": "Gemma 4 E2B", "description": "…", "task": "chat", "license": "apache-2.0",
+      "repo": "litert-community/gemma-4-E2B-it-litert-lm", "revision": "41c5…bce7", "gated": false,
+      "context_length": 32003, "tools": true, "reasoning": true, "vision": true,
+      "variants": [
+        { "id": "gemma-4-e2b-gpu", "backend": "gpu", "platforms": ["macos-arm64", "linux-x64", "linux-arm64", "win-x64"],
+          "file": { "path": "gemma-4-E2B-it.litertlm", "size": 2588147712, "sha256": "1819…a63c" } },
+        { "id": "gemma-4-e2b-npu-lnl", "backend": "npu", "npu": "intel-lnl", "platforms": ["win-x64"],
+          "file": { "path": "gemma-4-E2B-it_intel_LNL.litertlm", "size": 2960506880, "sha256": "…" } }
+      ]
+    }
+  ]
+}
+```
+
+The NPU variant above shows the shape only: the published list has none yet,
+since NPU opens after acceptance on a real Intel NPU machine.
+
+The core never downloads LiteRT-LM models. The client downloads a variant's
+file from `https://huggingface.co/<repo>/resolve/<revision>/<path>` into
+`<data>/litert-lm/models/<variant id>/`, checks `size` and `sha256`, asks the
+core to check the file (`POST /atomic/v1/models/litert-lm/check`) and writes
+`model.yml` last. For a `gated` repository it sends the user's HF token, and
+only to Hugging Face hosts. `VITE_LITERT_LM_MODELS_URL` (app, dev builds) and
+`ATC_LITERT_LM_MODELS_URL` (`atc`) point a client at another copy during
+development.
+
+### Fields
+
+- `schema_version` — `1`; a client keeps the last list it accepted when this
+  is higher than it knows. `updated_at` — when the list last changed.
+- `huggingface` — where models beyond the curated ones come from:
+  - `orgs` — organisations the client lists, `filter` — always `litert-lm`,
+    the model tag it filters on.
+  - `backends` — for each platform, the backends the client may offer for
+    Hugging Face models there. Only `macos-arm64`, `linux-x64`,
+    `linux-arm64` and `win-x64`; `npu` only on `win-x64`.
+- `models` — curated models, shown first in the order listed; may be empty.
+  Each has `id`, `name`, `description`, `task` (`chat`), `license`, the
+  Hugging Face `repo` and the full commit `revision` its files are pinned to,
+  `gated`, the default `context_length` (the host never goes above the file's
+  own maximum), the `tools`, `reasoning` and `vision` flags, and `variants`:
+  - `id` — unique across the list: it names the download task and the folder
+    on disk.
+  - `backend` — `cpu`, `gpu` or `npu`; `npu` — the NPU generation an `npu`
+    variant's file is compiled for ahead of time, `intel-lnl` (Lunar Lake) or
+    `intel-ptl` (Panther Lake). Required on `npu` variants, forbidden on
+    others.
+  - `platforms` — where the variant is offered. `npu` runs only on `win-x64`.
+  - `min_runtime_version` — optional, the oldest LiteRT-LM the file loads in,
+    when it is known before the download; the core reads the real one from
+    the file.
+  - `file` — `path` inside the repository (the file keeps its name in the
+    variant folder), `size` and `sha256`.
+
+A client hides a variant whose backend, NPU target or platform it does not
+know, and a model left with no variants, instead of dropping the list. Besides
+the schema, CI rejects duplicate model or variant ids, two curated models for
+one repo, unsafe file paths, a backend on a platform where it does not run,
+and an unknown platform or backend in `huggingface.backends`.
+
+### Hugging Face models
+
+The client lists `GET /api/models?author=<org>&filter=litert-lm` for every
+org, shows those models after the curated ones marked "Hugging Face, not
+checked by Atomic Chat", and uses the curated entry instead for a repo the
+list already has. Variants come from the `.litertlm` file names of the repo at
+the commit of the listing:
+
+- a `-gpu` or `_gpu` suffix — `gpu`;
+- `_intel_LNL` or `_intel_PTL` — `npu` with `intel-lnl` or `intel-ptl`;
+- no suffix — `cpu`, and also `gpu` when the repo has no GPU-suffixed file;
+- `-web`, `_web`, other chip suffixes (`_sm<n>`, `_mt<n>`,
+  `_Google_Tensor_*` and the like) and `.task` files are never offered;
+- a variant whose backend `huggingface.backends` does not allow on the host
+  platform is not offered.
+
+Size and `sha256` come from the LFS metadata of the repo tree, so these files
+are checked too.
+
+### Closing a platform with data
+
+A backend that turns out bad on a platform is closed without a release of the
+app or `atc`, within the hour of the merge: remove the platform from the
+`platforms` of the curated variants with that backend, and remove the backend
+from that platform in `huggingface.backends` for Hugging Face models.
+
+### How to curate a model
+
+Pin `revision` to the repo's current commit
+(`curl -fsS https://huggingface.co/api/models/<repo> | jq -r .sha`), pick the
+files by the rule above, and download each one from its `resolve/<revision>`
+URL. Count `sha256` and `size` yourself (`shasum -a 256`, `stat`): do not copy
+them from Hugging Face. Read each file with core's `litert-host inspect` for
+its backends, context and modalities; its tool calling and thinking flags are
+often `false` even when the model has both, so take `tools` and `reasoning`
+from the model card, together with any minimum LiteRT-LM version. Prefer the
+main file for a `gpu` variant when it lists `gpu`: a `-gpu` file is text only,
+and `gemma-4-E2B-it-gpu.litertlm` produced broken output on Metal. Run
+the same greedy prompt on CPU and GPU before opening a GPU variant on a
+platform. Then run `make validate`, and open a PR with the `shasum -a 256`
+table in its description.
+
 ## Runtime descriptors (`runtimes/`)
 
 A runtime descriptor tells atomic-chat-core which container image a
@@ -2286,6 +2519,23 @@ every push and pull request. It performs the following checks:
   model, the resolve template's `{region}` and `{asset_id}`, an https
   `catalog.url`, platforms each execution provider runs on, and that a variant
   `context_length` is smaller than its model's.
+- `ajv` validates `backends/litert-lm-manifest.json` against
+  `backends/litert-lm-schema.json`, and
+  `.github/scripts/litert-lm-manifest-check.mjs` checks unique versions,
+  unique platforms and asset names per release, all four platforms in every
+  release, accelerators only on `win-x64`, releases ordered newest first by
+  `published_at`, and that no release on the base branch changed content;
+  `node --test` over `.github/scripts/litert-lm-manifest-check.test.mjs`
+  checks that broken copies fail.
+- `ajv` validates `models/litert-lm-models.json` against
+  `models/schema.litert-lm-models.json` (which also requires `npu` on an NPU
+  variant and forbids it on others), and
+  `.github/scripts/litert-lm-models-check.mjs` checks unique model and variant
+  ids and repos, safe file paths, that each variant's backend runs on its
+  platforms (`npu` only on `win-x64`), and that `huggingface.backends` names
+  only the four platforms and backends that run there; `node --test` over
+  `.github/scripts/litert-lm-models-check.test.mjs` checks that broken copies
+  fail.
 - Cross-field integrity that the schema cannot express is checked by
   `node --test` over `.github/scripts/inventory-digest.test.mjs` and
   `.github/scripts/runtime-descriptor-integrity.test.mjs`, on every
@@ -2351,6 +2601,10 @@ npx ajv-cli@5 validate -s backends/foundry-local-schema.json -d backends/foundry
 node .github/scripts/foundry-local-manifest-check.mjs
 npx ajv-cli@5 validate -s models/schema.foundry-local-models.json -d models/foundry-local-models.json --strict=false
 node .github/scripts/foundry-local-models-check.mjs
+npx ajv-cli@5 validate -s backends/litert-lm-schema.json -d backends/litert-lm-manifest.json --strict=false
+node .github/scripts/litert-lm-manifest-check.mjs
+npx ajv-cli@5 validate -s models/schema.litert-lm-models.json -d models/litert-lm-models.json --strict=false
+node .github/scripts/litert-lm-models-check.mjs
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/vllm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
