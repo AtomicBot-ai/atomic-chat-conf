@@ -184,6 +184,52 @@ the live probe, set the optional boolean:
 This is backwards-compatible — older clients simply ignore the field — so it
 does **not** require a `schema_version` bump.
 
+### Checking a key on Connect (`key_check`)
+
+When the user connects a provider, the client checks the key before calling
+the provider connected. By default it asks `GET {base_url}/models` with the
+key: a list means the key works, a 401 means it is invalid. A few providers
+answer their model list without any key, so a wrong key would pass. For those,
+`key_check` names a request that needs a valid key:
+
+```json
+"key_check": { "path": "/key" }
+```
+
+```json
+"key_check": { "url": "https://huggingface.co/api/whoami-v2" }
+```
+
+- `path` is joined onto `base_url`; `url` is an absolute HTTPS URL. Exactly
+  one of the two. `method` is optional and only `GET` is allowed.
+- Any 2xx answer means the key works; a 401 that is not about missing
+  permissions means it is invalid; anything else leaves the key saved but
+  "not verified".
+- Set it only to an endpoint the provider documents as requiring a valid key
+  and costing nothing to call, and put the doc link in the PR.
+- A `url` host must be `base_url`'s host or share its parent domain (CI
+  checks this). The client uses a `url` check only while the user's base URL
+  is still on such a host, so a key typed for another server is never sent
+  to the provider.
+
+Providers with a `key_check` today:
+
+- `openrouter` — `{ "path": "/key" }`, i.e. `GET https://openrouter.ai/api/v1/key`,
+  documented under [Limits](https://openrouter.ai/docs/api-reference/limits)
+  and [Get current API key](https://openrouter.ai/docs/api/api-reference/api-keys/get-current-key)
+  (401 for a missing or invalid key).
+- `huggingface` — `{ "url": "https://huggingface.co/api/whoami-v2" }`,
+  the Hub's [Auth endpoint](https://huggingface.co/.well-known/openapi.md);
+  [`huggingface_hub`](https://github.com/huggingface/huggingface_hub/blob/v2.2.0/src/huggingface_hub/hf_api.py)
+  reads its 401 as "Invalid user token" and notes it is strictly rate-limited.
+
+`aimlapi` and `edenai` document their model lists as needing no key, and
+`nvidia` documents no key-information endpoint; none of the three documents a
+free endpoint that rejects an invalid key, so they have no `key_check`. A wrong
+key there is found by the first chat it fails.
+
+Older clients ignore the field, so it needs no `schema_version` bump.
+
 ## Capabilities
 
 The `capabilities` array on each model uses these values:

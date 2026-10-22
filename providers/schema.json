@@ -46,6 +46,7 @@
           "default": true,
           "description": "Controls the client's Refresh (\u21bb) button. true or absent: show the curated registry list UNION the provider's live GET /v1/models. false: show the curated registry list only and skip the live probe (use when /v1/models returns hundreds of junk/internal model ids)."
         },
+        "key_check": { "$ref": "#/definitions/keyCheck" },
         "settings": {
           "type": "array",
           "items": { "$ref": "#/definitions/providerSetting" }
@@ -95,6 +96,30 @@
           }
         }
       }
+    },
+    "keyCheck": {
+      "type": "object",
+      "description": "Optional. The request the client sends, with the user's key, to check that key on Connect, instead of GET {base_url}/models. Set it only for a provider whose model list answers without a valid key, and only to a documented endpoint that requires a valid key and costs nothing to call. Any 2xx means the key works; a 401 means it is invalid. Exactly one of `path` or `url`.",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^/[^/]",
+          "description": "Joined onto base_url, e.g. \"/key\" for https://openrouter.ai/api/v1/key."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "description": "An absolute HTTPS URL, for an endpoint outside base_url. Its host must be base_url's host or share its parent domain (CI checks this); the client also skips it when the user has changed base_url to another host, so a key is never sent elsewhere."
+        },
+        "method": {
+          "type": "string",
+          "enum": ["GET"],
+          "default": "GET"
+        }
+      },
+      "oneOf": [{ "required": ["path"] }, { "required": ["url"] }]
     },
     "customHeader": {
       "type": "object",
