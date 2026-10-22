@@ -1312,27 +1312,30 @@ integrity checks:
 {
   "$schema": "./schema.litert-lm-models.json",
   "schema_version": 1,
-  "updated_at": "2026-10-21T00:00:00Z",
+  "updated_at": "2026-10-22T00:00:00Z",
   "huggingface": {
     "orgs": ["litert-community"],
     "filter": "litert-lm",
-    "backends": { "macos-arm64": ["cpu", "gpu"], "win-x64": ["cpu", "gpu", "npu"] }
+    "backends": { "macos-arm64": ["cpu", "gpu"], "linux-x64": ["cpu"], "linux-arm64": ["cpu"], "win-x64": ["cpu"] }
   },
   "models": [
     {
-      "id": "gemma-4-e2b", "name": "Gemma 4 E2B", "description": "…", "task": "chat", "license": "…",
-      "repo": "litert-community/gemma-4-E2B-it-litert-lm", "revision": "<40 hex>", "gated": false,
-      "context_length": 32768, "tools": true, "reasoning": true, "vision": true,
+      "id": "gemma-4-e2b", "name": "Gemma 4 E2B", "description": "…", "task": "chat", "license": "apache-2.0",
+      "repo": "litert-community/gemma-4-E2B-it-litert-lm", "revision": "41c5…bce7", "gated": false,
+      "context_length": 32003, "tools": true, "reasoning": true, "vision": true,
       "variants": [
-        { "id": "gemma-4-e2b-gpu", "backend": "gpu", "platforms": ["macos-arm64", "win-x64"],
-          "file": { "path": "gemma-4-E2B-it-gpu.litertlm", "size": 0, "sha256": "…" } },
+        { "id": "gemma-4-e2b-gpu", "backend": "gpu", "platforms": ["macos-arm64"],
+          "file": { "path": "gemma-4-E2B-it.litertlm", "size": 2588147712, "sha256": "1819…a63c" } },
         { "id": "gemma-4-e2b-npu-lnl", "backend": "npu", "npu": "intel-lnl", "platforms": ["win-x64"],
-          "file": { "path": "gemma-4-E2B-it_intel_LNL.litertlm", "size": 0, "sha256": "…" } }
+          "file": { "path": "gemma-4-E2B-it_intel_LNL.litertlm", "size": 2960506880, "sha256": "…" } }
       ]
     }
   ]
 }
 ```
+
+The NPU variant above shows the shape only: the published list has none yet,
+since NPU opens after acceptance on a real Intel NPU machine.
 
 The core never downloads LiteRT-LM models. The client downloads a variant's
 file from `https://huggingface.co/<repo>/resolve/<revision>/<path>` into
@@ -1409,9 +1412,15 @@ Pin `revision` to the repo's current commit
 (`curl -fsS https://huggingface.co/api/models/<repo> | jq -r .sha`), pick the
 files by the rule above, and download each one from its `resolve/<revision>`
 URL. Count `sha256` and `size` yourself (`shasum -a 256`, `stat`): do not copy
-them from Hugging Face. Fill the model's flags from its model card, run
-`make validate`, and open a PR with the `shasum -a 256` table in its
-description.
+them from Hugging Face. Read each file with core's `litert-host inspect` for
+its backends, context and modalities; its tool calling and thinking flags are
+often `false` even when the model has both, so take `tools` and `reasoning`
+from the model card, together with any minimum LiteRT-LM version. Prefer the
+main file for a `gpu` variant when it lists `gpu`: a `-gpu` file is text only,
+and `gemma-4-E2B-it-gpu.litertlm` produced broken output on Metal. Run
+the same greedy prompt on CPU and GPU before opening a GPU variant on a
+platform. Then run `make validate`, and open a PR with the `shasum -a 256`
+table in its description.
 
 ## Runtime descriptors (`runtimes/`)
 
