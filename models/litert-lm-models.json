@@ -7,9 +7,9 @@
     "filter": "litert-lm",
     "backends": {
       "macos-arm64": ["cpu", "gpu"],
-      "linux-x64": ["cpu"],
-      "linux-arm64": ["cpu"],
-      "win-x64": ["cpu"]
+      "linux-x64": ["cpu", "gpu"],
+      "linux-arm64": ["cpu", "gpu"],
+      "win-x64": ["cpu", "gpu"]
     }
   },
   "models": [
@@ -40,7 +40,7 @@
         {
           "id": "gemma-4-e2b-gpu",
           "backend": "gpu",
-          "platforms": ["macos-arm64"],
+          "platforms": ["macos-arm64", "linux-x64", "linux-arm64", "win-x64"],
           "file": {
             "path": "gemma-4-E2B-it.litertlm",
             "size": 2588147712,
@@ -76,7 +76,7 @@
         {
           "id": "gemma-4-e4b-gpu",
           "backend": "gpu",
-          "platforms": ["macos-arm64"],
+          "platforms": ["macos-arm64", "linux-x64", "linux-arm64", "win-x64"],
           "file": {
             "path": "gemma-4-E4B-it.litertlm",
             "size": 3659530240,
@@ -112,7 +112,7 @@
         {
           "id": "gemma-4-12b-gpu",
           "backend": "gpu",
-          "platforms": ["macos-arm64"],
+          "platforms": ["macos-arm64", "linux-x64", "linux-arm64", "win-x64"],
           "file": {
             "path": "gemma-4-12B-it.litertlm",
             "size": 6883278368,
@@ -149,7 +149,7 @@
         {
           "id": "qwen3-4b-gpu",
           "backend": "gpu",
-          "platforms": ["macos-arm64"],
+          "platforms": ["macos-arm64", "linux-x64", "linux-arm64", "win-x64"],
           "min_runtime_version": "0.18.0",
           "file": {
             "path": "qwen3_4b_channelwise_int8_float32kv.litertlm",

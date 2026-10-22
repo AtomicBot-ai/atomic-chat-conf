@@ -1316,7 +1316,7 @@ integrity checks:
   "huggingface": {
     "orgs": ["litert-community"],
     "filter": "litert-lm",
-    "backends": { "macos-arm64": ["cpu", "gpu"], "linux-x64": ["cpu"], "linux-arm64": ["cpu"], "win-x64": ["cpu"] }
+    "backends": { "macos-arm64": ["cpu", "gpu"], "linux-x64": ["cpu", "gpu"], "linux-arm64": ["cpu", "gpu"], "win-x64": ["cpu", "gpu"] }
   },
   "models": [
     {
@@ -1324,7 +1324,7 @@ integrity checks:
       "repo": "litert-community/gemma-4-E2B-it-litert-lm", "revision": "41c5…bce7", "gated": false,
       "context_length": 32003, "tools": true, "reasoning": true, "vision": true,
       "variants": [
-        { "id": "gemma-4-e2b-gpu", "backend": "gpu", "platforms": ["macos-arm64"],
+        { "id": "gemma-4-e2b-gpu", "backend": "gpu", "platforms": ["macos-arm64", "linux-x64", "linux-arm64", "win-x64"],
           "file": { "path": "gemma-4-E2B-it.litertlm", "size": 2588147712, "sha256": "1819…a63c" } },
         { "id": "gemma-4-e2b-npu-lnl", "backend": "npu", "npu": "intel-lnl", "platforms": ["win-x64"],
           "file": { "path": "gemma-4-E2B-it_intel_LNL.litertlm", "size": 2960506880, "sha256": "…" } }
