@@ -1,7 +1,7 @@
 {
   "$schema": "./llamacpp-upstream-releases-schema.json",
   "schema_version": 1,
-  "updated_at": "2026-10-26T10:14:30Z",
+  "updated_at": "2026-10-26T10:25:24Z",
   "upstream_repo": "ggml-org/llama.cpp",
   "download_base": "https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download",
   "releases": [
@@ -16,85 +16,85 @@
           "name": "llama-b11870-bin-macos-arm64.tar.gz",
           "sha256": "991e1380fd9cf0c8a2343ee7fda202f8efe26b16e14acd8778b68725bc8868e7",
           "size": 16334235,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-ubuntu-arm64.tar.gz",
           "sha256": "0190be3c22b16151b2b9bfb59f7a62c20ec2f24caa9a6b2a0251a0d160789336",
           "size": 18202293,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-ubuntu-cuda-13.4-arm64.tar.gz",
           "sha256": "3deed28c4f4fa4a2ba9eb21449be511a3863daa68f9e7e892d6e10e5fb31eb5d",
           "size": 154137720,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-ubuntu-vulkan-arm64.tar.gz",
           "sha256": "121f343fa87b284a0d4f5c728146ff9f7c617c54e709c531abf1ebbb07fe46a2",
           "size": 28504387,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-ubuntu-vulkan-x64.tar.gz",
           "sha256": "beed31718bab84fb0ced472752dd1c42ef46363d9acb26773480b43206779fbe",
           "size": 35153527,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-ubuntu-x64.tar.gz",
           "sha256": "e4b4204cfa97f8864c44fed2877c76a126c816ce93dc90f339289e7dabfb00af",
           "size": 22485156,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-win-cpu-arm64.zip",
           "sha256": "6d6fea30eef62c481d4400a3f9b4cd45dc4bb81bcac46f123667649fd738cfd4",
           "size": 10959598,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-win-cpu-x64.zip",
           "sha256": "0918562f0d5b66c0c1ad476c8297a52805d953c1b943f3b49d4ae06573dd83c1",
           "size": 18143948,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-win-cuda-12.4-x64.zip",
           "sha256": "2097be64874639c363044f98baeaa4da1daaf7c26d0408442eb72c9a26f40455",
           "size": 265869486,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-win-cuda-13.4-arm64.zip",
           "sha256": "4df69bc696b0389df911722d853f9346c54956bd8f2a7c906bab5c25dd2ff4c7",
           "size": 145697479,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-win-cuda-13.4-x64.zip",
           "sha256": "22836f53c91e4c7c1746df158eeb626ddc0e3115d6667c44fcbeb32af3a187fb",
           "size": 153265232,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-win-opencl-adreno-arm64.zip",
           "sha256": "cec5dc01c1ca3870fbcaffc1157821804fc0018e7f121eef608a5a95a19f5f82",
           "size": 11547983,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-win-rocm-10.0-x64.zip",
           "sha256": "67723df7a67d29a610af862c6355a1f1c501101a512b7091ec43b176c1d3f441",
           "size": 257517005,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b11870-bin-win-vulkan-x64.zip",
           "sha256": "4163b20c9135c5ac3117440f4973ff5308fcb408c0847c9a2e2a6f510b159660",
           "size": 30241832,
-          "validation": "candidate"
+          "validation": "approved"
         }
       ]
     },
