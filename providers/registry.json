@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-10-19T12:15:00Z",
+  "updated_at": "2026-10-22T12:00:00Z",
   "providers": [
     {
       "active": true,
@@ -212,6 +212,7 @@
       "base_url": "https://openrouter.ai/api/v1",
       "explore_models_url": "https://openrouter.ai/models",
       "provider": "openrouter",
+      "key_check": { "path": "/key" },
       "settings": [
         {
           "key": "api-key",
@@ -793,6 +794,7 @@
       "base_url": "https://router.huggingface.co/v1",
       "explore_models_url": "https://huggingface.co/models?pipeline_tag=text-generation&inference_provider=all",
       "provider": "huggingface",
+      "key_check": { "url": "https://huggingface.co/api/whoami-v2" },
       "settings": [
         {
           "key": "api-key",

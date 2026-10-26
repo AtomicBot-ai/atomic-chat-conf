@@ -61,6 +61,23 @@ jobs:
                 )
               }
 
+              // A key check outside base_url must stay with the same
+              // provider: the user's key is sent to it.
+              if (p.key_check && p.key_check.url) {
+                const checkHost = new URL(p.key_check.url).hostname
+                const baseHost = new URL(p.base_url).hostname
+                const related =
+                  checkHost === baseHost ||
+                  baseHost.endsWith('.' + checkHost) ||
+                  checkHost.endsWith('.' + baseHost)
+                if (!related) {
+                  errors.push(
+                    `Provider "${p.provider}" key_check.url host ${checkHost} ` +
+                      `is not base_url's host ${baseHost} or its parent domain.`
+                  )
+                }
+              }
+
               if (Array.isArray(p.models)) {
                 const modelIds = new Set()
                 for (const m of p.models) {
