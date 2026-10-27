@@ -216,6 +216,9 @@ validate:
 	npx --yes ajv-cli@5 validate -s models/schema.litert-lm-models.json -d models/litert-lm-models.json --strict=false
 	node --test .github/scripts/litert-lm-models-check.test.mjs
 	node .github/scripts/litert-lm-models-check.mjs
+	npx --yes ajv-cli@5 validate -s backends/geniex-schema.json -d backends/geniex-manifest.json --strict=false
+	node --test .github/scripts/geniex-manifest-check.test.mjs
+	node .github/scripts/geniex-manifest-check.mjs
 	npx --yes ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
 	npx --yes ajv-cli@5 validate -s runtimes/environments/windows.schema.json -d runtimes/environments/windows.json --strict=true
 	npx --yes ajv-cli@5 validate -s runtimes/environments/windows-arm64.schema.json -d runtimes/environments/windows-arm64.json --strict=true

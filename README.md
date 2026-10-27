@@ -61,6 +61,8 @@ backends/
   foundry-local-schema.json   # JSON Schema (Draft-07) for the Foundry Local manifest
   litert-lm-manifest.json  # LiteRT-LM library wheels on PyPI per platform, plus OpenVINO (read by core)
   litert-lm-schema.json    # JSON Schema (Draft-07) for the LiteRT-LM manifest
+  geniex-manifest.json     # GenieX SDK zips on Qualcomm's S3 mirror, Windows on Snapdragon X (read by core)
+  geniex-schema.json       # JSON Schema (Draft-07) for the GenieX manifest
 runtimes/
   tensorrt-llm.json  # TensorRT-LLM managed-engine runtime descriptor
   vllm.json          # vLLM managed-engine runtime descriptor (branch only until live acceptance)
@@ -1430,6 +1432,104 @@ the same greedy prompt on CPU and GPU before opening a GPU variant on a
 platform. Then run `make validate`, and open a PR with the `shasum -a 256`
 table in its description.
 
+## GenieX runtime manifest
+
+[`backends/geniex-manifest.json`](backends/geniex-manifest.json) lists the
+GenieX releases Atomic Chat core installs as the `geniex` engine build:
+Qualcomm's GenieX SDK (`geniex.dll`, its `llama_cpp` and `qairt` plugins and
+the Microsoft-signed HTP files), which runs the `geniex` provider's GGUF
+models and AI Hub bundles on the Snapdragon X NPU, GPU or CPU. Qualcomm
+publishes the SDK as a zip on GitHub and on its S3 mirror
+(`qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-geniex/`); the core
+unpacks the zip and keeps only `lib/**`. Schema:
+[`backends/geniex-schema.json`](backends/geniex-schema.json); integrity
+checks:
+[`.github/scripts/geniex-manifest-check.mjs`](.github/scripts/geniex-manifest-check.mjs).
+
+```json
+{
+  "$schema": "./geniex-schema.json",
+  "schema_version": 1,
+  "releases": [
+    {
+      "version": "0.9.3",
+      "published_at": "2026-10-19T23:09:06Z",
+      "min_core_version": "0.20.0",
+      "abi": 1,
+      "notes_url": "https://github.com/qualcomm/GenieX/releases/tag/v0.9.3",
+      "assets": [
+        { "platform": "win-arm64", "url": "https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-geniex/geniex-sdk-windows-arm64-v0.9.3.zip", "name": "geniex-sdk-windows-arm64-v0.9.3.zip", "size": 91519631, "sha256": "3edf…0446" }
+      ]
+    }
+  ]
+}
+```
+
+Core reads it from `main` with an hour's cache and a copy on disk, and only on
+Windows arm64 with a Snapdragon X Elite or X2 Elite: elsewhere the provider
+does not exist. It installs a release only when the client asks
+(`POST /atomic/v1/engines/geniex/update` or the first install from the
+provider page). The zip is downloaded from its `url` and checked against
+`size` and `sha256` before it is unpacked; the core then runs
+`geniex-host probe` against the unpacked `lib/` and offers the build only
+after the probe answers. No administrator rights, driver install or test
+signing: the HTP files load from the build folder.
+`ATOMIC_GENIEX_MANIFEST_URL` (`https://` or `file://`) points core at another
+copy during development.
+
+### Fields
+
+- `schema_version` — `1`.
+- `releases` — newest first by `published_at`. Each release names the GenieX
+  `version` (the release tag without its `v`), the `released_at` of the
+  mirror's `manifest-<tag>.json` as `published_at`, `notes_url` (the GitHub
+  release page), and:
+  - `min_core_version` — the oldest core that understands the entry. **Core
+    skips a release whose `min_core_version` is newer than itself.**
+  - `abi` — our number, not Qualcomm's: the set and signatures of the C API
+    functions the core's binding reads. GenieX is pre-1.0 and changes its
+    header with minor versions, so it goes up when they change. **Core skips
+    a release whose `abi` it does not support**, and the active build is the
+    newest installed one with a supported `abi`.
+  - `assets` — one SDK zip per platform, `win-arm64` only for now. Core
+    selects by `platform`, never by parsing `name`. `url` is explicit and
+    must sit on the S3 mirror or under
+    `github.com/qualcomm/GenieX/releases/download/`; the core refuses any
+    other host.
+
+Besides the schema (which already rejects an asset without `size` or
+`sha256`, a URL on another host, an unknown platform and an unknown field),
+CI rejects a duplicate `version`, a duplicate or missing `platform` and a
+duplicate asset name within a release, releases out of `published_at` order,
+and a published release whose content changed.
+
+### A release is never rewritten
+
+Once a release entry is on `main`, its fields do not change: the core keeps an
+installed build under its version, and a different zip under the same version
+would fail every install's `sha256` check. CI compares every release with the
+same `version` on the base branch and fails when the content differs. A fix is
+a **new release at the top**; a broken one is removed (new installs stop
+within the hour), not edited.
+
+### How to add a release
+
+Take the URL, size and release time from the mirror's `manifest-<tag>.json`,
+then download the zip and count `sha256` yourself: the hash in the manifest is
+the only check on what core loads into its own process, so the mirror's
+number is a cross-check, not the source.
+
+```bash
+curl -fsS https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-geniex/manifest-v0.9.3.json | jq '{published_at: .released_at, assets: [.assets[] | select(.kind == "sdk" and .platform == "windows") | {name, url, size, sha256}]}'
+curl -fLO "<url>" && shasum -a 256 "<name>"
+```
+
+Set `published_at` to `released_at`, `abi` to the number core's binding
+supports for it (a new number when the C API changed), and
+`min_core_version` to the first core release that supports this one. Insert
+the entry at the top of `releases`, run `make validate`, and open a PR with
+the `shasum -a 256` output in its description.
+
 ## Runtime descriptors (`runtimes/`)
 
 A runtime descriptor tells atomic-chat-core which container image a
@@ -2536,6 +2636,15 @@ every push and pull request. It performs the following checks:
   only the four platforms and backends that run there; `node --test` over
   `.github/scripts/litert-lm-models-check.test.mjs` checks that broken copies
   fail.
+- `ajv` validates `backends/geniex-manifest.json` against
+  `backends/geniex-schema.json` (an asset needs `size` and `sha256`, a URL on
+  Qualcomm's S3 mirror or GitHub release, a known platform and no unknown
+  field), and `.github/scripts/geniex-manifest-check.mjs` checks unique
+  versions, exactly one asset per platform with unique names, releases
+  ordered newest first by `published_at`, and that no release on the base
+  branch changed content; `node --test` over
+  `.github/scripts/geniex-manifest-check.test.mjs` checks that broken copies
+  fail the schema and the integrity checks.
 - Cross-field integrity that the schema cannot express is checked by
   `node --test` over `.github/scripts/inventory-digest.test.mjs` and
   `.github/scripts/runtime-descriptor-integrity.test.mjs`, on every
@@ -2605,6 +2714,8 @@ npx ajv-cli@5 validate -s backends/litert-lm-schema.json -d backends/litert-lm-m
 node .github/scripts/litert-lm-manifest-check.mjs
 npx ajv-cli@5 validate -s models/schema.litert-lm-models.json -d models/litert-lm-models.json --strict=false
 node .github/scripts/litert-lm-models-check.mjs
+npx ajv-cli@5 validate -s backends/geniex-schema.json -d backends/geniex-manifest.json --strict=false
+node .github/scripts/geniex-manifest-check.mjs
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/vllm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true
