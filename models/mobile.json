@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.mobile.json",
   "schema_version": 1,
-  "updated_at": "2026-10-21T00:00:00Z",
+  "updated_at": "2026-10-27T12:48:30Z",
   "models": [
     {
       "id": "LiquidAI/LFM2.5-VL-3B-GGUF/LFM2.5-VL-3B-Q4_0.gguf",
@@ -338,10 +338,10 @@
       "isOnboarding": false
     },
     {
-      "id": "prism-ml/Ternary-Bonsai-8B-gguf/Ternary-Bonsai-8B-Q2_0.gguf",
+      "id": "prism-ml/Ternary-Bonsai-8B-gguf/Ternary-Bonsai-8B-Q2_0_g64.gguf",
       "name": "Ternary Bonsai (8B)",
       "description": "Ternary-weight 8B model. Compact 8B-class reasoning at a fraction of the memory.",
-      "size": 2182184672,
+      "size": 2310125920,
       "iconUrl": "bonsai",
       "engine": "llama",
       "mmprojRemoteId": null,
