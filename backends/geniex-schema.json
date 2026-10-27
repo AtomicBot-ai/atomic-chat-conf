@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat GenieX Runtime Manifest",
+  "description": "Schema for the release catalog of the `geniex` engine build: Qualcomm's GenieX SDK (geniex.dll with its llama_cpp and qairt plugins and the signed HTP files), which the core installs on Snapdragon X laptops to run the `geniex` provider's GGUF models and AI Hub bundles on the NPU, GPU or CPU. One zip per platform, pinned by an explicit URL on Qualcomm's S3 mirror or GitHub release, size and sha256; the core keeps only `lib/**` of the archive. A published release is never rewritten; a fix is a new release on top. Cores skip releases whose `min_core_version` is newer than themselves or whose `abi` their binding does not support.",
+  "type": "object",
+  "required": ["schema_version", "releases"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "releases": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Newest first by published_at.",
+      "items": { "$ref": "#/definitions/release" }
+    }
+  },
+  "definitions": {
+    "release": {
+      "type": "object",
+      "required": ["version", "published_at", "min_core_version", "abi", "notes_url", "assets"],
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "GenieX version, the release tag without its `v`, e.g. 0.9.3."
+        },
+        "published_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "`released_at` of the mirror's manifest-<tag>.json. The core takes the newest installed release with a supported abi."
+        },
+        "min_core_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Oldest atomic-chat-core that understands this entry. Older cores skip it."
+        },
+        "abi": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Our number, not Qualcomm's: the set and signatures of the C API functions the core's binding reads. GenieX is pre-1.0 and changes its header with minor versions. A core that does not know it skips the release."
+        },
+        "notes_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Upstream release page shown next to an update offer."
+        },
+        "assets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/asset" }
+        }
+      }
+    },
+    "sdk_url": {
+      "type": "string",
+      "pattern": "^https://(qaihub-public-assets\\.s3\\.us-west-2\\.amazonaws\\.com/qai-hub-geniex/|github\\.com/qualcomm/GenieX/releases/download/)",
+      "description": "Explicit zip URL on Qualcomm's S3 mirror (qai-hub-geniex) or a qualcomm/GenieX GitHub release. The core refuses any other host."
+    },
+    "size": { "type": "integer", "minimum": 1 },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "asset": {
+      "type": "object",
+      "required": ["platform", "url", "name", "size", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "platform": {
+          "type": "string",
+          "enum": ["win-arm64"],
+          "description": "Host platform the core selects on; never derived from the zip name at runtime. Only Windows on Snapdragon X for now; a new platform is added to this enum."
+        },
+        "url": { "$ref": "#/definitions/sdk_url" },
+        "name": { "type": "string", "pattern": "^geniex-sdk-[a-z0-9-]+-v[0-9.]+\\.zip$" },
+        "size": { "$ref": "#/definitions/size" },
+        "sha256": { "$ref": "#/definitions/sha256" }
+      }
+    }
+  }
+}
