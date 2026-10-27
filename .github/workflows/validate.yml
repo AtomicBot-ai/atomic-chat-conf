@@ -606,6 +606,18 @@ jobs:
           node --test .github/scripts/geniex-manifest-check.test.mjs
           node .github/scripts/geniex-manifest-check.mjs
 
+      - name: Validate GenieX model list against schema
+        run: |
+          ajv validate \
+            -s models/schema.geniex-models.json \
+            -d models/geniex-models.json \
+            --strict=false
+
+      - name: Check GenieX model list integrity
+        run: |
+          node --test .github/scripts/geniex-models-check.test.mjs
+          node .github/scripts/geniex-models-check.mjs
+
       - name: Validate diffusion catalog against schema
         run: |
           ajv validate \

@@ -43,6 +43,8 @@ models/
   schema.foundry-local-models.json # JSON Schema (Draft-07) for the Foundry Local model list
   litert-lm-models.json # LiteRT-LM models: Hugging Face listing rules, curated models
   schema.litert-lm-models.json # JSON Schema (Draft-07) for the LiteRT-LM model list
+  geniex-models.json    # GenieX models: Hugging Face GGUF rules, curated GGUFs and AI Hub bundles
+  schema.geniex-models.json # JSON Schema (Draft-07) for the GenieX model list
 backends/
   llamacpp-upstream-releases.json # Mirrored llama.cpp releases with min_core_version (cores >= 0.15.0)
   llamacpp-upstream-releases-schema.json # JSON Schema (Draft-07) for the release list
@@ -1530,6 +1532,145 @@ supports for it (a new number when the C API changed), and
 the entry at the top of `releases`, run `make validate`, and open a PR with
 the `shasum -a 256` output in its description.
 
+## GenieX model list
+
+[`models/geniex-models.json`](models/geniex-models.json) tells the app and
+`atc` which GenieX models Atomic Chat has checked and how to fill the list
+from Hugging Face. Schema:
+[`models/schema.geniex-models.json`](models/schema.geniex-models.json);
+integrity checks:
+[`.github/scripts/geniex-models-check.mjs`](.github/scripts/geniex-models-check.mjs).
+
+```json
+{
+  "$schema": "./schema.geniex-models.json",
+  "schema_version": 1,
+  "updated_at": "2026-10-27T00:00:00Z",
+  "huggingface": {
+    "quantizations": ["Q4_0"],
+    "backends": { "win-arm64": ["npu", "gpu", "cpu", "hybrid"] }
+  },
+  "models": [
+    {
+      "id": "gemma-4-e2b", "name": "Gemma 4 E2B", "description": "…", "task": "chat", "license": "gemma",
+      "context_length": 32768, "tools": true, "reasoning": true, "vision": true,
+      "kind": "gguf", "repo": "google/gemma-4-E2B-it-qat-q4_0-gguf", "revision": "…", "gated": true,
+      "file": { "path": "gemma-4-E2B-it-Q4_0.gguf", "size": 0, "sha256": "…" },
+      "mmproj": { "path": "mmproj-gemma-4-E2B-it-F16.gguf", "size": 0, "sha256": "…" },
+      "devices": ["npu", "gpu", "cpu", "hybrid"], "platforms": ["win-arm64"]
+    },
+    {
+      "id": "qwen3-4b-qairt", "name": "Qwen3 4B (AI Hub)", "description": "…", "task": "chat", "license": "apache-2.0",
+      "context_length": 4096, "tools": true, "reasoning": true, "vision": false,
+      "kind": "qairt",
+      "variants": [
+        { "id": "qwen3-4b-x-elite", "chip": "x-elite", "precision": "w4a16", "min_runtime_version": "0.9.3",
+          "bundle": { "url": "https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-models/…/snapdragon-x-elite/….zip", "size": 0, "sha256": "…" } }
+      ]
+    }
+  ]
+}
+```
+
+The models above show the two shapes only: the published list has none yet.
+The first curated set (Gemma 4 E2B and E4B, Qwen3 4B as GGUF; Qwen3 4B and
+Gemma 4 E4B bundles) lands after core's spike on a Snapdragon X Elite settles
+the devices and the quantizations.
+
+Two kinds of model:
+
+- **`gguf`** — a GGUF file the GenieX `llama_cpp` plugin runs on the Hexagon
+  NPU, the Adreno GPU, the CPU, or `hybrid` (prefill on the NPU, decode on
+  the CPU). One file serves every device: the device is a setting of the
+  downloaded model, changed without a new download.
+- **`qairt`** — a bundle Qualcomm AI Hub compiled for one chip, run by the
+  `qairt` plugin on the NPU only. A model lists one variant per chip; the
+  client shows only the variant for the machine's chip.
+
+The core never downloads GenieX models. The client downloads a GGUF (and its
+`mmproj`) from `https://huggingface.co/<repo>/resolve/<revision>/<path>` into
+`<data>/geniex/models/<model id>/`, or a bundle zip from its `url` into
+`<data>/geniex/models/<variant id>/` (unpacked there, the zip deleted), checks
+`size` and `sha256`, asks the core to check the model
+(`POST /atomic/v1/models/geniex/check`) and writes `model.yml` last. For a
+`gated` repository it sends the user's HF token, and only to Hugging Face
+hosts. `VITE_GENIEX_MODELS_URL` (app, dev builds) and `ATC_GENIEX_MODELS_URL`
+(`atc`) point a client at another copy during development.
+
+### Fields
+
+- `schema_version` — `1`; a client keeps the last list it accepted when this
+  is higher than it knows. `updated_at` — when the list last changed.
+- `huggingface` — how GGUF models beyond the curated ones are offered:
+  - `quantizations` — the GGUF quantizations the client offers from a
+    Hugging Face repository (`Q4_0`, `Q8_0`, `F16`, `Q4_K_M`, `Q5_K_M`);
+    other files are not offered. `Q4_0` only until the NPU is measured with
+    K-quants.
+  - `backends` — for each platform, the devices the client may offer for
+    Hugging Face models there. Only `win-arm64`, where all four run.
+- `models` — curated models, shown first in the order listed; may be empty.
+  Each has `id` (unique across the list together with variant ids: it names
+  the download task and the folder on disk), `name`, `description`, `task`
+  (`chat`), `license`, the default `context_length`, the `tools`, `reasoning`
+  and `vision` flags, and `kind`:
+  - `gguf` — the Hugging Face `repo` and the full commit `revision` its files
+    are pinned to, `gated`, `file` (`path` inside the repository, `size`,
+    `sha256`), `mmproj` in the same shape (required when `vision` is true),
+    `devices` the model is offered on and `platforms`.
+  - `qairt` — `variants`, each with `id`, `chip` (`x-elite` or `x2-elite`),
+    `bundle` (`url` on AI Hub's S3 `qai-hub-models`, `size`, `sha256`),
+    `precision` as AI Hub names it (`w4a16`), and optional
+    `min_runtime_version`, the oldest GenieX the bundle loads in when known
+    before the download; the core reads the real one from the bundle's
+    `geniex.json`.
+
+A client hides a model of a kind, a variant of a chip and a device it does
+not know, and a model left with nothing to offer, instead of dropping the
+list. Besides the schema (which also rejects a bundle variant without `chip`,
+a GGUF without `devices`, a vision GGUF without `mmproj`, a bundle URL off
+AI Hub's S3 and any file or bundle without `sha256`), CI rejects duplicate
+ids across models and variants, two curated GGUFs for one repo, unsafe file
+paths, a device on a platform where it does not run, two bundle variants for
+one chip, and an unknown platform or device in `huggingface.backends`.
+
+### Hugging Face models
+
+The client runs the same GGUF repository search as the llama.cpp provider,
+shows the results after the curated ones marked "Hugging Face, not checked
+by Atomic Chat", and uses the curated entry instead for a repo the list
+already has. From a repository it offers only the files whose quantization is
+in `huggingface.quantizations`, finds `mmproj` when the repository has one,
+takes `size` and `sha256` from the LFS metadata of the repository tree, pins
+`revision` to the commit of the listing, and offers the devices
+`huggingface.backends` allows on the host platform. Bundles never come from
+Hugging Face: their only source is this list. When Hugging Face is down the
+client shows the curated list alone and says so.
+
+### Closing a device with data
+
+A device that turns out bad is closed without a release of the app or `atc`,
+within the hour of the merge: remove it from the `devices` of the curated
+GGUF models and from the platform in `huggingface.backends` for Hugging Face
+models. A bad bundle is removed from `variants`; installed copies keep
+working.
+
+### How to curate a model
+
+For a GGUF, pin `revision` to the repo's current commit
+(`curl -fsS https://huggingface.co/api/models/<repo> | jq -r .sha`), pick the
+`Q4_0` file and the `mmproj` for a vision model, and download each one from
+its `resolve/<revision>` URL. For a bundle, take `download_url` for the chip
+from the model's `release-assets.json` on AI Hub's S3
+(`qai-hub-models/releases/latest/manifest.json` lists the models) and
+download the zip. Count `sha256` and `size` yourself (`shasum -a 256`,
+`stat`): Hugging Face numbers are a cross-check and AI Hub publishes none.
+Read each GGUF with core's `geniex-host inspect` for its context and
+modalities, and each bundle's `geniex.json` for its chip, context, precision
+and minimum GenieX version; set `tools` only where the host parses the
+model's tool calls reliably. Open a device on a model only after the same
+greedy prompt was checked on it against the CPU. Then run `make validate`,
+and open a PR with the `shasum -a 256` table in its description.
+
 ## Runtime descriptors (`runtimes/`)
 
 A runtime descriptor tells atomic-chat-core which container image a
@@ -2645,6 +2786,16 @@ every push and pull request. It performs the following checks:
   branch changed content; `node --test` over
   `.github/scripts/geniex-manifest-check.test.mjs` checks that broken copies
   fail the schema and the integrity checks.
+- `ajv` validates `models/geniex-models.json` against
+  `models/schema.geniex-models.json` (a model is `gguf` or `qairt` by `kind`;
+  a bundle variant needs `chip`, a GGUF needs `devices`, a vision GGUF needs
+  `mmproj`, every file and bundle needs `sha256`), and
+  `.github/scripts/geniex-models-check.mjs` checks unique ids across models
+  and variants and unique repos, safe file paths, that each device runs on
+  the model's platforms, one bundle variant per chip, and that
+  `huggingface.backends` names only `win-arm64` and devices that run there;
+  `node --test` over `.github/scripts/geniex-models-check.test.mjs` checks
+  that broken copies fail the schema and the integrity checks.
 - Cross-field integrity that the schema cannot express is checked by
   `node --test` over `.github/scripts/inventory-digest.test.mjs` and
   `.github/scripts/runtime-descriptor-integrity.test.mjs`, on every
@@ -2716,6 +2867,8 @@ npx ajv-cli@5 validate -s models/schema.litert-lm-models.json -d models/litert-l
 node .github/scripts/litert-lm-models-check.mjs
 npx ajv-cli@5 validate -s backends/geniex-schema.json -d backends/geniex-manifest.json --strict=false
 node .github/scripts/geniex-manifest-check.mjs
+npx ajv-cli@5 validate -s models/schema.geniex-models.json -d models/geniex-models.json --strict=false
+node .github/scripts/geniex-models-check.mjs
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/tensorrt-llm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/schema.json -d runtimes/vllm.json --strict=true
 npx ajv-cli@5 validate -s runtimes/environments/linux.schema.json -d runtimes/environments/linux.json --strict=true

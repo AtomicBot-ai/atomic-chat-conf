@@ -1,0 +1,194 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat GenieX model list",
+  "description": "Models of the `geniex` provider (Qualcomm GenieX on Snapdragon X), plus how the app and `atc` fill the list from Hugging Face. Two kinds: `gguf` models the GenieX llama_cpp plugin runs on the NPU, GPU, CPU or both (a GGUF file and, for vision, its mmproj, downloaded from https://huggingface.co/<repo>/resolve/<revision>/<path> into <data>/geniex/models/<model id>/), and `qairt` bundles compiled by Qualcomm AI Hub for one chip (a zip on Qualcomm's S3, unpacked into <data>/geniex/models/<variant id>/, NPU only). The client checks size and sha256, asks the core to check the model and writes model.yml last. GGUF repositories from the llama.cpp Hugging Face search are shown after the curated ones, offering only the quantizations in `huggingface.quantizations` and the devices `huggingface.backends` allows on the host platform; a curated model with the same repo wins. Bundles come from this list only. A client hides a model of a kind, a variant of a chip and a device it does not know, so new kinds are added next to the old ones.",
+  "type": "object",
+  "required": ["schema_version", "updated_at", "huggingface", "models"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "huggingface": {
+      "type": "object",
+      "required": ["quantizations", "backends"],
+      "additionalProperties": false,
+      "properties": {
+        "quantizations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["Q4_0", "Q8_0", "F16", "Q4_K_M", "Q5_K_M"] },
+          "description": "GGUF quantizations the client offers from a Hugging Face repository; other files of the repository are not offered. Q4_0 is what the Hexagon backend of ggml runs best."
+        },
+        "backends": {
+          "type": "object",
+          "description": "Platform -> devices the client may offer for Hugging Face models there. Removing one closes it for every client within the hour, without a release.",
+          "additionalProperties": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "$ref": "#/definitions/device" }
+          }
+        }
+      }
+    },
+    "models": {
+      "type": "array",
+      "description": "Curated models, shown first in the order listed. May be empty: clients then show Hugging Face GGUF models only, and no bundles.",
+      "items": { "$ref": "#/definitions/model" }
+    }
+  },
+  "definitions": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+    "device": {
+      "type": "string",
+      "enum": ["npu", "gpu", "cpu", "hybrid"],
+      "description": "GenieX device: Hexagon NPU, Adreno GPU, CPU, or hybrid (prefill on the NPU, decode on the CPU)."
+    },
+    "platform": { "type": "string", "enum": ["win-arm64"] },
+    "chip": {
+      "type": "string",
+      "enum": ["x-elite", "x2-elite"],
+      "description": "The Snapdragon SoC an AI Hub bundle is compiled for: X Elite (X1E) or X2 Elite (X2E). The client shows only the variant for the machine's chip."
+    },
+    "size": { "type": "integer", "minimum": 1 },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "gguf_file": {
+      "type": "object",
+      "required": ["path", "size", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path inside the repository; the file keeps its name inside the model folder.",
+          "pattern": "^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*\\.gguf$"
+        },
+        "size": { "$ref": "#/definitions/size" },
+        "sha256": { "$ref": "#/definitions/sha256" }
+      }
+    },
+    "bundle": {
+      "type": "object",
+      "required": ["url", "size", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^https://qaihub-public-assets\\.s3\\.us-west-2\\.amazonaws\\.com/qai-hub-models/",
+          "description": "Explicit zip URL on Qualcomm AI Hub's S3 (the `download_url` of the model's release-assets.json). Qualcomm publishes no checksum and the URL changes with each AI Hub release, so the URL is pinned here and sha256 is ours."
+        },
+        "size": { "$ref": "#/definitions/size" },
+        "sha256": { "$ref": "#/definitions/sha256" }
+      }
+    },
+    "model": {
+      "oneOf": [
+        { "$ref": "#/definitions/gguf_model" },
+        { "$ref": "#/definitions/qairt_model" }
+      ]
+    },
+    "gguf_model": {
+      "type": "object",
+      "required": ["id", "name", "description", "task", "license", "context_length", "tools", "reasoning", "vision", "kind", "repo", "revision", "gated", "file", "devices", "platforms"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id",
+          "description": "Unique across the list, together with variant ids: names the download task and the folder <data>/geniex/models/<id>."
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "task": { "type": "string", "enum": ["chat"] },
+        "license": { "type": "string", "minLength": 1 },
+        "context_length": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Default context. The host never exceeds the file's own maximum."
+        },
+        "tools": { "type": "boolean", "description": "The model supports tool calling and the host parses its tool calls reliably." },
+        "reasoning": { "type": "boolean", "description": "The model has a thinking mode." },
+        "vision": { "type": "boolean", "description": "The model accepts images; a gguf model then needs mmproj." },
+        "kind": { "const": "gguf", "description": "A GGUF file run by the GenieX llama_cpp plugin." },
+        "repo": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+        "revision": {
+          "type": "string",
+          "description": "The full commit the files are pinned to; URLs are https://huggingface.co/<repo>/resolve/<revision>/<path>.",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "gated": {
+          "type": "boolean",
+          "description": "The repository requires accepting its terms; the client sends the user's HF token, to Hugging Face hosts only."
+        },
+        "file": { "$ref": "#/definitions/gguf_file" },
+        "mmproj": {
+          "$ref": "#/definitions/gguf_file",
+          "description": "The multimodal projector next to the model file; required when vision is true."
+        },
+        "devices": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/definitions/device" },
+          "description": "Devices the model is offered on. Removing one closes it for every client within the hour, without a release."
+        },
+        "platforms": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/definitions/platform" }
+        }
+      },
+      "if": { "properties": { "vision": { "const": true } }, "required": ["vision"] },
+      "then": { "required": ["mmproj"] }
+    },
+    "qairt_model": {
+      "type": "object",
+      "required": ["id", "name", "description", "task", "license", "context_length", "tools", "reasoning", "vision", "kind", "variants"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "task": { "type": "string", "enum": ["chat"] },
+        "license": { "type": "string", "minLength": 1 },
+        "context_length": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Context the bundle was compiled with: it is fixed inside the bundle."
+        },
+        "tools": { "type": "boolean" },
+        "reasoning": { "type": "boolean" },
+        "vision": { "type": "boolean" },
+        "kind": { "const": "qairt", "description": "A Qualcomm AI Hub bundle run by the GenieX qairt plugin on the NPU." },
+        "variants": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/variant" }
+        }
+      }
+    },
+    "variant": {
+      "type": "object",
+      "required": ["id", "chip", "bundle", "precision"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id",
+          "description": "Unique across the list, together with model ids: names the download task and the folder <data>/geniex/models/<id>."
+        },
+        "chip": { "$ref": "#/definitions/chip" },
+        "bundle": { "$ref": "#/definitions/bundle" },
+        "precision": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Weight and activation precision the bundle was compiled with, as AI Hub names it (e.g. w4a16)."
+        },
+        "min_runtime_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Oldest GenieX the bundle loads in, when known before download. The core reads the real one from the bundle's geniex.json."
+        }
+      }
+    }
+  }
+}
