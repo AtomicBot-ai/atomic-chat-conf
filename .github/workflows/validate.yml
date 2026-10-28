@@ -606,6 +606,35 @@ jobs:
           node --test .github/scripts/litert-lm-models-check.test.mjs
           node .github/scripts/litert-lm-models-check.mjs
 
+      - name: Validate GenieX runtime manifest against schema
+        run: |
+          ajv validate \
+            -s backends/geniex-schema.json \
+            -d backends/geniex-manifest.json \
+            --strict=false
+
+      - name: Check GenieX runtime manifest integrity
+        env:
+          # Published releases are compared with the base: the target branch
+          # on a PR, the pre-push tip on a push (an empty or all-zeros ref
+          # means nothing to compare).
+          GENIEX_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: |
+          node --test .github/scripts/geniex-manifest-check.test.mjs
+          node .github/scripts/geniex-manifest-check.mjs
+
+      - name: Validate GenieX model list against schema
+        run: |
+          ajv validate \
+            -s models/schema.geniex-models.json \
+            -d models/geniex-models.json \
+            --strict=false
+
+      - name: Check GenieX model list integrity
+        run: |
+          node --test .github/scripts/geniex-models-check.test.mjs
+          node .github/scripts/geniex-models-check.mjs
+
       - name: Validate diffusion catalog against schema
         run: |
           ajv validate \
