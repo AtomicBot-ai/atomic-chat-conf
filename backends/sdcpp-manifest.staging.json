@@ -1,75 +1,75 @@
 {
   "$schema": "./sdcpp-schema.json",
-  "updated_at": "2026-10-25T09:30:56Z",
+  "updated_at": "2026-10-28T10:20:04Z",
   "upstream_repo": "AtomicBot-ai/stable-diffusion.cpp",
-  "tag_name": "master-1006-0886f11-a0e21584",
+  "tag_name": "master-1017-be48649-a095652b",
   "download_base": "https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download",
   "assets": [
     {
       "backend": "linux-cpu-arm64",
-      "name": "sd-master-0886f11-bin-Linux-Ubuntu-24.04-aarch64.zip",
-      "sha256": "b29fa6b14ac5bdae1fe942c55607bd64242794db6615ceacd33fdb9c5fcd4063",
-      "size": 22522161
+      "name": "sd-master-be48649-bin-Linux-Ubuntu-24.04-aarch64.zip",
+      "sha256": "2dc6a72aff3c720f3254589e8bf293900e43300cefe715116789282aa77d1b5b",
+      "size": 22551934
     },
     {
       "backend": "linux-cpu-x64",
-      "name": "sd-master-0886f11-bin-Linux-Ubuntu-24.04-x86_64.zip",
-      "sha256": "9dfa3b62d7c170af7630c559d835dda1a4dac6f0f263b4133e0e1d2da9d5bc38",
-      "size": 26438659
+      "name": "sd-master-be48649-bin-Linux-Ubuntu-24.04-x86_64.zip",
+      "sha256": "98aa8c047a9da9e4eb21abb4c87de09bb098553e96b9dbd4c61b9222327f5eaf",
+      "size": 26471871
     },
     {
       "backend": "linux-cuda12-x64",
-      "name": "sd-master-0886f11-bin-Linux-Ubuntu-24.04-x86_64-cuda12.zip",
-      "sha256": "a19fac5259e3184e681b957f9d4074a8617fc619ae5f6132cac0aefc6d001911",
-      "size": 725518976
+      "name": "sd-master-be48649-bin-Linux-Ubuntu-24.04-x86_64-cuda12.zip",
+      "sha256": "8fe9d9ad7946d0900be098c8ce54275477f01b070a5e696920f98dfbc975d4f0",
+      "size": 725561622
     },
     {
       "backend": "linux-cuda13-arm64",
-      "name": "sd-master-0886f11-bin-Linux-Ubuntu-24.04-aarch64-cuda13.zip",
-      "sha256": "9accf922d6502f119be86520f6e07522a934ced2c02839eae91d637c94cff847",
-      "size": 607805093
+      "name": "sd-master-be48649-bin-Linux-Ubuntu-24.04-aarch64-cuda13.zip",
+      "sha256": "9c125df0b411d9253959346ae4273c8db8e9d72d97f3478a5ef7eb4772707380",
+      "size": 607829740
     },
     {
       "backend": "linux-vulkan-x64",
-      "name": "sd-master-0886f11-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
-      "sha256": "ab34afc607c5dc7d94c80b83c4bbc4ba5683ec00bfe7345aec687a80f792e8a8",
-      "size": 36584664
+      "name": "sd-master-be48649-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
+      "sha256": "b805bbfefeb91880822fcb48e6b5b9032bb32e36c0240b48ae09debdfc7ac03b",
+      "size": 36617876
     },
     {
       "backend": "macos-arm64",
-      "name": "sd-master-0886f11-bin-Darwin-macOS-26.6.2-arm64.zip",
-      "sha256": "ffdd7b7b8336a923e62a129490c1577847e228f39ad670104a4f007c26d13900",
-      "size": 37684951
+      "name": "sd-master-be48649-bin-Darwin-macOS-26.6.2-arm64.zip",
+      "sha256": "377c0203f69947ba91d3f247f403af7842aa676f95ba41e306da00e1cf7e5279",
+      "size": 37744778
     },
     {
       "backend": "win-cpu-arm64",
-      "name": "sd-master-0886f11-bin-win-cpu-arm64.zip",
-      "sha256": "f6f2bddaecd4d46bf2a14d082aa113267fb0183aa92ed5eeb61ce29064db81ba",
-      "size": 16898241
+      "name": "sd-master-be48649-bin-win-cpu-arm64.zip",
+      "sha256": "b12641311f8b26ea61a9f09810c6979c277c8a68ed58f825793af9f3dfbaf409",
+      "size": 16926862
     },
     {
       "backend": "win-cpu-x64",
-      "name": "sd-master-0886f11-bin-win-cpu-x64.zip",
-      "sha256": "4e28aac0372a9aafedd74723ce15bc5ce72926b79ecd6e37402ecca44db7f3cd",
-      "size": 18572650
+      "name": "sd-master-be48649-bin-win-cpu-x64.zip",
+      "sha256": "649b202a9ce8e5bb414586d12806cbed0085d2cf6b998ec6767c1bc88b78c41d",
+      "size": 18599240
     },
     {
       "backend": "win-cuda12-x64",
-      "name": "sd-master-0886f11-bin-win-cuda12-x64.zip",
-      "sha256": "88bf9f0fce9efe01baa23d22baf4a4c4810e5ba21a865a51f9d8ec5b3117463b",
-      "size": 343984379
+      "name": "sd-master-be48649-bin-win-cuda12-x64.zip",
+      "sha256": "869dbdd156c36529e71e9704fefc185d0b9c473d77ffaece49a69d6dad12cd75",
+      "size": 344005796
     },
     {
       "backend": "win-cuda13-arm64",
-      "name": "sd-master-0886f11-bin-win-cuda13-arm64.zip",
-      "sha256": "03295fa0916c144aed5c2d30e202413c0c56ac6600f33f5671b47cd0a4d577b0",
-      "size": 211836057
+      "name": "sd-master-be48649-bin-win-cuda13-arm64.zip",
+      "sha256": "cd4175144fdb19751a4051e12e52b9591465aa98b42617691f85b501ce6374a8",
+      "size": 211863984
     },
     {
       "backend": "win-cuda13-x64",
-      "name": "sd-master-0886f11-bin-win-cuda13-x64.zip",
-      "sha256": "7d6e648009ae906de0345a4dc18c21e09f8321d0652ed8e3bdae5f1e2d050b45",
-      "size": 536328452
+      "name": "sd-master-be48649-bin-win-cuda13-x64.zip",
+      "sha256": "8ee85a5fdd01f398b4ee4bdede6de3cea1f8a9f6abb8bc14f293833198899dda",
+      "size": 536359155
     },
     {
       "backend": "win-cudart-cu12",
@@ -80,9 +80,9 @@
     },
     {
       "backend": "win-vulkan-x64",
-      "name": "sd-master-0886f11-bin-win-vulkan-x64.zip",
-      "sha256": "6b24597f75ced4e477e300ed1709508d448f8511555256894383069621ddcdc1",
-      "size": 30244126
+      "name": "sd-master-be48649-bin-win-vulkan-x64.zip",
+      "sha256": "edb42699a6794772631b4b1b9b9847eea3d30e9c8f56846f568fd477d279e186",
+      "size": 30270728
     }
   ]
 }
