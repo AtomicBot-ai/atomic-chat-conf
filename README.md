@@ -1555,8 +1555,8 @@ integrity checks:
       "id": "gemma-4-e2b", "name": "Gemma 4 E2B", "description": "…", "task": "chat", "license": "gemma",
       "context_length": 32768, "tools": true, "reasoning": true, "vision": true,
       "kind": "gguf", "repo": "google/gemma-4-E2B-it-qat-q4_0-gguf", "revision": "…", "gated": true,
-      "file": { "path": "gemma-4-E2B-it-Q4_0.gguf", "size": 0, "sha256": "…" },
-      "mmproj": { "path": "mmproj-gemma-4-E2B-it-F16.gguf", "size": 0, "sha256": "…" },
+      "file": { "path": "gemma-4-E2B_q4_0-it.gguf", "size": 0, "sha256": "…" },
+      "mmproj": { "path": "gemma-4-E2B-it-mmproj.gguf", "size": 0, "sha256": "…" },
       "devices": ["npu", "gpu", "cpu", "hybrid"], "platforms": ["win-arm64"]
     },
     {
@@ -1572,10 +1572,14 @@ integrity checks:
 }
 ```
 
-The models above show the two shapes only: the published list has none yet.
-The first curated set (Gemma 4 E2B and E4B, Qwen3 4B as GGUF; Qwen3 4B and
-Gemma 4 E4B bundles) lands after core's spike on a Snapdragon X Elite settles
-the devices and the quantizations.
+The models above show the two shapes only (the published file carries the
+real names, sizes and checksums). The first curated set, from core's spike on a
+Snapdragon X2 Elite (2026-10-28): Qwen3 4B, Gemma 4 E2B and E4B as GGUF
+(`Q4_0`; `Q4_K_M` runs on the NPU too, so Hugging Face offers both), and the
+Qwen3 4B AI Hub bundle for `x-elite` and `x2-elite`. Gemma 4 E4B has no
+`hybrid` device (GenieX 0.9.3's OpenCL backend asserts), and the bundle has
+`tools: false` (the qairt plugin passes no tools to the model). AI Hub v0.65.0
+ships no GenieX bundle for Gemma 4 or a VLM.
 
 Two kinds of model:
 
