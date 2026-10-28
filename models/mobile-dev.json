@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.mobile.json",
   "schema_version": 1,
-  "updated_at": "2026-10-21T00:00:00Z",
+  "updated_at": "2026-10-27T16:07:09Z",
   "models": [
     {
       "id": "LiquidAI/LFM2.5-2.6B-GGUF/LFM2.5-2.6B-Q4_K_M.gguf",
@@ -17,6 +17,34 @@
       "platforms": [
         "ios",
         "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "mlx-community/Qwen3-0.6B-4bit",
+      "name": "Qwen 3 (0.6B) · MLX",
+      "description": "Small local text model for the iOS MLX preview. Runs on the Apple GPU.",
+      "size": 351383618,
+      "iconUrl": "qwen",
+      "engine": "mlx",
+      "mmprojRemoteId": null,
+      "supportsThinking": false,
+      "badges": [
+        {
+          "label": "MLX",
+          "tone": "purple"
+        },
+        {
+          "label": "4-bit",
+          "tone": "gray"
+        }
+      ],
+      "categories": [
+        "general",
+        "compact"
+      ],
+      "platforms": [
+        "ios"
       ],
       "isOnboarding": false
     }
