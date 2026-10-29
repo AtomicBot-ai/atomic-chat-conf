@@ -1,0 +1,63 @@
+{
+  "schema": "atomic-engine-candidate-results",
+  "schema_version": 1,
+  "generated_at": "2026-10-28T08:40:00.000Z",
+  "engine": "audio-cpp",
+  "run": {
+    "mode": "ci",
+    "id": "39600000108",
+    "attempt": "1",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39600000108",
+    "candidate_id": "conf-v0.9.3-bootstrap",
+    "suites": "all"
+  },
+  "core": {
+    "ref": "main",
+    "sha": "6c7e9e8a4b1d2c3e4f5a6b7c8d9e0f1a2b3c4d5e",
+    "version": "0.21.0",
+    "protected_changes": []
+  },
+  "conf": {
+    "ref": "main",
+    "sha": "9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c"
+  },
+  "candidate": {
+    "repo": "AtomicBot-ai/atomic-chat-conf",
+    "tag": "v0.9.3",
+    "source": "release",
+    "commit": null,
+    "published_at": "2026-10-29T07:50:00Z",
+    "complete": true,
+    "missing": [],
+    "core_assets": [
+      "audio-v0.9.3-bin-linux-cpu-arm64.zip",
+      "audio-v0.9.3-bin-linux-cpu-x64.zip",
+      "audio-v0.9.3-bin-linux-cuda13-arm64.zip",
+      "audio-v0.9.3-bin-linux-vulkan-x64.zip",
+      "audio-v0.9.3-bin-macos-arm64.zip",
+      "audio-v0.9.3-bin-win-cpu-arm64.zip",
+      "audio-v0.9.3-bin-win-cpu-x64.zip",
+      "audio-v0.9.3-bin-win-cuda12-x64.zip",
+      "audio-v0.9.3-bin-win-cuda13-arm64.zip",
+      "audio-v0.9.3-bin-win-cuda13-x64.zip",
+      "audio-v0.9.3-bin-win-vulkan-x64.zip"
+    ]
+  },
+  "pin": {
+    "source": "audiocpp-manifest",
+    "tag": "v0.9.3",
+    "repo": "0xShug0/audio.cpp"
+  },
+  "status": "pass",
+  "reasons": [],
+  "surface": {
+    "status": "pass",
+    "counts": {
+      "break": 0,
+      "warn": 0,
+      "info": 2,
+      "error": 0
+    },
+    "same_as_pin": false
+  }
+}

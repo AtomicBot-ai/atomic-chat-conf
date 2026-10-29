@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat audio.cpp Backends Manifest",
+  "description": "Schema for the remote audio.cpp (audiocpp_server) prebuilt manifest consumed by Atomic Chat core's engine installer. Same shape as the stable-diffusion.cpp manifest: every asset carries an explicit `backend` id, and the client selects on that id only, never on the file name (upstream and fork archives are named differently).",
+  "type": "object",
+  "required": ["tag_name", "upstream_repo", "assets"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "upstream_repo": {
+      "type": "string",
+      "enum": ["AtomicBot-ai/audio.cpp", "0xShug0/audio.cpp"],
+      "description": "GitHub repository whose release of the tag supplied the archives: the Atomic fork, or upstream on the emergency and bootstrap path. It is also the download host when download_base is absent."
+    },
+    "tag_name": {
+      "type": "string",
+      "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+(-a[0-9a-f]{7})?$",
+      "description": "0xShug0/audio.cpp release tag (e.g. v0.9.3). An `-a<rev>` suffix marks a build of that tag by AtomicBot-ai/audio.cpp at fork commit <rev> (mirror-audiocpp.yml atomic_rev): installs are matched on this name, and at an equal version the rebuild is newer than the bare tag, so the new name is what moves installed clients onto it. The client strips it when downloading from upstream_repo instead of download_base."
+    },
+    "download_base": {
+      "type": "string",
+      "format": "uri",
+      "description": "Base URL the client prepends to '<tag_name>/<asset name>'. Present once .github/workflows/mirror-audiocpp.yml has re-signed and re-hosted the archives; absent means download from the upstream_repo GitHub release of the tag without its -a<rev> suffix."
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/asset" }
+    }
+  },
+  "definitions": {
+    "asset": {
+      "type": "object",
+      "required": ["backend", "name", "sha256", "size"],
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "type": "string",
+          "enum": [
+            "macos-arm64",
+            "win-cuda12-x64",
+            "win-cuda13-x64",
+            "win-vulkan-x64",
+            "win-cpu-x64",
+            "linux-vulkan-x64",
+            "linux-cpu-x64",
+            "linux-cuda13-arm64",
+            "linux-cpu-arm64",
+            "win-cuda13-arm64",
+            "win-cpu-arm64",
+            "win-cudart-cu12"
+          ],
+          "description": "Stable backend id the client selects on; the only field it matches against. Same vocabulary as the sd.cpp manifest, without ROCm. win-cuda13-x64 and the *-arm64 ids other than macos-arm64 come from the fork only and carry their CUDA runtime inside."
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+\\.(zip|tar\\.gz)$"
+        },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "size": { "type": "integer", "minimum": 1 },
+        "companion": {
+          "type": "boolean",
+          "description": "True for the Windows CUDA runtime archive (win-cudart-cu12 only) that is unpacked next to win-cuda12-x64 when the host has no CUDA toolkit."
+        }
+      },
+      "if": {
+        "properties": { "backend": { "const": "win-cudart-cu12" } }
+      },
+      "then": {
+        "required": ["companion"],
+        "properties": { "companion": { "const": true } }
+      },
+      "else": {
+        "properties": { "companion": { "const": false } }
+      }
+    }
+  }
+}
