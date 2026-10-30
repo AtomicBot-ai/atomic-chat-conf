@@ -16,6 +16,11 @@
     }
   },
   "definitions": {
+    "revision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "Full immutable Hugging Face commit SHA for this repository; omitted means main for legacy entries."
+    },
     "file": {
       "type": "object",
       "required": ["repo", "filename", "bytes"],
@@ -25,6 +30,7 @@
           "type": "string",
           "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
         },
+        "revision": { "$ref": "#/definitions/revision" },
         "filename": { "type": "string", "minLength": 1 },
         "bytes": { "type": "integer", "minimum": 1 },
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
@@ -99,6 +105,7 @@
           "additionalProperties": false,
           "properties": {
             "repo": { "type": "string" },
+            "revision": { "$ref": "#/definitions/revision" },
             "quants": {
               "type": "array",
               "minItems": 1,
