@@ -2936,3 +2936,21 @@ npx ajv-cli@5 validate -s app/schema.json -d app/latest.json --strict=false
 ## License
 
 See the project's primary license in the main Atomic Chat repository.
+
+## Diffusion model revisions
+
+`models/diffusion.json` accepts an optional full 40-character Hugging Face
+commit SHA in `transformer.revision` and in each side file's `revision` (VAE,
+audio VAE or text encoder). Each revision belongs to that entry's repository;
+never reuse a transformer commit for a dependency from another repository.
+Sizes and SHA-256 values must come from the same revision. Entries without a
+revision retain the legacy `main` behavior. This is an additive schema-version-1
+field: older clients ignore it and still use `main`; pinning takes effect only
+in clients that support per-repository revisions.
+
+Z-Image Turbo's transformer is pinned to Unsloth commit
+`b40f712c569ecfff42f2307dcc43399ae1d71318` (2026-10-29, "Better quants").
+Its Q3_K_M, Q4_K_M, Q5_K_M and Q6_K byte counts and LFS SHA-256 values were
+refreshed from that revision's Hub metadata; Q8_0 is unchanged. The catalog
+metadata was checked; image generation with the replacement files has not
+been validated as part of this correction.
