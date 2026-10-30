@@ -28,6 +28,7 @@
         "filename": { "type": "string", "minLength": 1 },
         "bytes": { "type": "integer", "minimum": 1 },
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "revision": { "type": "string", "pattern": "^[0-9a-f]{40}$", "description": "Immutable Hugging Face commit matching this file size and SHA-256." },
         "field": {
           "type": "string",
           "enum": ["llm", "llm_vision", "qwen2vl", "clip_l", "t5xxl", "embeddings_connectors"]
@@ -44,6 +45,7 @@
         "filename": { "type": "string", "minLength": 1 },
         "bytes": { "type": "integer", "minimum": 1 },
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "revision": { "type": "string", "pattern": "^[0-9a-f]{40}$", "description": "Immutable Hugging Face commit matching this file size and SHA-256." },
         "recommended": { "type": "boolean" }
       }
     },

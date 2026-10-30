@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.diffusion.json",
   "schema_version": 1,
-  "updated_at": "2026-10-21T12:00:00Z",
+  "updated_at": "2026-10-30T12:00:00Z",
   "families": [
     {
       "id": "z-image",
@@ -19,6 +19,7 @@
             "label": "Q3_K_M",
             "filename": "z-image-turbo-Q3_K_M.gguf",
             "bytes": 4186161216,
+            "revision": "6c80814333b7b6a70a2e5b469a7c6437ce65de0f",
             "sha256": "7070b605165c372833c21c6bd45e73b242cf0db261b4d5436039363f3dbd4e0e"
           },
           {
@@ -26,6 +27,7 @@
             "label": "Q4_K_M",
             "filename": "z-image-turbo-Q4_K_M.gguf",
             "bytes": 5017613376,
+            "revision": "6c80814333b7b6a70a2e5b469a7c6437ce65de0f",
             "sha256": "e6494f87de6abaf6a561924f50317a5f271fc34bb4222aabbd801197df8f7daa",
             "recommended": true
           },
@@ -34,6 +36,7 @@
             "label": "Q5_K_M",
             "filename": "z-image-turbo-Q5_K_M.gguf",
             "bytes": 5574444096,
+            "revision": "6c80814333b7b6a70a2e5b469a7c6437ce65de0f",
             "sha256": "847e33003ae6e85121c62785d7f7213958d58287c932d0c2189a1c9a2d1f093a"
           },
           {
@@ -41,6 +44,7 @@
             "label": "Q6_K",
             "filename": "z-image-turbo-Q6_K.gguf",
             "bytes": 5910505536,
+            "revision": "6c80814333b7b6a70a2e5b469a7c6437ce65de0f",
             "sha256": "fc137d87b49e06fdd5230d67d6c8cfa42a9e1fd38b65ccd355882450c3eb1c82"
           },
           {
@@ -48,6 +52,7 @@
             "label": "Q8_0",
             "filename": "z-image-turbo-Q8_0.gguf",
             "bytes": 7224707136,
+            "revision": "6c80814333b7b6a70a2e5b469a7c6437ce65de0f",
             "sha256": "f163d60b0eb427469510b8226243d196574a18139a2e40c017409cfbda95ecfe"
           }
         ]
