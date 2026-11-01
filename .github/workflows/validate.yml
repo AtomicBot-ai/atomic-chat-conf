@@ -652,6 +652,12 @@ jobs:
           node --test .github/scripts/geniex-models-check.test.mjs
           node .github/scripts/geniex-models-check.mjs
 
+      - name: Validate audio catalog
+        run: |
+          ajv validate -s models/schema.audio.json -d models/audio.json --strict=false
+          node .github/scripts/audio-catalog-check.mjs
+          node --test .github/scripts/audio-catalog-check.test.mjs
+
       - name: Validate diffusion catalog against schema
         run: |
           ajv validate \

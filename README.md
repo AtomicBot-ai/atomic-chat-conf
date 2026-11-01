@@ -465,6 +465,22 @@ every model without the checkpoint files. So the catalog keeps
 integrity check enforces both. A new logo key needs the image in the app first,
 then the `icon` value here.
 
+## Audio models
+
+`models/audio.json` lists the local speech, music and sound-effect models for audio.cpp, validated by
+`models/schema.audio.json` and `.github/scripts/audio-catalog-check.mjs`. Clients read it from `main`
+(1 h TTL) and send each model's `family`, `task` and options in the load request; the core has no
+catalog of its own. Files are pinned by `revision`, `bytes` and `sha256`, and client downloads go to
+`<data>/audio/models/<filename>`.
+
+`controls`, `defaults` and `ranges` say which form fields a client shows before the model is loaded.
+`attribution` is text a client must show with the model: Stable Audio's license asks for
+"Powered by Stability AI", keeps its use free only under USD 1M of yearly revenue, and asks commercial
+users to register with Stability AI.
+
+Our audio.cpp builds leave out eSpeak-ng, which is GPL, so the check refuses models that phonemize with
+it, such as Kokoro and Piper.
+
 ## Embedding models
 
 `models/embedding.json` lists the embedding models of the Hub's Embedding
