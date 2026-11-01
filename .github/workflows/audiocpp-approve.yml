@@ -1,0 +1,140 @@
+name: Approve an audio.cpp build
+run-name: Approve audio.cpp ${{ inputs.tag }} [cid:${{ inputs.candidate_id }}]
+
+# The last step of "Updating audio.cpp" (README): a signed build that core's
+# engine-candidate (engine=audio-cpp) passed moves from the staging manifest to
+# backends/audiocpp-manifest.json, which every core reads within the hour.
+# Modelled on sdcpp-approve.yml: mirror-audiocpp.yml writes the staging
+# manifest (its default manifest_path), engine-candidate checks the signed
+# release (repo=AtomicBot-ai/atomic-chat-conf), and this workflow runs only
+# when that run passed, with conf_sha set to the commit of this repository the
+# run read (results.json conf.sha).
+#
+# The live manifest gets the staging manifest of conf_sha, not of main: a newer
+# candidate may hold the slot by now. Pushed straight to main, like
+# sdcpp-approve.yml: the checks below refuse what no passing run backs. The
+# first approval creates the live manifest; a bad build is rolled back by
+# reverting the approval commit.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Signed mirror tag to approve (e.g. v0.9.3-a1b2c3d4, or a bare v0.9.3)"
+        required: true
+        type: string
+      conf_sha:
+        description: "Commit whose backends/audiocpp-manifest.staging.json goes live (conf.sha in the passing run's results.json)"
+        required: true
+        type: string
+      candidate_id:
+        description: "Id the caller finds this run by in its title"
+        required: false
+        default: "manual"
+        type: string
+
+# The mirror rewrites the staging manifest and prunes releases: one writer at a
+# time, and no release of the tag replaced while it is being approved.
+concurrency:
+  group: mirror-audiocpp
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  approve:
+    name: Approve and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # conf_sha is an older commit of main; its staging manifest is read
+          # with git show.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Inputs reach scripts through env only, never through `${{ }}` in `run:`.
+      - name: Check the inputs
+        env:
+          TAG: ${{ inputs.tag }}
+          CONF_SHA: ${{ inputs.conf_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-a[0-9a-f]{7})?$ ]] || { echo "::error::tag must look like v0.9.3-a1b2c3d4 or v0.9.3"; exit 1; }
+          [[ "$CONF_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::conf_sha must be a full 40-character commit hash"; exit 1; }
+
+      # Main as it is now, not as it was when the run was queued: a run that
+      # waited behind an approval of the same tag has nothing left to do, and
+      # a re-run must not commit a timestamp only. Before the first approval
+      # there is no live manifest at all.
+      - name: Already live?
+        id: state
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main
+          LIVE=""
+          if git cat-file -e FETCH_HEAD:backends/audiocpp-manifest.json 2>/dev/null; then
+            LIVE="$(git show FETCH_HEAD:backends/audiocpp-manifest.json | jq -r .tag_name)"
+          fi
+          echo "backends/audiocpp-manifest.json on main: ${LIVE:-(none yet)}"
+          if [ "$LIVE" = "$TAG" ]; then echo "done=true"; else echo "done=false"; fi >> "$GITHUB_OUTPUT"
+
+      - name: Check the staged manifest against the release
+        if: steps.state.outputs.done != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          CONF_SHA: ${{ inputs.conf_sha }}
+        run: node .github/scripts/audiocpp-approve.mjs check --tag "$TAG" --conf-sha "$CONF_SHA"
+
+      # A successful engine-candidate run in core must name the tag, and its
+      # results.json must say it passed audio-cpp on this repository's release
+      # of it (not the fork's release of the same bare tag). Core is public, so
+      # this token can read its runs and artifacts.
+      - name: Refuse a tag no passing engine-candidate run backs
+        if: steps.state.outputs.done != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: node .github/scripts/upstream-verify.mjs gate --engine audio-cpp --tag "$TAG"
+
+      - name: Write the live manifest
+        if: steps.state.outputs.done != 'true'
+        env:
+          TAG: ${{ inputs.tag }}
+          CONF_SHA: ${{ inputs.conf_sha }}
+        run: node .github/scripts/audiocpp-approve.mjs approve --tag "$TAG" --conf-sha "$CONF_SHA"
+
+      - name: Validate the live manifest
+        if: steps.state.outputs.done != 'true'
+        run: |
+          set -euo pipefail
+          npm install -g ajv-cli@5
+          ajv validate -s backends/audiocpp-schema.json -d backends/audiocpp-manifest.json --strict=false
+          node .github/scripts/audiocpp-manifest-check.mjs backends/audiocpp-manifest.json
+
+      # Someone may push to main between the checkout and here: rebase onto it
+      # and retry instead of failing an approval that is already decided.
+      - name: Commit the live manifest
+        if: steps.state.outputs.done != 'true'
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backends/audiocpp-manifest.json
+          git commit -m "chore(audiocpp-manifest): approve $TAG"
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected (attempt $attempt): rebasing onto main"
+            git pull --rebase
+          done
+          echo "::error::Could not push the approval of $TAG"
+          exit 1

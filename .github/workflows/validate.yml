@@ -506,7 +506,8 @@ jobs:
 
       # Includes the rule older cores depend on: backends/manifest.json names an
       # approved release of the list that every core runs, with the same bytes.
-      # upstream-verify.test.mjs covers the approval gates (llama.cpp and sd.cpp).
+      # upstream-verify.test.mjs covers the approval gates (llama.cpp, sd.cpp and
+      # audio.cpp).
       - name: Check upstream llama.cpp release list integrity
         run: |
           node --test .github/scripts/upstream-releases.test.mjs
@@ -546,6 +547,22 @@ jobs:
         run: |
           node .github/scripts/sdcpp-manifest-check.mjs
           node --test .github/scripts/sdcpp-approve.test.mjs
+
+      # Same pair for audio.cpp (mirror-audiocpp.yml, audiocpp-approve.yml). The
+      # staging manifest always exists; the live one only once a build has been
+      # approved.
+      - name: Validate audio.cpp backends manifests against schema
+        run: |
+          ajv validate -s backends/audiocpp-schema.json -d backends/audiocpp-manifest.staging.json --strict=false
+          if [ -f backends/audiocpp-manifest.json ]; then
+            ajv validate -s backends/audiocpp-schema.json -d backends/audiocpp-manifest.json --strict=false
+          fi
+
+      - name: Check audio.cpp backends manifest integrity
+        run: |
+          node .github/scripts/audiocpp-manifest-check.mjs
+          node --test .github/scripts/audiocpp-manifest-check.test.mjs
+          node --test .github/scripts/audiocpp-approve.test.mjs
 
       - name: Validate MLX server manifest against schema
         run: |
@@ -634,6 +651,12 @@ jobs:
         run: |
           node --test .github/scripts/geniex-models-check.test.mjs
           node .github/scripts/geniex-models-check.mjs
+
+      - name: Validate audio catalog
+        run: |
+          ajv validate -s models/schema.audio.json -d models/audio.json --strict=false
+          node .github/scripts/audio-catalog-check.mjs
+          node --test .github/scripts/audio-catalog-check.test.mjs
 
       - name: Validate diffusion catalog against schema
         run: |

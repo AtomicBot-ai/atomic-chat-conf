@@ -1,0 +1,53 @@
+#!/usr/bin/env node
+/**
+ * What models/schema.audio.json cannot say about models/audio.json. Run by `make validate` and
+ * validate.yml.
+ */
+import { readFileSync } from 'node:fs'
+import { pathToFileURL } from 'node:url'
+
+/** eSpeak-ng is GPL and our builds leave it out: these families answer `Could not load eSpeak-ng`. */
+const NEEDS_ESPEAK = new Set(['kokoro_tts', 'piper_tts', 'sanotts', 'inflect_v2', 'kitten_tts', 'kitten_tts2'])
+const TASK_OF_MODE = { speech: 'tts', music: 'gen', effects: 'gen' }
+
+export function checkAudioCatalog(catalog) {
+  const errors = []
+  const ids = new Set()
+  const filenames = new Set()
+  for (const model of catalog.models) {
+    const at = model.id
+    if (ids.has(at)) errors.push(`${at}: duplicate id`)
+    ids.add(at)
+    if (NEEDS_ESPEAK.has(model.family)) errors.push(`${at}: ${model.family} needs eSpeak-ng, which no build carries`)
+    if (model.task !== TASK_OF_MODE[model.mode]) errors.push(`${at}: ${model.mode} is served by task ${TASK_OF_MODE[model.mode]}`)
+    if (model.quants.filter((quant) => quant.recommended).length !== 1) errors.push(`${at}: exactly one recommended quant`)
+    const quantIds = new Set()
+    for (const quant of model.quants) {
+      if (quantIds.has(quant.id)) errors.push(`${at}: duplicate quant ${quant.id}`)
+      quantIds.add(quant.id)
+      if (filenames.has(quant.filename)) errors.push(`${at}: ${quant.filename} is another model's file`)
+      filenames.add(quant.filename)
+      if (quant.path.split('/').at(-1) !== quant.filename) errors.push(`${at}: ${quant.path} does not end in ${quant.filename}`)
+    }
+    // Stable Audio makes 120 s when a request names no length.
+    if (model.task === 'gen') {
+      if (!model.controls.includes('durationSec')) errors.push(`${at}: a generating model needs the durationSec control`)
+      if (model.defaults.durationSec === undefined) errors.push(`${at}: a generating model needs defaults.durationSec`)
+      const [min, max] = model.ranges?.durationSec ?? []
+      if (min === undefined) errors.push(`${at}: a generating model needs ranges.durationSec`)
+      else if (min >= max || model.defaults.durationSec < min || model.defaults.durationSec > max)
+        errors.push(`${at}: defaults.durationSec is outside ranges.durationSec`)
+    }
+    if (model.default_voice && !model.controls.includes('voice')) errors.push(`${at}: default_voice without the voice control`)
+  }
+  for (const mode of Object.keys(TASK_OF_MODE))
+    if (!catalog.models.some((model) => model.mode === mode)) errors.push(`no ${mode} model`)
+  return errors
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  const errors = checkAudioCatalog(JSON.parse(readFileSync('models/audio.json', 'utf8')))
+  for (const error of errors) console.error(`models/audio.json: ${error}`)
+  if (errors.length > 0) process.exit(1)
+  console.log('models/audio.json: ok')
+}

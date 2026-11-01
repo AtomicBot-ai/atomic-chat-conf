@@ -1,0 +1,66 @@
+[
+  {
+    "conclusion": "",
+    "createdAt": "2026-10-29T12:00:00Z",
+    "databaseId": 39600000107,
+    "displayTitle": "engine-candidate audio-cpp v0.9.5-a0e0e0e0 [cid:conf-v0.9.5-a0e0e0e0-hb-7] core@main",
+    "status": "in_progress",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39600000107"
+  },
+  {
+    "conclusion": "success",
+    "createdAt": "2026-10-29T11:30:00Z",
+    "databaseId": 39600000105,
+    "displayTitle": "engine-candidate audio-cpp v0.9.4-a2b3c4d5 [cid:conf-v0.9.4-a2b3c4d5-hb-5] core@main",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39600000105"
+  },
+  {
+    "conclusion": "success",
+    "createdAt": "2026-10-29T11:00:00Z",
+    "databaseId": 39600000106,
+    "displayTitle": "engine-candidate audio-cpp v0.9.4-a2b3c4d5 [cid:manual] core@main",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39600000106"
+  },
+  {
+    "conclusion": "success",
+    "createdAt": "2026-10-29T10:00:00Z",
+    "databaseId": 39600000103,
+    "displayTitle": "engine-candidate audio-cpp v0.9.3-a1b2c3d4 [cid:conf-v0.9.3-a1b2c3d4-hb-3] core@main",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39600000103"
+  },
+  {
+    "conclusion": "success",
+    "createdAt": "2026-10-29T09:30:00Z",
+    "databaseId": 39600000104,
+    "displayTitle": "engine-candidate llamacpp-upstream b11734 [cid:conf-b11734-hb-4] core@v0.18.2",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39600000104"
+  },
+  {
+    "conclusion": "failure",
+    "createdAt": "2026-10-29T09:00:00Z",
+    "databaseId": 39600000102,
+    "displayTitle": "engine-candidate audio-cpp v0.9.3-a1b2c3d4 [cid:conf-v0.9.3-a1b2c3d4-hb-2] core@main",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39600000102"
+  },
+  {
+    "conclusion": "success",
+    "createdAt": "2026-10-29T08:00:00Z",
+    "databaseId": 39600000101,
+    "displayTitle": "engine-candidate audio-cpp v0.9.3 [cid:hb-1] core@main",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39600000101"
+  },
+  {
+    "conclusion": "success",
+    "createdAt": "2026-10-28T08:00:00Z",
+    "databaseId": 39600000108,
+    "displayTitle": "engine-candidate audio-cpp v0.9.3 [cid:conf-v0.9.3-bootstrap] core@main",
+    "status": "completed",
+    "url": "https://github.com/AtomicBot-ai/atomic-chat-core/actions/runs/39600000108"
+  }
+]

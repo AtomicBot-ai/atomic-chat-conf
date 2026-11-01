@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
+import { fakeGhPath as fakeAudioGhPath } from '../fixtures/audiocpp/gh.mjs'
 import { fakeGhPath } from '../fixtures/sdcpp/gh.mjs'
 import {
   candidateId,
@@ -147,7 +148,7 @@ test('the sd.cpp gate says why no run backs a tag', () => {
   assert.match(checkedRun(failedOnly, SIGNED, 'sd-cpp', () => assert.fail('read')).refusal, /concluded failure/)
 })
 
-test('the gate CLI reads results.json for sd-cpp only', () => {
+test('the gate CLI reads results.json for sd-cpp, not for llama.cpp', () => {
   const script = fileURLToPath(new URL('./upstream-verify.mjs', import.meta.url))
   const env = { ...process.env, PATH: fakeGhPath() }
   const cli = (...args) => spawnSync(process.execPath, [script, ...args], { encoding: 'utf8', env })
@@ -168,7 +169,68 @@ test('the gate CLI reads results.json for sd-cpp only', () => {
   const bare = cli('gate', '--engine', 'sd-cpp', '--tag', 'master-883-137f740')
   assert.equal(bare.status, 1)
   assert.match(bare.stderr, /--tag must look like master-883-137f740-a36f1b1a/)
-  assert.match(cli('gate', '--engine', 'whisper', '--tag', SIGNED).stderr, /--engine must be one of llamacpp-upstream, sd-cpp/)
+  assert.match(cli('gate', '--engine', 'whisper', '--tag', SIGNED).stderr, /--engine must be one of llamacpp-upstream, sd-cpp, audio-cpp/)
   assert.match(cli('gate', '--engine', 'toString', '--tag', SIGNED).stderr, /--engine must be one of/)
   assert.match(cli('verify', '--engine', 'sd-cpp', '--tag', SIGNED).stderr, /verify checks llama.cpp tags only/)
+})
+
+// audio.cpp: core runs and their results.json from .github/fixtures/audiocpp.
+const audioFixture = (path) =>
+  JSON.parse(readFileSync(new URL(`../fixtures/audiocpp/${path}`, import.meta.url), 'utf8'))
+const AUDIO_SIGNED = 'v0.9.3-a1b2c3d4'
+const audioRuns = audioFixture('runs.json')
+const readAudioResults = (r) => audioFixture(`results/${r.databaseId}.json`)
+
+test('results.json must pass audio-cpp on the signed mirror of the very tag', () => {
+  const pass = audioFixture('results/39600000103.json')
+  assert.equal(resultsRefusal(pass, 'audio-cpp', AUDIO_SIGNED), null)
+  assert.equal(resultsRefusal(pass, 'sd-cpp', AUDIO_SIGNED), 'engine is audio-cpp')
+  assert.equal(resultsRefusal(pass, 'audio-cpp', 'v0.9.3'), 'candidate.tag is v0.9.3-a1b2c3d4')
+})
+
+test('the audio.cpp gate takes the newest successful run whose results back the tag', () => {
+  const signed = checkedRun(audioRuns, AUDIO_SIGNED, 'audio-cpp', readAudioResults)
+  assert.equal(signed.refusal, undefined)
+  assert.equal(signed.run.databaseId, 39600000103)
+  // A bare tag names the fork's own release too; only the check of the mirror here counts.
+  const bare = checkedRun(audioRuns, 'v0.9.3', 'audio-cpp', readAudioResults)
+  assert.equal(bare.run.databaseId, 39600000108)
+  const forkOnly = audioRuns.filter((r) => r.databaseId === 39600000101)
+  assert.match(
+    checkedRun(forkOnly, 'v0.9.3', 'audio-cpp', readAudioResults).refusal,
+    /39600000101: candidate\.repo is AtomicBot-ai\/audio\.cpp/
+  )
+})
+
+test('the audio.cpp gate says why no run backs a tag', () => {
+  const { run, refusal } = checkedRun(audioRuns, 'v0.9.4-a2b3c4d5', 'audio-cpp', readAudioResults)
+  assert.equal(run, undefined)
+  assert.match(refusal, /39600000105: engine is sd-cpp/)
+  assert.match(refusal, /39600000106: no results\.json/)
+  assert.match(refusal, /engine=audio-cpp, repo=AtomicBot-ai\/atomic-chat-conf and tag=v0\.9\.4-a2b3c4d5/)
+  assert.match(
+    checkedRun(audioRuns, 'v0.9.5-a0e0e0e0', 'audio-cpp', readAudioResults).refusal,
+    /its last engine-candidate run is in_progress/
+  )
+  const failedOnly = audioRuns.filter((r) => r.databaseId === 39600000102)
+  assert.match(checkedRun(failedOnly, AUDIO_SIGNED, 'audio-cpp', () => assert.fail('read')).refusal, /concluded failure/)
+})
+
+test('the gate CLI reads results.json for audio-cpp', () => {
+  const script = fileURLToPath(new URL('./upstream-verify.mjs', import.meta.url))
+  const env = { ...process.env, PATH: fakeAudioGhPath() }
+  const cli = (...args) => spawnSync(process.execPath, [script, ...args], { encoding: 'utf8', env })
+
+  const passed = cli('gate', '--engine', 'audio-cpp', '--tag', AUDIO_SIGNED)
+  assert.equal(passed.status, 0, passed.stderr)
+  assert.match(passed.stdout, /v0\.9\.3-a1b2c3d4 verified: .*\n.*\/runs\/39600000103/)
+
+  const refused = cli('gate', '--engine', 'audio-cpp', '--tag', 'v0.9.4-a2b3c4d5')
+  assert.equal(refused.status, 1)
+  assert.match(refused.stderr, /no successful run backs it/)
+
+  const side = cli('gate', '--engine', 'audio-cpp', '--tag', 'v0.9.2-drama3-base-small')
+  assert.equal(side.status, 1)
+  assert.match(side.stderr, /--tag must look like v0\.9\.3-a1b2c3d4/)
+  assert.match(cli('verify', '--engine', 'audio-cpp', '--tag', AUDIO_SIGNED).stderr, /verify checks llama.cpp tags only/)
 })

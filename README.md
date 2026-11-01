@@ -57,6 +57,9 @@ backends/
   sdcpp-manifest.json      # stable-diffusion.cpp build catalog (read by core)
   sdcpp-manifest.staging.json # sd.cpp candidate slot: test builds, then sdcpp-approve.yml
   sdcpp-schema.json        # JSON Schema (Draft-07) for the sd.cpp manifest
+  audiocpp-manifest.json   # audio.cpp build catalog (read by core; appears with the first approval)
+  audiocpp-manifest.staging.json # audio.cpp candidate slot: test builds, then audiocpp-approve.yml
+  audiocpp-schema.json     # JSON Schema (Draft-07) for the audio.cpp manifest
   mlx-manifest.json        # The pinned mlx-server build (read by core and the desktop Makefile)
   mlx-schema.json          # JSON Schema (Draft-07) for the MLX manifest
   foundry-local-manifest.json # microsoft/foundry-local releases (read by core)
@@ -88,12 +91,16 @@ app/
   workflows/prism-approve.yml   # Approves a listed PrismML release (engine update pipeline)
   workflows/mirror-sdcpp.yml    # Mirrors + signs an sd.cpp build from the Atomic fork into a manifest
   workflows/sdcpp-approve.yml   # Moves a checked sd.cpp build from staging to the live manifest
+  workflows/mirror-audiocpp.yml # Mirrors + signs an audio.cpp build from the Atomic fork into the staging manifest
+  workflows/audiocpp-approve.yml # Moves a checked audio.cpp build from staging to the live manifest
   actions/windows-code-sign/    # Authenticode signing via DigiCert KeyLocker
   scripts/mirror.mjs            # Asset whitelist + manifest generation
   scripts/upstream-releases.mjs # Release list upkeep: add, approve, promote, withdraw, prune, check
   scripts/prism-manifest.mjs    # PrismML release list: latest, add, gate, approve, withdraw, check
   scripts/upstream-verify.mjs   # engine-candidate check of a mirrored tag, and the approval gate
   scripts/sdcpp-approve.mjs     # sd.cpp approval: check the staged manifest, write the live one
+  scripts/audiocpp-approve.mjs  # audio.cpp approval: check the staged manifest, write the live one
+  scripts/audiocpp-manifest-check.mjs # audio.cpp manifest integrity (required backends, companion, hashes)
   entitlements.plist            # Entitlements for the signed macOS binaries
 Makefile                        # make mirror TAG=... and friends
 README.md
@@ -457,6 +464,22 @@ every model without the checkpoint files. So the catalog keeps
 `schema_version: 1` and must always hold a default checkpoint model; the
 integrity check enforces both. A new logo key needs the image in the app first,
 then the `icon` value here.
+
+## Audio models
+
+`models/audio.json` lists the local speech, music and sound-effect models for audio.cpp, validated by
+`models/schema.audio.json` and `.github/scripts/audio-catalog-check.mjs`. Clients read it from `main`
+(1 h TTL) and send each model's `family`, `task` and options in the load request; the core has no
+catalog of its own. Files are pinned by `revision`, `bytes` and `sha256`, and client downloads go to
+`<data>/audio/models/<filename>`.
+
+`controls`, `defaults` and `ranges` say which form fields a client shows before the model is loaded.
+`attribution` is text a client must show with the model: Stable Audio's license asks for
+"Powered by Stability AI", keeps its use free only under USD 1M of yearly revenue, and asks commercial
+users to register with Stability AI.
+
+Our audio.cpp builds leave out eSpeak-ng, which is GPL, so the check refuses models that phonemize with
+it, such as Kokoro and Piper.
 
 ## Embedding models
 
@@ -1004,6 +1027,129 @@ a newer build number, so the fix is the next build through the steps above.
 The revert works only while the previous tag's release still exists here: the
 mirror prunes all but the newest `retain` sd.cpp releases (3 by default),
 keeping only the tags the manifests name.
+
+## Updating audio.cpp
+
+Core installs `audiocpp_server` (engine `audio-cpp`) from
+[`backends/audiocpp-manifest.json`](backends/audiocpp-manifest.json) (schema:
+[`backends/audiocpp-schema.json`](backends/audiocpp-schema.json)), read from
+this repository's `main` (`ATOMIC_AUDIOCPP_MANIFEST_URL` overrides it). The
+shape is sd.cpp's: one `tag_name`, `upstream_repo`, and one archive per backend
+id with its `sha256` and `size`, downloaded from this repository's releases
+(`download_base`) or, without it, from `upstream_repo`'s release of the tag.
+The flow is sd.cpp's too, with its own files, so the two engines never touch
+each other's manifests or releases.
+
+- The live manifest does not exist until the first approval writes it.
+  [`backends/audiocpp-manifest.staging.json`](backends/audiocpp-manifest.staging.json)
+  is the candidate slot: the mirror writes it by default, test builds of the
+  app read it, core's `engine-candidate` checks the build it names, and
+  [`audiocpp-approve.yml`](.github/workflows/audiocpp-approve.yml) copies it
+  into the live manifest. It names the newest candidate, passed or not. Its
+  first content is upstream's `v0.9.3` as published (no `download_base`, not
+  re-signed), so core work can start before the fork exists.
+- Builds come from the Atomic fork,
+  [AtomicBot-ai/audio.cpp](https://github.com/AtomicBot-ai/audio.cpp)
+  (workflow `Release (Atomic)`: a release per upstream tag `vX.Y.Z`, with
+  archives `audio-<tag>-bin-<backend id>.zip` and the CUDA runtime companion
+  `audio-<tag>-cudart-win-cu12-x64.zip`), and are signed here by
+  [`mirror-audiocpp.yml`](.github/workflows/mirror-audiocpp.yml): Authenticode
+  on Windows, Developer ID on macOS; Linux archives and the cudart companion
+  pass through byte-for-byte. With `atomic_rev` (the fork commit the archives
+  were built at, 7 hex) the release here and the manifest are tagged
+  `vX.Y.Z-a<rev>`.
+- `source_repo=0xShug0/audio.cpp` mirrors upstream's own archives instead, for
+  emergencies and the bootstrap (bare tag only, no `atomic_rev`). Upstream
+  publishes the six required builds and the CUDA 12 runtime under its own
+  names; its non-portable, ROCm and CUDA 13 archives are not mirrored:
+
+  | Backend id | Fork archive | Upstream archive |
+  | --- | --- | --- |
+  | `macos-arm64` | `audio-<tag>-bin-macos-arm64.zip` (universal) | `audio-<tag>-bin-macos-arm64-metal.tar.gz` (arm64 only) |
+  | `win-cpu-x64` | `audio-<tag>-bin-win-cpu-x64.zip` | `audio-<tag>-bin-windows-x64-cpu-portable.zip` |
+  | `win-vulkan-x64` | `audio-<tag>-bin-win-vulkan-x64.zip` | `audio-<tag>-bin-windows-x64-vulkan-portable.zip` |
+  | `win-cuda12-x64` | `audio-<tag>-bin-win-cuda12-x64.zip` | `audio-<tag>-bin-windows-x64-cuda12.4.zip` |
+  | `win-cudart-cu12` (companion) | `audio-<tag>-cudart-win-cu12-x64.zip` | `audio-<tag>-cudart-windows-x64-cuda12.4.zip` |
+  | `linux-cpu-x64` | `audio-<tag>-bin-linux-cpu-x64.zip` | `audio-<tag>-bin-ubuntu-x64-cpu-portable.tar.gz` |
+  | `linux-vulkan-x64` | `audio-<tag>-bin-linux-vulkan-x64.zip` | `audio-<tag>-bin-ubuntu-x64-vulkan-portable.tar.gz` |
+  | `win-cuda13-x64`, `linux-cpu-arm64`, `linux-cuda13-arm64`, `win-cpu-arm64`, `win-cuda13-arm64` | `audio-<tag>-bin-<backend id>.zip` | — |
+
+- Core orders tags by version; at an equal version the `-a<rev>` rebuild is
+  newer than the bare tag. It never moves an installed engine back.
+
+### By hand
+
+1. In the fork, run `Release (Atomic)` with `upstream_tag=vX.Y.Z` and
+   `publish=true`. Note the fork commit it built: that is `atomic_rev`.
+2. Mirror into the staging slot (the default `manifest_path`):
+
+   ```bash
+   gh workflow run mirror-audiocpp.yml --repo AtomicBot-ai/atomic-chat-conf \
+     -f tag=vX.Y.Z -f atomic_rev=<rev>
+   ```
+
+   It publishes the signed release `vX.Y.Z-a<rev>` here, then commits the
+   staging manifest to main.
+3. Run core's `engine-candidate` with `engine=audio-cpp`,
+   `repo=AtomicBot-ai/atomic-chat-conf`, `tag=vX.Y.Z-a<rev>` and `conf_ref` at
+   or after the mirror's commit. It must pass. Its `results.json` (artifact
+   `engine-candidate-results`) records the conf commit it read as `conf.sha`.
+4. Approve:
+
+   ```bash
+   gh workflow run audiocpp-approve.yml --repo AtomicBot-ai/atomic-chat-conf \
+     -f tag=vX.Y.Z-a<rev> -f conf_sha=<conf.sha>
+   ```
+
+`audiocpp-approve.yml` does nothing when the live manifest already names the
+tag. Otherwise it refuses unless:
+
+- `backends/audiocpp-manifest.staging.json` at `conf_sha`, a commit of main,
+  names the tag, downloads from this repository, and lists every archive with
+  the `size` and `sha256` of this repository's release of the tag (the
+  release's `digest`);
+- a successful `engine-candidate` run in core has the tag as a word of its
+  title, and its `results.json` says `status: pass`, `engine: audio-cpp`,
+  `candidate.repo` `AtomicBot-ai/atomic-chat-conf` and `candidate.tag` the tag
+  (`upstream-verify.mjs gate --engine audio-cpp`). A run on the fork's own
+  release of a bare tag names the same word but not this repository, so it
+  does not count.
+
+Then it writes that staging manifest, with a new `updated_at`, to
+`backends/audiocpp-manifest.json`, validates it like CI does and pushes
+`chore(audiocpp-manifest): approve <tag>` to main. Unlike sd.cpp, a bare tag
+(`vX.Y.Z`, mirrored from upstream or from the fork without `atomic_rev`) may
+be approved too: no installed engine predates the first build, and the fork's
+later `-a<rev>` build of the same tag still reaches every client as an update.
+
+The mirror refuses the tag the live manifest names: a re-run re-signs every
+archive in place, and clients already hold the old hashes. Mirroring with
+`manifest_path=backends/audiocpp-manifest.json` writes the live manifest
+directly, without the check; it is for emergencies only.
+
+### Automatic audio.cpp updates
+
+The engine update pipeline
+([atomic-hatchet-pipeline](https://github.com/AtomicBot-ai/atomic-hatchet-pipeline))
+does not run audio.cpp yet. When it does, it runs the steps above as it does
+for sd.cpp: `mirror-audiocpp.yml` with `candidate_id=<id>`, core's
+`engine-candidate` with `engine=audio-cpp`, then `audiocpp-approve.yml` with
+the run's `conf.sha`; each run is found by `[cid:<id>]` in its title. Both
+conf workflows share the `mirror-audiocpp` concurrency group, so the release
+and the manifests are never rewritten at the same time; sd.cpp and llama.cpp
+mirrors run independently.
+
+### Rolling back
+
+Revert the approval commit (`chore(audiocpp-manifest): approve <tag>`) on
+main. The live manifest names the previous tag again (reverting the very first
+approval removes the live manifest), and cores that have not installed the bad
+build yet stop being offered it. Cores that have installed it stay on it,
+because core never moves an engine back; the fix is the next build through the
+steps above. The revert works only while the previous tag's release still
+exists here: the mirror prunes all but the newest `retain` audio.cpp releases
+(`vX.Y.Z` and `vX.Y.Z-a<rev>` tags only, 3 by default), keeping the tags the
+manifests name.
 
 ## MLX server manifest
 
@@ -2771,7 +2917,7 @@ every push and pull request. It performs the following checks:
   `backends/manifest.json` that names an approved release with
   `min_core_version` `0.0.0` and the same hashes.
   `.github/scripts/upstream-verify.test.mjs` checks the approval gates, for
-  llama.cpp and sd.cpp, against fixture runs in core.
+  llama.cpp, sd.cpp and audio.cpp, against fixture runs in core.
 - `ajv` validates `backends/turboquant-manifest.json` against
   `backends/turboquant-schema.json`.
 - Every TurboQuant `tag` must look like `b<build>-<semver>` and all entries must
@@ -2792,6 +2938,14 @@ every push and pull request. It performs the following checks:
   the CUDA runtime companion, and `sha256`/`size` pairing.
   `.github/scripts/sdcpp-approve.test.mjs` checks the approval against a
   fixture release: the staged archives must match it by size and digest.
+- `ajv` validates `backends/audiocpp-manifest.staging.json` (and
+  `backends/audiocpp-manifest.json`, once an approval has created it) against
+  `backends/audiocpp-schema.json`, and
+  `.github/scripts/audiocpp-manifest-check.mjs` runs sd.cpp's integrity rules
+  on both with audio.cpp's tag form. `audiocpp-manifest-check.test.mjs` runs
+  the schema and those rules on broken copies, and
+  `.github/scripts/audiocpp-approve.test.mjs` checks the approval against a
+  fixture release (`.github/fixtures/audiocpp/`).
 - `ajv` validates `backends/mlx-manifest.json` against
   `backends/mlx-schema.json`, and `node --test` over
   `.github/scripts/mlx-manifest.test.mjs` checks the tag pattern, exactly one
@@ -2906,6 +3060,8 @@ npx ajv-cli@5 validate -s backends/llamacpp-upstream-releases-schema.json -d bac
 node .github/scripts/upstream-releases.mjs check
 npx ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
 npx ajv-cli@5 validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.json --strict=false
+npx ajv-cli@5 validate -s backends/audiocpp-schema.json -d backends/audiocpp-manifest.staging.json --strict=false
+node .github/scripts/audiocpp-manifest-check.mjs
 npx ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.json --strict=false
 npx ajv-cli@5 validate -s backends/foundry-local-schema.json -d backends/foundry-local-manifest.json --strict=false
 node .github/scripts/foundry-local-manifest-check.mjs
