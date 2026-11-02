@@ -11,6 +11,7 @@ import { projectCollection } from './model-catalog.mjs'
 const NEEDS_ESPEAK = new Set(['kokoro_tts', 'piper_tts', 'sanotts', 'inflect_v2', 'kitten_tts', 'kitten_tts2'])
 const TASK_OF_MODE = { speech: 'tts', music: 'gen', effects: 'gen' }
 const SHA256 = /^[0-9a-f]{64}$/
+const ICON = /^[a-z0-9][a-z0-9-]*$/
 
 /** The catalog's own rules for an audio entry: its key, its collection, and one variant per quant. */
 export function checkAudioEntries(catalog) {
@@ -67,6 +68,9 @@ export function checkAudioCatalog(collection) {
         errors.push(`${at}: defaults.durationSec is outside ranges.durationSec`)
     }
     if (model.default_voice && !model.controls.includes('voice')) errors.push(`${at}: default_voice without the voice control`)
+    // What a model picker shows on one row: the developer's mark and one line of text.
+    if (!ICON.test(model.icon ?? '')) errors.push(`${at}: icon names the developer's logo key`)
+    if (model.description.length > 80) errors.push(`${at}: description is one line, at most 80 characters`)
   }
   for (const mode of Object.keys(TASK_OF_MODE))
     if (!collection.models.some((model) => model.mode === mode)) errors.push(`no ${mode} model`)

@@ -479,7 +479,9 @@ catalog of its own. Files are pinned by `revision`, `bytes` and `sha256`, and cl
 
 An entry is keyed `audio:<id>`, has `format: "gguf"`, `engines: ["audio-cpp"]`, and the variants
 `default` (`all-required-files`) plus one per quant whose `selection` is the quant's `id`.
-`.github/scripts/audio-catalog-check.mjs` checks these and what follows; `models/schema.audio.json`
+`icon` is the developer's logo key (`qwen`, `openmoss`, `acestep`, `stability`; a client
+without the key shows a generic mark) and `description` is one line for a model picker, at most 80
+characters. `.github/scripts/audio-catalog-check.mjs` checks these and what follows; `models/schema.audio.json`
 checks the export. To add a model or move one to a newer commit of its repository:
 
 ```sh

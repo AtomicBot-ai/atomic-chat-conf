@@ -87,6 +87,15 @@ test('every mode has a model, on its task', () => {
   assert.match(errors, /speech is served by task tts/)
 })
 
+test('a picker row: a logo key and a one-line description', () => {
+  const collection = live()
+  delete collection.models[0].icon
+  collection.models[1].description = 'x'.repeat(81)
+  const errors = checkAudioCatalog(collection).join('\n')
+  assert.match(errors, /icon names the developer's logo key/)
+  assert.match(errors, /description is one line/)
+})
+
 test('a default voice needs the voice control', () => {
   const collection = live()
   collection.models[0].controls = ['seed']
