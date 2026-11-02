@@ -469,13 +469,29 @@ then the `icon` value here.
 
 ## Audio models
 
-> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export. Edit `models/catalog.json` and regenerate; keep this export for existing consumers. See [model catalog ownership](models/README.md).
-
-`models/audio.json` lists the local speech, music and sound-effect models for audio.cpp, validated by
-`models/schema.audio.json` and `.github/scripts/audio-catalog-check.mjs`. Clients read it from `main`
-(1 h TTL) and send each model's `family`, `task` and options in the load request; the core has no
+The local speech, music and sound-effect models for audio.cpp are the `kind: "audio"` entries of
+[`models/catalog.json`](models/catalog.json), listed by its `audio` collection. Edit them there only:
+`models/audio.json` is their generated export (see [model catalog ownership](models/README.md)). A
+client projects the `audio` collection, with the core's `projectAtomicModelCollection` or from the
+export, and sends each model's `family`, `task` and options in the load request; the core has no
 catalog of its own. Files are pinned by `revision`, `bytes` and `sha256`, and client downloads go to
 `<data>/audio/models/<filename>`.
+
+An entry is keyed `audio:<id>`, has `format: "gguf"`, `engines: ["audio-cpp"]`, and the variants
+`default` (`all-required-files`) plus one per quant whose `selection` is the quant's `id`.
+`icon` is the developer's logo key (`qwen`, `openmoss`, `acestep`, `stability`; a client
+without the key shows a generic mark) and `description` is one line for a model picker, at most 80
+characters. `.github/scripts/audio-catalog-check.mjs` checks these and what follows; `models/schema.audio.json`
+checks the export. To add a model or move one to a newer commit of its repository:
+
+```sh
+node .github/scripts/refresh-model-catalog.mjs audio:<id> audio-cpp/audio.cpp-gguf <full commit>
+node .github/scripts/export-model-catalog.mjs
+make validate
+```
+
+The refresh reads `bytes` and `sha256` of every quant from that commit; a new entry needs its quants'
+`path` and `filename` first.
 
 `controls`, `defaults` and `ranges` say which form fields a client shows before the model is loaded.
 `attribution` is text a client must show with the model: Stable Audio's license asks for

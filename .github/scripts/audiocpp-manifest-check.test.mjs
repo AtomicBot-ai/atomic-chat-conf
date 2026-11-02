@@ -8,13 +8,19 @@ import { test } from 'node:test'
 import { STAGING, checkManifest } from './audiocpp-manifest-check.mjs'
 
 // The schema, run through ajv exactly as `make validate` runs it, and the
-// integrity checks as pure functions, against the real staging manifest (the
-// upstream bootstrap: no download_base) and a mirrored one (the approval
-// fixture), plus broken copies of both.
+// integrity checks as pure functions, against an upstream manifest (the first
+// staging bootstrap of upstream's v0.9.3: no download_base) and a mirrored one
+// (the approval fixture), plus broken copies of both. The real staging and
+// live manifests change with every mirror, so they are only checked to pass.
 const REPO_ROOT = fileURLToPath(new URL('../..', import.meta.url))
 const SCHEMA = 'backends/audiocpp-schema.json'
-const upstream = JSON.parse(readFileSync(join(REPO_ROOT, STAGING), 'utf8'))
-const mirrored = JSON.parse(readFileSync(new URL('../fixtures/audiocpp/staging.json', import.meta.url), 'utf8'))
+const fixture = (name) => JSON.parse(readFileSync(new URL(`../fixtures/audiocpp/${name}`, import.meta.url), 'utf8'))
+const upstream = fixture('upstream.json')
+const mirrored = fixture('staging.json')
+const real = [STAGING, 'backends/audiocpp-manifest.json'].map((path) => [
+  path,
+  JSON.parse(readFileSync(join(REPO_ROOT, path), 'utf8')),
+])
 const edit = (manifest, mutate) => {
   const data = structuredClone(manifest)
   mutate(data)
@@ -22,9 +28,10 @@ const edit = (manifest, mutate) => {
 }
 const asset = (data, backend) => data.assets.find((a) => a.backend === backend)
 
-test('the staging manifest and a mirrored one pass', () => {
+test('an upstream manifest, a mirrored one and the real ones pass', () => {
   assert.deepEqual(checkManifest(upstream), [])
   assert.deepEqual(checkManifest(mirrored), [])
+  for (const [path, manifest] of real) assert.deepEqual(checkManifest(manifest), [], path)
 })
 
 test('the integrity checks say what is wrong', () => {

@@ -5,7 +5,6 @@
 The following files are **deprecated generated compatibility exports**, retained for released clients:
 
 - `audio.json` — generated; do not edit independently.
-
 - `recommended.json` — generated; do not edit independently.
 - `staff-picks.json` — generated; do not edit independently.
 - `diffusion.json` — generated; do not edit independently.
