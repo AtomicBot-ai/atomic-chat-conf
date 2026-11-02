@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.mobile.json",
   "schema_version": 1,
-  "updated_at": "2026-10-27T16:07:09Z",
+  "updated_at": "2026-11-02T01:01:07Z",
   "models": [
     {
       "id": "LiquidAI/LFM2.5-2.6B-GGUF/LFM2.5-2.6B-Q4_K_M.gguf",
@@ -23,7 +23,7 @@
     {
       "id": "mlx-community/Qwen3-0.6B-4bit",
       "name": "Qwen 3 (0.6B) · MLX",
-      "description": "Small local text model for the iOS MLX preview. Runs on the Apple GPU.",
+      "description": "Local text model running on the Apple GPU. Physical iPhone or iPad with iOS 26+. Compact 4-bit weights for everyday chat.",
       "size": 351383618,
       "iconUrl": "qwen",
       "engine": "mlx",
@@ -42,6 +42,117 @@
       "categories": [
         "general",
         "compact"
+      ],
+      "platforms": [
+        "ios"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "mlx-community/Qwen3-1.7B-4bit",
+      "name": "Qwen 3 (1.7B) · MLX",
+      "description": "Local text model running on the Apple GPU. Physical iPhone or iPad with iOS 26+. Compact 4-bit weights for everyday chat.",
+      "size": 984013244,
+      "iconUrl": "qwen",
+      "engine": "mlx",
+      "mmprojRemoteId": null,
+      "supportsThinking": false,
+      "badges": [
+        {
+          "label": "MLX",
+          "tone": "purple"
+        },
+        {
+          "label": "4-bit",
+          "tone": "gray"
+        }
+      ],
+      "categories": [
+        "general",
+        "compact"
+      ],
+      "platforms": [
+        "ios"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "mlx-community/Qwen3-4B-4bit",
+      "name": "Qwen 3 (4B) · MLX",
+      "description": "Local text model running on the Apple GPU. Physical iPhone or iPad with iOS 26+. Requires more free memory than the smaller variants.",
+      "size": 2278969756,
+      "iconUrl": "qwen",
+      "engine": "mlx",
+      "mmprojRemoteId": null,
+      "supportsThinking": false,
+      "badges": [
+        {
+          "label": "MLX",
+          "tone": "purple"
+        },
+        {
+          "label": "4-bit",
+          "tone": "gray"
+        }
+      ],
+      "categories": [
+        "general"
+      ],
+      "platforms": [
+        "ios"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "prithivMLmods/Qwen3.5-0.8B-MTP-GGUF/Qwen3.5-0.8B.Q4_K_M.gguf",
+      "name": "Qwen 3.5 (0.8B) · MTP",
+      "description": "Text-only GGUF with embedded MTP draft layers. Optional MTP is off by default; speed depends on the device and prompt.",
+      "size": 541903680,
+      "iconUrl": "qwen",
+      "engine": "llama",
+      "mmprojRemoteId": null,
+      "supportsThinking": false,
+      "badges": [
+        {
+          "label": "MTP",
+          "tone": "purple"
+        },
+        {
+          "label": "Q4_K_M",
+          "tone": "gray"
+        }
+      ],
+      "categories": [
+        "general",
+        "compact"
+      ],
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "Edge0/Edge0-8B-A1B-preview",
+      "name": "Edge0 8B-A1B · Preview",
+      "description": "Local text-only model with experts streamed from storage. Downloads 4.6 GB; supports background download and pause/resume. Physical iPhone or iPad, iOS 26+.",
+      "size": 4576122089,
+      "iconUrl": "custom",
+      "engine": "edge0",
+      "mmprojRemoteId": null,
+      "supportsThinking": false,
+      "badges": [
+        {
+          "label": "Edge0",
+          "tone": "purple"
+        },
+        {
+          "label": "Preview",
+          "tone": "orange"
+        }
+      ],
+      "categories": [
+        "general"
       ],
       "platforms": [
         "ios"

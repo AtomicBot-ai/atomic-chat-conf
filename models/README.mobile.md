@@ -56,13 +56,13 @@ that supports it before publication. A bare array and the old top-level
 | `name` | yes | Non-empty card title. |
 | `description` | yes | Non-empty card description, materialized in the mobile catalog. |
 | `iconUrl` | yes | Mobile bundled asset key or HTTPS image URL. No desktop asset handles or numeric React Native `require()` values. |
-| `engine` | yes | Exactly `llama`, `mlx` or `coreml-diffusion`. Apple Intelligence is injected by the app and must never be published here. |
+| `engine` | yes | Exactly `llama`, `mlx`, `edge0` or `coreml-diffusion`. Apple Intelligence is injected by the app and must never be published here. |
 | `size` | yes | Positive integer download size in bytes, at most JavaScript's safe integer limit. Not RAM/VRAM or an inference memory estimate. |
 | `mmprojRemoteId` | yes | Exact GGUF projector file identity, or `null`. Must differ from `id`. |
 | `mmprojSize` | when projector exists | Positive integer projector size in bytes. Must be absent when `mmprojRemoteId` is `null`. |
 | `badges` | yes | Array of `{ "label": "...", "tone": "..." }`; may be empty. `label` is non-empty; optional `tone` is `purple`, `green`, `orange`, `gray` or `blue`. |
 | `categories` | no | Descriptive categories: `general`, `reasoning`, `coding`, `vision`, `audio`, `tools`, `compact`, `multilingual`. Unique values; no inference of runtime features. |
-| `platforms` | no, except Apple engines | Non-empty, unique array of `ios`/`android`. Omission means both. `mlx` and `coreml-diffusion` require exactly `["ios"]`; the app must also check runtime availability. |
+| `platforms` | no, except Apple engines | Non-empty, unique array of `ios`/`android`. Omission means both. `mlx`, `edge0` and `coreml-diffusion` require exactly `["ios"]`; the app must also check runtime availability. |
 | `isOnboarding` | no | Offer this exact artifact in mobile onboarding only when `true`. Array order defines catalog order; there is no desktop onboarding inheritance. |
 | `forceCpu` | no | Explicit mobile execution flag. Omission means no forced CPU override; preserve `false` when supplied. |
 | `supportsThinking` | no | Show the mobile thinking toggle only when explicitly `true` and supported by this artifact's chat template. Omission/`false` does not enable it. |
@@ -203,3 +203,13 @@ safe artifact paths, concrete GGUF models/projectors and CoreML artifacts.
 The schema rejects local state, unknown fields, unsupported engines/platforms,
 invalid sizes, unpaired projectors and non-iOS Apple-engine entries. Rejection
 tests exercise these failures; categories never derive mobile execution flags.
+
+## Mobile release catalog, November 2026
+
+The mobile catalogs add Qwen3 MLX 0.6B/1.7B/4B, a text-only Qwen3.5 0.8B GGUF
+with embedded MTP layers, and Edge0 8B. MTP is an optional per-model setting,
+default off, and its badge does not promise a speedup. Edge0 is an iOS-only
+engine supported by the corresponding new mobile binary. Publish with that
+mobile release; do not promote these entries into a legacy-client compatibility
+export without verifying its engine support. Core AI and Edge0 35B are not
+published. The mobile bundle snapshots contain the same two manifests.

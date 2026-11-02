@@ -3,11 +3,19 @@
   "title": "Atomic Chat Mobile Models",
   "description": "Self-contained mobile catalogs. Independent of all desktop manifests and their platform vocabulary.",
   "type": "object",
-  "required": ["schema_version", "updated_at", "models"],
+  "required": [
+    "schema_version",
+    "updated_at",
+    "models"
+  ],
   "additionalProperties": false,
   "properties": {
-    "$schema": { "type": "string" },
-    "schema_version": { "const": 1 },
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1
+    },
     "updated_at": {
       "type": "string",
       "format": "date-time",
@@ -16,7 +24,9 @@
     },
     "models": {
       "type": "array",
-      "items": { "$ref": "#/definitions/model" }
+      "items": {
+        "$ref": "#/definitions/model"
+      }
     }
   },
   "definitions": {
@@ -32,41 +42,100 @@
     },
     "badge": {
       "type": "object",
-      "required": ["label"],
+      "required": [
+        "label"
+      ],
       "additionalProperties": false,
       "properties": {
-        "label": { "type": "string", "minLength": 1 },
-        "tone": { "enum": ["purple", "green", "orange", "gray", "blue"] }
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tone": {
+          "enum": [
+            "purple",
+            "green",
+            "orange",
+            "gray",
+            "blue"
+          ]
+        }
       }
     },
     "model": {
       "type": "object",
-      "required": ["id", "name", "description", "iconUrl", "engine", "size", "mmprojRemoteId", "badges"],
+      "required": [
+        "id",
+        "name",
+        "description",
+        "iconUrl",
+        "engine",
+        "size",
+        "mmprojRemoteId",
+        "badges"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "$ref": "#/definitions/remoteId" },
-        "name": { "type": "string", "minLength": 1 },
-        "description": { "type": "string", "minLength": 1 },
+        "id": {
+          "$ref": "#/definitions/remoteId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
         "iconUrl": {
           "type": "string",
           "pattern": "^([A-Za-z][A-Za-z0-9_-]*|https://\\S+)$",
           "description": "Mobile bundled asset key or HTTPS image URL; desktop icon keys need an explicit mapping."
         },
-        "engine": { "enum": ["llama", "mlx", "coreml-diffusion"] },
-        "size": { "$ref": "#/definitions/bytes" },
-        "mmprojRemoteId": {
-          "anyOf": [{ "$ref": "#/definitions/remoteId" }, { "type": "null" }]
+        "engine": {
+          "enum": [
+            "llama",
+            "mlx",
+            "coreml-diffusion",
+            "edge0"
+          ]
         },
-        "mmprojSize": { "$ref": "#/definitions/bytes" },
+        "size": {
+          "$ref": "#/definitions/bytes"
+        },
+        "mmprojRemoteId": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/remoteId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mmprojSize": {
+          "$ref": "#/definitions/bytes"
+        },
         "badges": {
           "type": "array",
-          "items": { "$ref": "#/definitions/badge" }
+          "items": {
+            "$ref": "#/definitions/badge"
+          }
         },
         "categories": {
           "type": "array",
           "uniqueItems": true,
           "items": {
-            "enum": ["general", "reasoning", "coding", "vision", "audio", "tools", "compact", "multilingual"]
+            "enum": [
+              "general",
+              "reasoning",
+              "coding",
+              "vision",
+              "audio",
+              "tools",
+              "compact",
+              "multilingual"
+            ]
           },
           "description": "Optional descriptive metadata copied on edit from an exact staff pick. Never implies mobile runtime capabilities."
         },
@@ -74,26 +143,93 @@
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "enum": ["ios", "android"] },
+          "items": {
+            "enum": [
+              "ios",
+              "android"
+            ]
+          },
           "description": "Omit for both platforms. MLX and CoreML must explicitly select iOS."
         },
-        "isOnboarding": { "type": "boolean" },
-        "forceCpu": { "type": "boolean" },
-        "supportsThinking": { "type": "boolean" }
+        "isOnboarding": {
+          "type": "boolean"
+        },
+        "forceCpu": {
+          "type": "boolean"
+        },
+        "supportsThinking": {
+          "type": "boolean"
+        }
       },
       "allOf": [
         {
-          "if": { "properties": { "mmprojRemoteId": { "type": "string" } } },
-          "then": { "required": ["mmprojSize"] },
-          "else": { "not": { "required": ["mmprojSize"] } }
+          "if": {
+            "properties": {
+              "mmprojRemoteId": {
+                "type": "string"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "mmprojSize"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "mmprojSize"
+              ]
+            }
+          }
         },
         {
-          "if": { "properties": { "engine": { "enum": ["mlx", "coreml-diffusion"] } } },
-          "then": {
-            "required": ["platforms"],
+          "if": {
             "properties": {
-              "platforms": { "const": ["ios"] },
-              "mmprojRemoteId": { "type": "null" }
+              "engine": {
+                "enum": [
+                  "mlx",
+                  "coreml-diffusion",
+                  "edge0"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "platforms"
+            ],
+            "properties": {
+              "platforms": {
+                "const": [
+                  "ios"
+                ]
+              },
+              "mmprojRemoteId": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "engine": {
+                "const": "edge0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "id": {
+                "const": "Edge0/Edge0-8B-A1B-preview"
+              },
+              "isOnboarding": {
+                "const": false
+              },
+              "supportsThinking": {
+                "const": false
+              }
             }
           }
         }
