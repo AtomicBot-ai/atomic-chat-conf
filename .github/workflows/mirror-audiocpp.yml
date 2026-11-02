@@ -1,0 +1,649 @@
+name: Mirror audio.cpp
+run-name: Mirror audio.cpp ${{ inputs.tag }} [cid:${{ inputs.candidate_id }}]
+
+# Takes an audio.cpp release tag from source_repo (by default the Atomic fork,
+# AtomicBot-ai/audio.cpp, which builds every engine Atomic Chat ships from
+# 0xShug0's tag of the same name), re-signs the Windows and macOS binaries with
+# Atomic Chat's certificates, publishes them as a release here, and points the
+# manifest at them. Modelled on mirror-sdcpp.yml; the differences are the
+# binary (audiocpp_server), the tag form (vX.Y.Z), and upstream's macOS and
+# Linux archives being .tar.gz.
+#
+# Same reasoning as mirror-upstream.yml: the client downloads these archives
+# at runtime and must not run ad-hoc-signed (macOS) or unsigned (Windows)
+# binaries. Linux archives and the NVIDIA-signed cudart companion pass
+# through untouched but gain the sha256 the client verifies.
+#
+# The fork names its archives audio-<tag>-bin-<backend id>.zip (plus
+# audio-<tag>-cudart-win-cu12-x64.zip); upstream names them by its own build
+# matrix (audio-<tag>-bin-windows-x64-vulkan-portable.zip and so on). Both are
+# matched here and written to the manifest under an explicit `backend` id. The
+# client selects on that id and never derives anything from the file name.
+# source_repo=0xShug0/audio.cpp is the emergency and bootstrap path: upstream
+# publishes only the six required builds and the CUDA 12 runtime, so the
+# fork-only ids (win-cuda13-x64 and the arm64 Linux and Windows builds) are
+# optional here.
+#
+# The client matches installs on the manifest's tag_name: a new name is an
+# engine update for every installed copy, the same name is nothing. A rebuild
+# of an upstream tag (new packaging in the fork, or the move from upstream's
+# archives to the fork's) therefore sets atomic_rev, the fork commit the
+# archives were built at. The release here and the manifest are then tagged
+# <tag>-a<rev> (the schema's Atomic-variant suffix), which core ranks above the
+# bare tag, and every client offers the update.
+#
+# A build reaches users through the staging manifest, which is this
+# workflow's default manifest_path (the candidate slot, which test builds read
+# too); then core's engine-candidate (engine=audio-cpp) on the signed release;
+# then audiocpp-approve.yml, which copies the staging manifest that check read
+# into the live one. Callers find this run by `[cid:<candidate_id>]` in its
+# title. Writing the live manifest here directly skips the check.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "audio.cpp release tag to mirror (e.g. v0.9.3)"
+        required: true
+        type: string
+      retain:
+        description: "How many mirrored audio.cpp releases to keep (older ones are deleted)"
+        required: false
+        default: "3"
+        type: string
+      publish_manifest:
+        description: "Commit the manifest (see manifest_path) so clients pick the tag up"
+        required: false
+        default: true
+        type: boolean
+      source_repo:
+        description: "Repository whose release of the tag supplies every archive (0xShug0/audio.cpp: upstream, emergency and bootstrap only)"
+        required: false
+        default: "AtomicBot-ai/audio.cpp"
+        type: choice
+        options:
+          - AtomicBot-ai/audio.cpp
+          - 0xShug0/audio.cpp
+      atomic_rev:
+        description: "Fork commit the archives were built at (7 hex). Set: release and manifest are tagged <tag>-a<rev>, so installed engines update. Empty: the bare tag"
+        required: false
+        default: ""
+        type: string
+      manifest_path:
+        description: "Manifest to write: the staging one (candidate slot, read by test builds and engine-candidate), or the live one (emergencies only: skips the check)"
+        required: false
+        default: "backends/audiocpp-manifest.staging.json"
+        type: choice
+        options:
+          - backends/audiocpp-manifest.staging.json
+          - backends/audiocpp-manifest.json
+      candidate_id:
+        description: "Id the caller finds this run by in its title"
+        required: false
+        default: "manual"
+        type: string
+
+# audiocpp-approve.yml shares the group: it reads the staging manifest and the
+# release this workflow rewrites. sd.cpp and llama.cpp mirrors have their own.
+concurrency:
+  group: mirror-audiocpp
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  # The name clients see: the release here and the manifest's tag_name.
+  RELEASE_TAG: ${{ inputs.atomic_rev != '' && format('{0}-a{1}', inputs.tag, inputs.atomic_rev) || inputs.tag }}
+
+jobs:
+  select:
+    name: Select assets
+    runs-on: ubuntu-latest
+    outputs:
+      windows: ${{ steps.pick.outputs.windows }}
+      macos: ${{ steps.pick.outputs.macos }}
+      passthrough: ${{ steps.pick.outputs.passthrough }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Inputs reach scripts through env only, never through `${{ }}` in `run:`.
+      - name: Validate tag
+        env:
+          TAG: ${{ inputs.tag }}
+          REV: ${{ inputs.atomic_rev }}
+          SOURCE_REPO: ${{ inputs.source_repo }}
+        run: |
+          set -euo pipefail
+          # Side tags such as v0.9.2-drama3-base-small are not engine releases.
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::tag must look like an audio.cpp release tag (e.g. v0.9.3)"
+            exit 1
+          fi
+          case "$SOURCE_REPO" in
+            AtomicBot-ai/audio.cpp|0xShug0/audio.cpp) ;;
+            *) echo "::error::source_repo must be AtomicBot-ai/audio.cpp or 0xShug0/audio.cpp"; exit 1 ;;
+          esac
+          if [ -n "$REV" ]; then
+            if ! [[ "$REV" =~ ^[0-9a-f]{7}$ ]]; then
+              echo "::error::atomic_rev must be a 7-character lowercase commit hash (e.g. 1b2c3d4)"
+              exit 1
+            fi
+            if [ "$SOURCE_REPO" = 0xShug0/audio.cpp ]; then
+              echo "::error::atomic_rev names a fork build; 0xShug0/audio.cpp archives keep the bare tag"
+              exit 1
+            fi
+          fi
+
+      # A re-run of a tag replaces its release assets (--clobber below) with
+      # freshly signed bytes, whose hashes no longer match what clients hold
+      # for the live tag. Read from main as it is now: the run may have waited
+      # behind an approval. Until the first approval there is no live manifest.
+      - name: Refuse the tag clients install
+        run: |
+          set -euo pipefail
+          git fetch --quiet --depth=1 origin main
+          if ! git cat-file -e FETCH_HEAD:backends/audiocpp-manifest.json 2>/dev/null; then
+            echo "No live backends/audiocpp-manifest.json yet; mirroring $RELEASE_TAG"
+            exit 0
+          fi
+          LIVE="$(git show FETCH_HEAD:backends/audiocpp-manifest.json | jq -r .tag_name)"
+          if [ "$LIVE" = "$RELEASE_TAG" ]; then
+            echo "::error::$RELEASE_TAG is the tag backends/audiocpp-manifest.json serves; mirror the build under a new atomic_rev instead"
+            exit 1
+          fi
+          echo "Live tag: $LIVE; mirroring $RELEASE_TAG"
+
+      # Backend ids are the contract with the client (backends/audiocpp-schema.json
+      # enumerates them). Each id lists the fork's archive name first, then
+      # upstream's: only upstream's portable builds (no -march=native) are
+      # taken, and its ROCm and CUDA 13 archives are not mirrored (the fork's
+      # win-cuda13-x64 carries its runtime inside; upstream's needs a second
+      # companion the client does not know).
+      - name: Resolve mirrored assets
+        id: pick
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          SOURCE_REPO: ${{ inputs.source_repo }}
+        run: |
+          set -euo pipefail
+          node <<'EOF'
+          const fs = require('fs')
+          const tag = process.env.TAG
+          const SOURCE = process.env.SOURCE_REPO
+          const T = tag.replace(/\./g, '\\.')
+          const entry = (backend, platform, required, names, extra = {}) => ({
+            backend, platform, required, ...extra,
+            pattern: new RegExp(`^audio-${T}-(?:${names.join('|')})$`),
+          })
+          const MATRIX = [
+            entry('macos-arm64', 'macos', true,
+              ['bin-macos-arm64\\.zip', 'bin-macos-arm64-metal\\.tar\\.gz']),
+            entry('win-cuda12-x64', 'windows', true,
+              ['bin-win-cuda12-x64\\.zip', 'bin-windows-x64-cuda12\\.4\\.zip']),
+            entry('win-vulkan-x64', 'windows', true,
+              ['bin-win-vulkan-x64\\.zip', 'bin-windows-x64-vulkan-portable\\.zip']),
+            entry('win-cpu-x64', 'windows', true,
+              ['bin-win-cpu-x64\\.zip', 'bin-windows-x64-cpu-portable\\.zip']),
+            entry('linux-vulkan-x64', 'passthrough', true,
+              ['bin-linux-vulkan-x64\\.zip', 'bin-ubuntu-x64-vulkan-portable\\.tar\\.gz']),
+            entry('linux-cpu-x64', 'passthrough', true,
+              ['bin-linux-cpu-x64\\.zip', 'bin-ubuntu-x64-cpu-portable\\.tar\\.gz']),
+            // NVIDIA's own signed DLLs; mirrored byte-for-byte so download_base
+            // applies to every asset the manifest lists. Required: the client
+            // cannot run win-cuda12-x64 on a host without the CUDA toolkit
+            // otherwise.
+            entry('win-cudart-cu12', 'passthrough', true,
+              ['cudart-win-cu12-x64\\.zip', 'cudart-windows-x64-cuda12\\.4\\.zip'], { companion: true }),
+            // Atomic additions, absent from an upstream release. Their CUDA
+            // runtime is inside them, so there is no companion; Windows ones are
+            // signed like the rest (already-signed NVIDIA and VC++ DLLs keep
+            // their own).
+            entry('win-cuda13-x64', 'windows', false, ['bin-win-cuda13-x64\\.zip']),
+            entry('linux-cuda13-arm64', 'passthrough', false, ['bin-linux-cuda13-arm64\\.zip']),
+            entry('linux-cpu-arm64', 'passthrough', false, ['bin-linux-cpu-arm64\\.zip']),
+            entry('win-cuda13-arm64', 'windows', false, ['bin-win-cuda13-arm64\\.zip']),
+            entry('win-cpu-arm64', 'windows', false, ['bin-win-cpu-arm64\\.zip']),
+          ]
+
+          async function main() {
+            const resp = await fetch(`https://api.github.com/repos/${SOURCE}/releases/tags/${tag}`, {
+              headers: {
+                Accept: 'application/vnd.github+json',
+                'User-Agent': 'atomic-chat-conf-mirror-audiocpp',
+                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+              },
+            })
+            if (!resp.ok) throw new Error(`GitHub API ${resp.status} for ${SOURCE} tag ${tag}: ${await resp.text()}`)
+            const release = await resp.json()
+            const repo = SOURCE
+            const selected = []
+            const missing = []
+            for (const e of MATRIX) {
+              const matches = (release.assets ?? []).filter((a) => e.pattern.test(a.name))
+              if (matches.length === 0) {
+                if (e.required) missing.push(`${e.backend}: ${e.pattern.source}`)
+                continue
+              }
+              if (matches.length > 1) throw new Error(`${e.backend}: ${matches.length} assets match ${e.pattern.source}`)
+              const asset = matches[0]
+              // sign-windows unpacks and repacks zips only.
+              if (e.platform === 'windows' && !asset.name.endsWith('.zip')) throw new Error(`${asset.name} is not a zip`)
+              selected.push({
+                backend: e.backend,
+                name: asset.name,
+                size: asset.size,
+                platform: e.platform,
+                companion: e.companion === true,
+                repo,
+                url: `https://github.com/${repo}/releases/download/${tag}/${asset.name}`,
+              })
+            }
+            if (missing.length > 0) throw new Error(`${SOURCE} release ${tag} is missing required assets:\n  ${missing.join('\n  ')}`)
+            selected.sort((a, b) => a.backend.localeCompare(b.backend))
+            fs.writeFileSync('assets.json', JSON.stringify({ tag, assets: selected }, null, 2) + '\n')
+            for (const a of selected) console.error(`  ${a.platform.padEnd(12)} ${a.backend.padEnd(20)} ${a.name} (${(a.size / 1024 ** 2).toFixed(1)} MiB) from ${a.repo}`)
+          }
+          main().catch((err) => { console.error(err.message); process.exit(1) })
+          EOF
+          for platform in windows macos passthrough; do
+            list="$(jq -c "[.assets[] | select(.platform == \"$platform\")]" assets.json)"
+            echo "$platform=$list" >> "$GITHUB_OUTPUT"
+          done
+
+      # The publish job needs the backend-id mapping back; the signed
+      # artifacts only carry file names.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audiocpp-selection
+          path: assets.json
+          retention-days: 1
+
+  sign-macos:
+    name: Sign macOS (${{ matrix.asset.name }})
+    needs: select
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        asset: ${{ fromJSON(needs.select.outputs.macos) }}
+    env:
+      ASSET_NAME: ${{ matrix.asset.name }}
+      ASSET_URL: ${{ matrix.asset.url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Import code signing certificate
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          # The keychain lives and dies with this job, so its password is
+          # generated here rather than kept as a secret.
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 24)
+
+          echo -n "$APPLE_CERTIFICATE" | base64 --decode -o "$CERTIFICATE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          if [ -z "$IDENTITY" ]; then
+            echo "::error::No Developer ID Application identity in the imported keychain"
+            exit 1
+          fi
+          echo "CODESIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+          echo "Signing identity: $IDENTITY"
+
+      - name: Download source archive
+        run: curl -fSL --retry 5 --retry-delay 3 -o "$ASSET_NAME" "$ASSET_URL"
+
+      # The fork ships a zip, upstream a .tar.gz; both are flat today, but the
+      # archive is signed in place and repacked in its own format with
+      # whatever structure it came with. Core locates audiocpp_server itself
+      # when it finalizes the install.
+      - name: Sign Mach-O binaries
+        run: |
+          set -euo pipefail
+          mkdir extract
+          case "$ASSET_NAME" in
+            *.zip) unzip -q "$ASSET_NAME" -d extract ;;
+            *.tar.gz) tar -xzf "$ASSET_NAME" -C extract ;;
+            *) echo "::error::$ASSET_NAME is neither a .zip nor a .tar.gz"; exit 1 ;;
+          esac
+
+          signed=0
+          while IFS= read -r bin; do
+            if file "$bin" | grep -q "Mach-O"; then
+              codesign --force --options runtime --timestamp \
+                --entitlements .github/entitlements.plist \
+                --sign "$CODESIGN_IDENTITY" "$bin"
+              codesign --verify --strict "$bin"
+              signed=$((signed + 1))
+            fi
+          done < <(find extract -type f)
+
+          if [ "$signed" -eq 0 ]; then
+            echo "::error::no Mach-O binaries found in $ASSET_NAME"
+            exit 1
+          fi
+          echo "Signed $signed Mach-O binaries"
+
+          server="$(find extract -type f -name audiocpp_server -print -quit)"
+          if [ -z "$server" ]; then
+            echo "::error::audiocpp_server missing from $ASSET_NAME"
+            exit 1
+          fi
+          "$server" --version 2>&1 | head -5 || true
+
+      # COPYFILE_DISABLE and --no-xattrs/--no-mac-metadata keep macOS's tar from
+      # adding ._* AppleDouble entries and xattr headers that upstream's
+      # Linux-made tarballs never had.
+      - name: Repack
+        run: |
+          set -euo pipefail
+          rm -f "$ASSET_NAME"
+          case "$ASSET_NAME" in
+            *.zip) (cd extract && zip -qr "../$ASSET_NAME" .) ;;
+            *.tar.gz) (cd extract && COPYFILE_DISABLE=1 tar --no-xattrs --no-mac-metadata -czf "../$ASSET_NAME" .) ;;
+          esac
+          rm -rf extract
+
+      - name: Verify signatures survived the round trip
+        run: |
+          set -euo pipefail
+          mkdir verify
+          case "$ASSET_NAME" in
+            *.zip) unzip -q "$ASSET_NAME" -d verify ;;
+            *.tar.gz) tar -xzf "$ASSET_NAME" -C verify ;;
+          esac
+          if [ -n "$(find verify -name '._*' -print -quit)" ]; then
+            echo "::error::$ASSET_NAME gained AppleDouble entries"
+            exit 1
+          fi
+          server="$(find verify -type f -name audiocpp_server -print -quit)"
+          codesign -dv --verbose=2 "$server" 2>&1 | grep -E "Authority|TeamIdentifier|flags"
+          codesign --verify --strict "$server"
+          rm -rf verify
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-${{ matrix.asset.name }}
+          path: ${{ matrix.asset.name }}
+          retention-days: 1
+
+  sign-windows:
+    name: Sign Windows (${{ matrix.asset.name }})
+    needs: select
+    runs-on: windows-latest
+    strategy:
+      # One job per archive: the CUDA archives are hundreds of megabytes each
+      # and signing them in sequence would blow the job timeout.
+      fail-fast: false
+      matrix:
+        asset: ${{ fromJSON(needs.select.outputs.windows) }}
+    env:
+      ASSET_NAME: ${{ matrix.asset.name }}
+      ASSET_URL: ${{ matrix.asset.url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download source archive
+        shell: pwsh
+        run: |
+          curl.exe -fSL --retry 5 --retry-delay 3 -o "$env:ASSET_NAME" "$env:ASSET_URL"
+          if ($LASTEXITCODE -ne 0) { throw "download failed" }
+
+      - name: Extract
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path extract | Out-Null
+          7z x "$env:ASSET_NAME" -oextract -bso0 -bsp0
+          if ($LASTEXITCODE -ne 0) { throw "7z failed to extract" }
+          Remove-Item "$env:ASSET_NAME"
+
+      - name: Sign binaries
+        uses: ./.github/actions/windows-code-sign
+        with:
+          path: extract
+          sm-api-key: ${{ secrets.SM_API_KEY }}
+          sm-client-cert-b64: ${{ secrets.SM_CLIENT_CERT_FILE_B64 }}
+          sm-client-cert-password: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
+
+      - name: Repack
+        shell: pwsh
+        run: |
+          # 7-Zip, not Compress-Archive: the latter is single-threaded and needs
+          # double-digit minutes on the CUDA archives.
+          Push-Location extract
+          7z a -tzip -mx=5 -mmt=on "..\$env:ASSET_NAME" * -bso0 -bsp0
+          if ($LASTEXITCODE -ne 0) { throw "7z failed to repack" }
+          Pop-Location
+          Remove-Item -Recurse -Force extract
+
+      - name: Verify signatures survived the round trip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path verify | Out-Null
+          7z x "$env:ASSET_NAME" -overify -bso0 -bsp0
+          $server = Get-ChildItem -Path verify -Recurse -Filter "audiocpp_server.exe" | Select-Object -First 1
+          if (-not $server) { throw "audiocpp_server.exe missing from repacked archive" }
+          signtool verify /pa $server.FullName
+          if ($LASTEXITCODE -ne 0) { throw "repacked audiocpp_server.exe is not signed" }
+          Remove-Item -Recurse -Force verify
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-${{ matrix.asset.name }}
+          path: ${{ matrix.asset.name }}
+          retention-days: 1
+
+  passthrough:
+    name: Pass through (${{ matrix.asset.name }})
+    needs: select
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        asset: ${{ fromJSON(needs.select.outputs.passthrough) }}
+    steps:
+      # No Linux code-signing mechanism exists here, and the cudart companion
+      # holds NVIDIA's own signed DLLs. Both are mirrored byte-for-byte; they
+      # still gain the sha256 the client verifies.
+      - name: Download source archive
+        env:
+          ASSET_NAME: ${{ matrix.asset.name }}
+          ASSET_URL: ${{ matrix.asset.url }}
+        run: curl -fSL --retry 5 --retry-delay 3 -o "$ASSET_NAME" "$ASSET_URL"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-${{ matrix.asset.name }}
+          path: ${{ matrix.asset.name }}
+          retention-days: 1
+
+  publish:
+    name: Publish release and manifest
+    needs: [select, sign-macos, sign-windows, passthrough]
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag }}
+      REV: ${{ inputs.atomic_rev }}
+      MANIFEST: ${{ inputs.manifest_path }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Collect signed assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: signed-*
+          path: dist
+          merge-multiple: true
+
+      - name: Collect the backend-id selection
+        uses: actions/download-artifact@v4
+        with:
+          name: audiocpp-selection
+          path: selection
+
+      - name: Show what will be published
+        run: ls -la dist
+
+      # The release must exist and hold every asset BEFORE the manifest moves:
+      # clients resolve download URLs from the manifest, so the reverse order
+      # would hand them 404s for as long as the upload took.
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SOURCE="$(jq -r '.assets[0].repo' selection/assets.json)"
+          {
+            printf 'Mirror of [%s %s](https://github.com/%s/releases/tag/%s)' "$SOURCE" "$TAG" "$SOURCE" "$TAG"
+            if [ -n "$REV" ]; then
+              printf ' as built at [%s](https://github.com/%s/commit/%s)' "$REV" "$SOURCE" "$REV"
+            fi
+            if [ "$SOURCE" != 0xShug0/audio.cpp ]; then
+              printf ', from [0xShug0/audio.cpp %s](https://github.com/0xShug0/audio.cpp/releases/tag/%s)' "$TAG" "$TAG"
+            fi
+            printf '.\n\n'
+            printf 'Windows binaries are Authenticode-signed and macOS binaries carry a Developer ID signature with hardened runtime; DLLs already signed by NVIDIA or Microsoft keep their own signature. Linux archives and the CUDA runtime companion are mirrored byte-for-byte.\n\n'
+            printf 'Consumed by Atomic Chat through `backends/audiocpp-manifest.json`.\n'
+          } > notes.md
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG exists; replacing its assets and notes"
+            gh release upload "$RELEASE_TAG" dist/* --clobber
+            gh release edit "$RELEASE_TAG" --notes-file notes.md
+            exit 0
+          fi
+          gh release create "$RELEASE_TAG" dist/* \
+            --title "audio.cpp $RELEASE_TAG (signed mirror)" \
+            --notes-file notes.md
+
+      - name: Regenerate ${{ inputs.manifest_path }}
+        run: |
+          set -euo pipefail
+          node <<'EOF'
+          const { createHash } = require('crypto')
+          const fs = require('fs')
+          const path = require('path')
+          const tag = process.env.TAG
+          const selection = JSON.parse(fs.readFileSync('selection/assets.json', 'utf8'))
+          if (selection.tag !== tag) throw new Error(`selection is for ${selection.tag}, not ${tag}`)
+          const assets = []
+          for (const entry of selection.assets) {
+            const file = path.join('dist', entry.name)
+            if (!fs.existsSync(file)) throw new Error(`${entry.name} was selected but not published`)
+            const sha256 = createHash('sha256').update(fs.readFileSync(file)).digest('hex')
+            const size = fs.statSync(file).size
+            const asset = { backend: entry.backend, name: entry.name, sha256, size }
+            if (entry.companion) asset.companion = true
+            assets.push(asset)
+          }
+          const manifest = {
+            $schema: './audiocpp-schema.json',
+            updated_at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+            upstream_repo: selection.assets[0].repo,
+            tag_name: process.env.RELEASE_TAG,
+            download_base: 'https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download',
+            assets,
+          }
+          const out = process.env.MANIFEST
+          if (!['backends/audiocpp-manifest.json', 'backends/audiocpp-manifest.staging.json'].includes(out)) throw new Error(`refusing to write ${out}`)
+          fs.writeFileSync(out, JSON.stringify(manifest, null, 2) + '\n')
+          console.error(`Wrote ${out}: tag ${process.env.RELEASE_TAG}, ${assets.length} asset(s)`)
+          EOF
+
+      - name: Validate the regenerated manifest
+        run: |
+          set -euo pipefail
+          npm install -g ajv-cli@5
+          ajv validate -s backends/audiocpp-schema.json -d "$MANIFEST" --strict=false
+          node .github/scripts/audiocpp-manifest-check.mjs "$MANIFEST"
+
+      # Someone may push to main between the checkout and here: rebase onto it
+      # and retry rather than fail with the release already up.
+      - name: Commit manifest
+        if: ${{ inputs.publish_manifest }}
+        env:
+          SOURCE_REPO: ${{ inputs.source_repo }}
+        run: |
+          set -euo pipefail
+          git add -N "$MANIFEST"
+          if git diff --quiet -- "$MANIFEST"; then
+            echo "$MANIFEST already points at $RELEASE_TAG; nothing to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$MANIFEST"
+          git commit -m "chore(audiocpp-manifest): mirror $SOURCE_REPO $RELEASE_TAG into $(basename "$MANIFEST")"
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected (attempt $attempt): rebasing onto main"
+            git pull --rebase
+          done
+          echo "::error::Could not push $MANIFEST for $RELEASE_TAG"
+          exit 1
+
+      - name: Prune old mirrored releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RETAIN: ${{ inputs.retain }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$RETAIN" =~ ^[0-9]+$ ]] || [ "$RETAIN" -lt 1 ]; then
+            echo "::error::retain must be a positive integer"
+            exit 1
+          fi
+          # Only audio.cpp tags (vX.Y.Z, with or without -a<rev>), newest
+          # version first, a fork rebuild above the bare tag, then newest
+          # release: a re-run of an older tag would otherwise look like the
+          # newest release and evict a current one. llama.cpp's b<n>, sd.cpp's
+          # master-<n>-<sha> and PrismML's prism-* tags are different streams
+          # and never match. The tag just published and the tags the manifests
+          # in this checkout name are never deleted.
+          mapfile -t keep < <(
+            echo "$RELEASE_TAG"
+            for m in backends/audiocpp-manifest.json backends/audiocpp-manifest.staging.json; do
+              if [ -f "$m" ]; then jq -r '.tag_name' "$m"; fi
+            done
+          )
+          mapfile -t stale < <(
+            gh release list --limit 200 --json tagName,createdAt --jq '
+              [ .[]
+                | select(.tagName | test("^v[0-9]+[.][0-9]+[.][0-9]+(-a[0-9a-f]{7})?$"))
+                | { tag: .tagName,
+                    version: (.tagName | capture("^v(?<x>[0-9]+)[.](?<y>[0-9]+)[.](?<z>[0-9]+)") | [(.x | tonumber), (.y | tonumber), (.z | tonumber)]),
+                    rebuild: (.tagName | test("-a[0-9a-f]{7}$")),
+                    at: .createdAt } ]
+              | sort_by([.version, .rebuild, .at]) | reverse | .[].tag' \
+              | tail -n +$((RETAIN + 1))
+          )
+          pruned=0
+          for tag in "${stale[@]}"; do
+            if printf '%s\n' "${keep[@]}" | grep -qxF "$tag"; then
+              echo "Keeping $tag: a manifest names it"
+              continue
+            fi
+            echo "Deleting release $tag"
+            gh release delete "$tag" --yes --cleanup-tag
+            pruned=$((pruned + 1))
+          done
+          [ "$pruned" -gt 0 ] || echo "Nothing to prune (retaining $RETAIN)"

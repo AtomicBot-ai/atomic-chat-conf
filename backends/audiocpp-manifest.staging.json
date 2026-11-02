@@ -1,0 +1,51 @@
+{
+  "$schema": "./audiocpp-schema.json",
+  "updated_at": "2026-10-29T11:50:24Z",
+  "upstream_repo": "0xShug0/audio.cpp",
+  "tag_name": "v0.9.3",
+  "assets": [
+    {
+      "backend": "linux-cpu-x64",
+      "name": "audio-v0.9.3-bin-ubuntu-x64-cpu-portable.tar.gz",
+      "sha256": "02156f7a7bd9924902cec26be35087d3806c7e348be344b1ec28cac0c1af3929",
+      "size": 63289061
+    },
+    {
+      "backend": "linux-vulkan-x64",
+      "name": "audio-v0.9.3-bin-ubuntu-x64-vulkan-portable.tar.gz",
+      "sha256": "10ac6b5cb72bc9266e5a600407dbcc2a3eaf87139a3e01c064bf3035d11f81b8",
+      "size": 77051422
+    },
+    {
+      "backend": "macos-arm64",
+      "name": "audio-v0.9.3-bin-macos-arm64-metal.tar.gz",
+      "sha256": "70a84c2b61ce5ef99547a12affab9b0d40daf08666baf7da4f940d5c7b722819",
+      "size": 34847832
+    },
+    {
+      "backend": "win-cpu-x64",
+      "name": "audio-v0.9.3-bin-windows-x64-cpu-portable.zip",
+      "sha256": "f5fa4662b7ec323dbe31d37e224e46159b064836a9005da384551a5248771eeb",
+      "size": 30409504
+    },
+    {
+      "backend": "win-cuda12-x64",
+      "name": "audio-v0.9.3-bin-windows-x64-cuda12.4.zip",
+      "sha256": "976b1fe4329407be45b272fc656d91006f081d22706f453f8879bc69dbb4a9b3",
+      "size": 465913709
+    },
+    {
+      "backend": "win-cudart-cu12",
+      "name": "audio-v0.9.3-cudart-windows-x64-cuda12.4.zip",
+      "sha256": "866a2bc12c4d887eb3b1b62f82f7a8fdd93391cb77ea02b63b0f360cfb3bb4d8",
+      "size": 607273675,
+      "companion": true
+    },
+    {
+      "backend": "win-vulkan-x64",
+      "name": "audio-v0.9.3-bin-windows-x64-vulkan-portable.zip",
+      "sha256": "51f8d8ce6cc7789bc9dc3d15f35e05f143aaf2ce1cbecc525a4104bcdde82a42",
+      "size": 82088153
+    }
+  ]
+}
