@@ -35,6 +35,16 @@ test('an audio entry is a gguf for audio-cpp with one variant per quant', () => 
   assert.match(errors, /variant q4_k names no quant/)
 })
 
+test('every quant pins its bytes and LFS sha256', () => {
+  const edited = catalog()
+  const [quant] = edited.models['audio:moss-tts-nano-100m'].definition.quants
+  quant.bytes = '193343328'
+  quant.sha256 = quant.sha256.toUpperCase()
+  const errors = checkAudioEntries(edited).join('\n')
+  assert.match(errors, /quant q8_0 needs its bytes/)
+  assert.match(errors, /quant q8_0 needs its LFS sha256/)
+})
+
 test('refuses a model that needs eSpeak-ng', () => {
   const collection = live()
   collection.models[0].family = 'kokoro_tts'

@@ -10,6 +10,7 @@ import { projectCollection } from './model-catalog.mjs'
 /** eSpeak-ng is GPL and our builds leave it out: these families answer `Could not load eSpeak-ng`. */
 const NEEDS_ESPEAK = new Set(['kokoro_tts', 'piper_tts', 'sanotts', 'inflect_v2', 'kitten_tts', 'kitten_tts2'])
 const TASK_OF_MODE = { speech: 'tts', music: 'gen', effects: 'gen' }
+const SHA256 = /^[0-9a-f]{64}$/
 
 /** The catalog's own rules for an audio entry: its key, its collection, and one variant per quant. */
 export function checkAudioEntries(catalog) {
@@ -27,6 +28,11 @@ export function checkAudioEntries(catalog) {
       if (entry.variants[variant]?.selection !== selection) errors.push(`${key}: variant ${variant} selects ${selection}`)
     for (const variant of Object.keys(entry.variants))
       if (!(variant in expected)) errors.push(`${key}: variant ${variant} names no quant`)
+    // The same file pin as a diffusion quant: what refresh-model-catalog.mjs reads from the HF commit.
+    for (const quant of quants) {
+      if (!Number.isSafeInteger(quant.bytes) || quant.bytes <= 0) errors.push(`${key}: quant ${quant.id} needs its bytes`)
+      if (!SHA256.test(quant.sha256 ?? '')) errors.push(`${key}: quant ${quant.id} needs its LFS sha256, 64 lowercase hex`)
+    }
   }
   return errors
 }
