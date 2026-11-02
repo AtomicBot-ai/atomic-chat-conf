@@ -29,6 +29,12 @@ jobs:
       - name: Install ajv-cli
         run: npm install -g ajv-cli@5
 
+      - name: Check the unified model catalog and compatible exports
+        run: |
+          node --test .github/scripts/model-catalog.test.mjs
+          node .github/scripts/export-model-catalog.mjs --check
+          npx --yes ajv-cli@5 validate -s models/schema.catalog.json -d models/catalog.json --strict=false
+
       - name: Validate providers registry against schema
         run: |
           ajv validate \

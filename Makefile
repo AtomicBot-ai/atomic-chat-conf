@@ -166,6 +166,9 @@ prism-withdraw:
 # runtime-descriptor-*.test.mjs files discover every one of them, schema
 # included, so a new engine's descriptor is checked without editing this list.
 validate:
+	node --test .github/scripts/model-catalog.test.mjs
+	node .github/scripts/export-model-catalog.mjs --check
+	npx --yes ajv-cli@5 validate -s models/schema.catalog.json -d models/catalog.json --strict=false
 	node --test .github/scripts/recommendation-tiers.test.mjs
 	node --test .github/scripts/runtime-descriptor.test.mjs
 	node --test .github/scripts/environment-manifest.test.mjs

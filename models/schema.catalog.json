@@ -1,0 +1,165 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat unified model catalog",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "updated_at",
+    "models",
+    "collections"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "models": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "kind",
+          "definition",
+          "format",
+          "variants"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "chat",
+              "diffusion",
+              "embedding",
+              "decision",
+              "litert-lm",
+              "geniex",
+              "foundry-local",
+              "auxiliary",
+              "prism",
+              "audio"
+            ]
+          },
+          "definition": {
+            "type": "object"
+          },
+          "omit_revisions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "format": {
+            "type": "string",
+            "minLength": 1
+          },
+          "variants": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "path",
+                "size"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "size": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "model_id": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "chat"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "files"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "collections": {
+      "type": "object",
+      "required": [
+        "recommended",
+        "staff-picks",
+        "diffusion",
+        "embedding",
+        "decision",
+        "litert-lm-models",
+        "geniex-models",
+        "foundry-local-models",
+        "atomic-prism-models",
+        "audio"
+      ],
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "header"
+        ],
+        "properties": {
+          "header": {
+            "type": "object"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "model",
+                "variant"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "variant": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
