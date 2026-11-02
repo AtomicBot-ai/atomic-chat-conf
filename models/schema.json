@@ -1,7 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Atomic Chat Recommended Models",
-  "description": "Schema for the remote recommended-models manifest consumed by the Atomic Chat (Jan) client.",
+  "title": "Atomic Chat Recommended Models (deprecated export)",
+  "description": "DEPRECATED compatibility export: models/recommended.json is generated from models/catalog.json for released clients. Edit catalog.json and regenerate; keep this export until its consumers are explicitly unsupported. Legacy contract: Schema for the remote recommended-models manifest consumed by the Atomic Chat (Jan) client.",
+  "deprecated": true,
   "type": "object",
   "required": [
     "schema_version",

@@ -1,7 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Atomic Chat diffusion model catalog",
-  "description": "Curated local image/video generation families for stable-diffusion.cpp (and, later, the diffusers sidecar). Every size is the exact byte count from the Hugging Face API: the app renders bytes / 1024**3, so a hand-typed decimal GB would disagree with the progress bar beside it. A video family (modality video) also carries a video block; its side files may include audio_vae and a text_encoders entry with field embeddings_connectors.",
+  "title": "Atomic Chat diffusion model catalog (deprecated export)",
+  "description": "DEPRECATED compatibility export: models/diffusion.json is generated from models/catalog.json for released clients. Edit catalog.json and regenerate; keep this export until its consumers are explicitly unsupported. Legacy contract: Curated local image/video generation families for stable-diffusion.cpp (and, later, the diffusers sidecar). Every size is the exact byte count from the Hugging Face API: the app renders bytes / 1024**3, so a hand-typed decimal GB would disagree with the progress bar beside it. A video family (modality video) also carries a video block; its side files may include audio_vae and a text_encoders entry with field embeddings_connectors.",
+  "deprecated": true,
   "type": "object",
   "required": ["schema_version", "updated_at", "families"],
   "additionalProperties": false,

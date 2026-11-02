@@ -1,7 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Atomic Chat audio model catalog",
-  "description": "Curated local speech, music and sound-effect models for audio.cpp. Clients read it from conf; the core takes family, task and options in each load request.",
+  "title": "Atomic Chat audio model catalog (deprecated export)",
+  "description": "DEPRECATED compatibility export: models/audio.json is generated from models/catalog.json for released clients. Edit catalog.json and regenerate; retain the export while its consumers are supported. Legacy contract: Curated local speech, music and sound-effect models for audio.cpp. Clients read it from conf; the core takes family, task and options in each load request.",
+  "deprecated": true,
   "type": "object",
   "required": ["schema_version", "updated_at", "models"],
   "additionalProperties": false,

@@ -270,6 +270,8 @@ provider or new model never requires a bump.
 
 ## Recommended models
 
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
+
 [`models/recommended.json`](models/recommended.json) drives the **Recommended**
 section in two places of the Atomic Chat client:
 
@@ -358,18 +360,16 @@ arbitrary context lengths. Refresh the evidence when rotating these choices.
 
 ### How to add or update a recommendation
 
-1. Open [`models/recommended.json`](models/recommended.json) on GitHub.
-2. Click the pencil icon ("Edit").
-3. Append (or modify) an entry following the shape above.
-4. Bump `updated_at` to today (`YYYY-MM-DDTHH:MM:SSZ`).
-5. Commit to a new branch and open a Pull Request.
-6. Wait for CI ("Validate registry") to pass — it runs the JSON Schema
-   plus a duplicate-entry check against `models/recommended.json`.
-7. Request a review and merge.
+1. Edit the model/variant in `models/catalog.json` and reference its ID in the `recommended` collection.
+2. Bump the canonical catalog's `updated_at` and regenerate compatibility exports with `node .github/scripts/export-model-catalog.mjs`.
+3. Run `make validate`, review the canonical diff and generated exports, then open a Pull Request.
+4. Request a review and merge after CI passes. Do not independently edit the deprecated `models/recommended.json` export.
 
 All running Atomic Chat clients pick up the change within an hour.
 
 ## Staff picks
+
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
 
 [`models/staff-picks.json`](models/staff-picks.json) drives the **Staff picks**
 list that the Hub screen (`/hub`) shows by default, before the user types a
@@ -427,6 +427,8 @@ bump `updated_at`, open a PR, wait for the "Validate registry" workflow.
 
 ## Decision models
 
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
+
 `models/decision.json` lists the decision models of the Hub's Decision
 category: models that answer typed questions (`choice`, `score`, `noul`) about
 a state in one forward pass, served on `/v1/systemone`. The app downloads every
@@ -467,6 +469,8 @@ then the `icon` value here.
 
 ## Audio models
 
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export. Edit `models/catalog.json` and regenerate; keep this export for existing consumers. See [model catalog ownership](models/README.md).
+
 `models/audio.json` lists the local speech, music and sound-effect models for audio.cpp, validated by
 `models/schema.audio.json` and `.github/scripts/audio-catalog-check.mjs`. Clients read it from `main`
 (1 h TTL) and send each model's `family`, `task` and options in the load request; the core has no
@@ -482,6 +486,8 @@ Our audio.cpp builds leave out eSpeak-ng, which is GPL, so the check refuses mod
 it, such as Kokoro and Piper.
 
 ## Embedding models
+
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
 
 `models/embedding.json` lists the embedding models of the Hub's Embedding
 category: models that turn an input into a vector, served on the Local API
@@ -1306,6 +1312,8 @@ insert the entry at the top of `releases`, run `make validate`, and open a PR.
 
 ## Foundry Local model list
 
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
+
 [`models/foundry-local-models.json`](models/foundry-local-models.json) tells
 the app where Foundry Local models come from and which of them Atomic Chat has
 curated. Schema:
@@ -1504,6 +1512,8 @@ run `make validate`, and open a PR with the `shasum -a 256` output in its
 description.
 
 ## LiteRT-LM model list
+
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
 
 [`models/litert-lm-models.json`](models/litert-lm-models.json) tells the app
 and `atc` which LiteRT-LM models Atomic Chat has checked and where to find the
@@ -1725,6 +1735,8 @@ the entry at the top of `releases`, run `make validate`, and open a PR with
 the `shasum -a 256` output in its description.
 
 ## GenieX model list
+
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
 
 [`models/geniex-models.json`](models/geniex-models.json) tells the app and
 `atc` which GenieX models Atomic Chat has checked and how to fill the list
@@ -3093,7 +3105,10 @@ npx ajv-cli@5 validate -s app/schema.json -d app/latest.json --strict=false
 
 See the project's primary license in the main Atomic Chat repository.
 
+
 ## Diffusion model revisions
+
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
 
 `models/diffusion.json` accepts an optional full 40-character Hugging Face
 commit SHA in `transformer.revision` and in each side file's `revision` (VAE,
@@ -3110,3 +3125,20 @@ Its Q3_K_M, Q4_K_M, Q5_K_M and Q6_K byte counts and LFS SHA-256 values were
 refreshed from that revision's Hub metadata; Q8_0 is unchanged. The catalog
 metadata was checked; image generation with the replacement files has not
 been validated as part of this correction.
+
+
+## Unified model catalog
+
+`models/catalog.json` is the only editable source for desktop model definitions, recommendation references and auxiliary HF sources. `models/schema.catalog.json` and `.github/scripts/model-catalog.mjs` validate structure, references and full repository commits. Each collection references a model rather than copying its source. `omit_revisions` records which newly pinned fields a historical export must omit; it does not remove pins from new clients.
+
+The existing desktop JSON files are **deprecated generated compatibility exports**; their supported consumers keep the same payloads and URLs. The complete list and retirement policy are in [models/README.md](models/README.md). Run `node .github/scripts/export-model-catalog.mjs` after editing the catalog. CI and `make validate` reject exports that disagree with it. Mobile catalogs and immutable runtime descriptors remain separate contracts. Keep the old exports until support for their released consumers is explicitly ended.
+
+To update one source deliberately, run `node .github/scripts/refresh-model-catalog.mjs <model-id> <owner/repo> <full-commit>`, regenerate exports and review their changes. The helper obtains file metadata from that exact HF commit. It never substitutes main. The exporter and its tests require no network. Initial migration preserves all old export values and pins historical image files to their matching commits.
+
+Client baselines are generated copies of the same document, not additional catalogs to edit:
+
+```sh
+node .github/scripts/export-model-catalog.mjs --baseline ../Atomic-Chat/core/src/browser/modelCatalogBaseline.json --baseline ../eye-cli/src/workspace-service/models/model-catalog-baseline.json --baseline ../atomic-chat-core/src/client/model-catalog-baseline.json
+```
+
+Add `--check` to validate those copies offline. Publish compatible conf data, release core, then update the clients' exact core pins and lockfiles before releasing either client.

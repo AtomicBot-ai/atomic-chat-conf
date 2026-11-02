@@ -1,7 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Atomic Chat Staff Picks",
-  "description": "Schema for the remote staff-picks manifest consumed by the Atomic Chat Hub. Intentionally separate from models/schema.json: recommended.json is frozen for shipped production clients and must keep schema_version 1 with its original entry shape.",
+  "title": "Atomic Chat Staff Picks (deprecated export)",
+  "description": "DEPRECATED compatibility export: models/staff-picks.json is generated from models/catalog.json for released clients. Edit catalog.json and regenerate; keep this export until its consumers are explicitly unsupported. Legacy contract: Schema for the remote staff-picks manifest consumed by the Atomic Chat Hub. Intentionally separate from models/schema.json: recommended.json is frozen for shipped production clients and must keep schema_version 1 with its original entry shape.",
+  "deprecated": true,
   "type": "object",
   "required": ["schema_version", "updated_at", "picks"],
   "additionalProperties": false,

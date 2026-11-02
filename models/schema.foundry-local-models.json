@@ -1,7 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Atomic Chat Foundry Local model list",
-  "description": "Models of the `foundry-local` provider, plus where the app finds the rest. The app resolves a variant through `resolver` (an undocumented Azure ML registry endpoint that answers without an account with a short-lived SAS link to the variant's blob container), downloads every listed file into <data>/foundry-local/models/<variant id>/<path>, checking size and sha256, and writes model.yml last. Models of the live Microsoft catalog at `catalog.url` are shown after the curated ones, checked by size only; a curated variant with the same asset id and version wins. The app skips a variant whose `source.kind`, execution provider or device it does not know, and a model left with no variants, so new kinds of source are added next to the old ones.",
+  "title": "Atomic Chat Foundry Local model list (deprecated export)",
+  "description": "DEPRECATED compatibility export: models/foundry-local-models.json is generated from models/catalog.json for released clients. Edit catalog.json and regenerate; keep this export until its consumers are explicitly unsupported. Legacy contract: Models of the `foundry-local` provider, plus where the app finds the rest. The app resolves a variant through `resolver` (an undocumented Azure ML registry endpoint that answers without an account with a short-lived SAS link to the variant's blob container), downloads every listed file into <data>/foundry-local/models/<variant id>/<path>, checking size and sha256, and writes model.yml last. Models of the live Microsoft catalog at `catalog.url` are shown after the curated ones, checked by size only; a curated variant with the same asset id and version wins. The app skips a variant whose `source.kind`, execution provider or device it does not know, and a model left with no variants, so new kinds of source are added next to the old ones.",
+  "deprecated": true,
   "type": "object",
   "required": ["schema_version", "updated_at", "resolver", "catalog", "models"],
   "additionalProperties": false,
