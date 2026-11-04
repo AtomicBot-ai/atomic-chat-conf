@@ -1,0 +1,393 @@
+;
+; Copyright(C) 2024-2025 Advanced Micro Devices, Inc. All rights Reserved.
+;
+; kipudrv.inf
+;
+[Version]
+Signature = "$Windows NT$"
+Class=ComputeAccelerator
+ClassGuid={F01A9D53-3FF6-48D2-9F97-C8A7004BE10C}
+Provider=%ManufacturerName%
+PnpLockdown=1
+DriverVer = 10/10/2025,32.00.0203.314
+CatalogFile=kipudrv.cat
+
+[SourceDisksNames]
+0=%IpuMcdmDriverDisk%
+
+[SourceDisksFiles]
+ipu_pasid.sbin = 0
+1x4.xclbin = 0
+validate_1502_00.xclbin = 0
+df_bw.txt = 0, DPU_Sequence
+tct_1col.txt = 0, DPU_Sequence
+tct_4col.txt = 0, DPU_Sequence
+df_bw_17f0_10.elf = 0, ELF
+df_bw_17f0_11.elf = 0, ELF
+df_bw_17f0_20.elf = 0, ELF
+tct_1col_17f0_10.elf = 0, ELF
+tct_1col_17f0_11.elf = 0, ELF
+tct_1col_17f0_20.elf = 0, ELF
+tct_4col_17f0_10.elf = 0, ELF
+tct_4col_17f0_11.elf = 0, ELF
+tct_4col_17f0_20.elf = 0, ELF
+nop_17f0_10.elf = 0, ELF
+nop_17f0_11.elf = 0, ELF
+nop_17f0_20.elf = 0, ELF
+preemption_noop_4x4.elf = 0, ELF
+preemption_noop_4x8.elf = 0, ELF
+preemption_memtile_4x4.elf = 0, ELF
+preemption_memtile_4x8.elf = 0, ELF
+ipu_2_pasid.sbin = 0
+ipu_3_pasid.sbin = 0
+ipu_4_pasid.sbin = 0
+validate_17f0_00.xclbin = 0
+validate_17f0_10.xclbin = 0
+validate_17f0_11.xclbin = 0
+validate_17f0_20.xclbin = 0
+validate_elf_17f0_10.xclbin = 0
+validate_elf_17f0_11.xclbin = 0
+validate_elf_17f0_20.xclbin = 0
+gemm_17f0_10.xclbin = 0
+gemm_17f0_11.xclbin = 0
+gemm_17f0_20.xclbin = 0
+gemm_elf_17f0_10.xclbin = 0
+gemm_elf_17f0_11.xclbin = 0
+gemm_elf_17f0_20.xclbin = 0
+mobilenet_elf_17f0_10.xclbin = 0
+mobilenet_elf_17f0_11.xclbin = 0
+mobilenet_elf_17f0_20.xclbin = 0
+mobilenet_ifm.bin = 0, Mobilenet
+mobilenet_param.bin = 0, Mobilenet
+buffer_sizes.json = 0, Mobilenet
+mobilenet_4col_17f0_10.elf = 0, ELF
+mobilenet_4col_17f0_11.elf = 0, ELF
+mobilenet_4col_17f0_20.elf = 0, ELF
+gemm_int8.txt = 0, DPU_Sequence
+gemm_int8_17f0_10.elf = 0, ELF
+gemm_int8_17f0_11.elf = 0, ELF
+gemm_int8_17f0_20.elf = 0, ELF
+preemption_4x4_17f0.xclbin = 0
+preemption_4x8_17f0.xclbin = 0
+aie_reconfig_overhead.txt = 0, DPU_Sequence
+aie_reconfig_overhead_17f0_10.elf = 0, ELF
+aie_reconfig_overhead_17f0_11.elf = 0, ELF
+aie_reconfig_overhead_17f0_20.elf = 0, ELF
+benchmark_17f0_10.json = 0
+benchmark_17f0_11.json = 0
+benchmark_17f0_20.json = 0
+xrt-smi.exe = 0
+xrt_core.dll = 0
+xrt_coreutil.dll = 0
+xdp_core.dll = 0
+xdp_ml_timeline_plugin.dll = 0
+xdp_user_plugin.dll = 0
+vitis-ai-runtime.dll = 0
+vitis-ai-runtime2.dll = 0
+aks.dll = 0
+trace-logging-aks.dll = 0
+akskernels.dll = 0
+1x4_2.5.0.189-1.xclbin = 0
+1x4_2.5.0.259-365.xclbin = 0
+1x4_3.5.0.0-949.xclbin = 0
+1x4_v0_122.xclbin = 0
+5x4_3.5.0.0-950.xclbin = 0
+1x4_2.5.0.0-518_ipu_2.xclbin = 0
+1x4_3.5.0.0-947_ipu_2.xclbin = 0
+1x4_3.5.0.050-650.xclbin = 0
+5x4_3.5.0.050-651.xclbin = 0
+1x4_3.5.0.0-798.xclbin = 0
+5x4_3.5.0.0-799.xclbin = 0
+1x4_3.5.0.0-1505.xclbin = 0
+1x4_3.5.0.0-1482_ipu_2.xclbin = 0
+4x4_3.5.0.0-1506.xclbin = 0
+4x4_3.5.0.0-1483_ipu_2.xclbin = 0
+qdq.1x4_3.5.0.0-1481_ipu_2.xclbin = 0
+1x4_3.5.0.0-1791.xclbin = 0
+4x4_3.5.0.0-1792.xclbin = 0
+1x4_3.5.0.0-1793_ipu_2.xclbin = 0
+4x4_3.5.0.0-1794_ipu_2.xclbin = 0
+1x4_3.5.0.0-2044_ipu_2.xclbin = 0
+4x4_3.5.0.0-2046_ipu_2.xclbin = 0
+1x4_3.5.0.0-1990_ipu_2.xclbin = 0
+4x4_3.5.0.0-1987_ipu_2.xclbin = 0
+4x4_3.5.0.0-1989_ipu_2.xclbin = 0
+aieml_gemm_asr.xclbin = 0
+aieml_gemm_asr.json = 0
+aieml_gemm_asr_qdq.xclbin = 0
+aieml_gemm_asr_qdq.json = 0
+aieml_gemm_vm_phx_4x4.xclbin = 0
+aieml_gemm_vm_phx_4x4.json = 0
+aieml_gemm_vm_phx_4x4_bf16.xclbin = 0
+aieml_gemm_vm_phx_4x4_bf16.json = 0
+aie2p_gemm_strix_4x2_bf16.xclbin = 0
+aie2p_gemm_strix_4x2_bf16.json = 0
+aie2p_gemm_vm_strix_4x4.xclbin = 0
+aie2p_gemm_vm_strix_4x4.json = 0
+maize.dll = 0
+tvm_ipu.dll = 0
+tvm_ipu_runtime.dll = 0
+1x4_3.5.0.0-2351.xclbin = 0
+4x4_3.5.0.0-2352.xclbin = 0
+AMD_AIE2P_Nx4_Overlay_3.5.0.0-2353_ipu_2.xclbin = 0
+AMD_AIE2P_4x4_Overlay_3.5.0.0-2354_ipu_2.xclbin = 0
+1x4_3.5.0.0-2145_ipu_2.xclbin = 0
+4x4_3.5.0.0-2160_ipu_2.xclbin = 0
+AMD_AIE2P_4x4_Overlay_CFG0_3.5.0.0-2229_ipu_2.xclbin = 0
+config_xclbin.txt = 0
+ipustack.sys  = 0,,
+amd_taau_ops.rml_plugin.dll = 0
+RadeonML.dll = 0
+RadeonML_aks.dll = 0
+RadeonML_DirectML.dll = 0
+RadeonML_ipu.dll = 0
+
+[DestinationDirs]
+IpuMcdmDriver.Miniport = 13 ; Driver store
+IpuMcdmDriver.Dpu = 13, DPU_Sequence ; Driver store/DPU_Sequence
+IpuMcdmDriver.Elf = 13, ELF ; Driver store/ELF
+IpuMcdmDriver.Mobilenet = 13, Mobilenet ; Driver store/Mobilenet
+IpuMcdmDriver.UserModeAMD = 11 , AMD ; System32/AMD
+IpuMcdmDriver.CopyMisc = 11
+IpuMcdmDriver.CopyXclbin = 11,AMD
+
+[Manufacturer]
+%ManufacturerName%=IpuMcdmDriver.Mfg,NTamd64.10.0...22000
+
+[ControlFlags]
+ExcludeFromSelect=*
+
+
+[IpuMcdmDriver.NT]
+FeatureScore=FB
+AddReg = IpuMcdmDriver.AddReg
+CopyFiles=IpuMcdmDriver.Miniport, IpuMcdmDriver.CopyMisc, IpuMcdmDriver.CopyXclbin, IpuMcdmDriver.Dpu, IpuMcdmDriver.UserModeAMD, IpuMcdmDriver.Elf, IpuMcdmDriver.Mobilenet
+
+[IpuMcdmDriver.NT.HW]
+Include = machine.inf
+Needs = PciD3ColdSupported.HW
+AddReg = IPUHW.AddReg
+
+[IpuMcdmDriver.Miniport]
+ipu_pasid.sbin
+1x4.xclbin
+validate_1502_00.xclbin
+ipu_2_pasid.sbin
+ipu_3_pasid.sbin
+ipu_4_pasid.sbin
+validate_17f0_00.xclbin
+validate_17f0_10.xclbin
+validate_17f0_11.xclbin
+validate_17f0_20.xclbin
+validate_elf_17f0_10.xclbin
+validate_elf_17f0_11.xclbin
+validate_elf_17f0_20.xclbin
+gemm_17f0_10.xclbin
+gemm_17f0_11.xclbin
+gemm_17f0_20.xclbin
+gemm_elf_17f0_10.xclbin
+gemm_elf_17f0_11.xclbin
+gemm_elf_17f0_20.xclbin
+mobilenet_elf_17f0_10.xclbin
+mobilenet_elf_17f0_11.xclbin
+mobilenet_elf_17f0_20.xclbin
+preemption_4x4_17f0.xclbin
+preemption_4x8_17f0.xclbin
+benchmark_17f0_10.json
+benchmark_17f0_11.json
+benchmark_17f0_20.json
+xrt_core.dll
+xdp_ml_timeline_plugin.dll
+xdp_user_plugin.dll
+1x4_2.5.0.189-1.xclbin
+1x4_2.5.0.259-365.xclbin
+1x4_3.5.0.0-949.xclbin
+1x4_v0_122.xclbin
+5x4_3.5.0.0-950.xclbin
+1x4_2.5.0.0-518_ipu_2.xclbin
+1x4_3.5.0.0-947_ipu_2.xclbin
+1x4_3.5.0.050-650.xclbin
+5x4_3.5.0.050-651.xclbin
+1x4_3.5.0.0-798.xclbin
+5x4_3.5.0.0-799.xclbin
+1x4_3.5.0.0-1505.xclbin
+1x4_3.5.0.0-1482_ipu_2.xclbin
+4x4_3.5.0.0-1506.xclbin
+4x4_3.5.0.0-1483_ipu_2.xclbin
+qdq.1x4_3.5.0.0-1481_ipu_2.xclbin
+1x4_3.5.0.0-1791.xclbin
+4x4_3.5.0.0-1792.xclbin
+1x4_3.5.0.0-1793_ipu_2.xclbin
+4x4_3.5.0.0-1794_ipu_2.xclbin
+1x4_3.5.0.0-2044_ipu_2.xclbin
+4x4_3.5.0.0-2046_ipu_2.xclbin
+1x4_3.5.0.0-1990_ipu_2.xclbin
+4x4_3.5.0.0-1987_ipu_2.xclbin
+4x4_3.5.0.0-1989_ipu_2.xclbin
+aieml_gemm_asr.xclbin
+aieml_gemm_asr.json
+aieml_gemm_asr_qdq.xclbin
+aieml_gemm_asr_qdq.json
+aieml_gemm_vm_phx_4x4.xclbin
+aieml_gemm_vm_phx_4x4.json
+aieml_gemm_vm_phx_4x4_bf16.xclbin
+aieml_gemm_vm_phx_4x4_bf16.json
+aie2p_gemm_strix_4x2_bf16.xclbin
+aie2p_gemm_strix_4x2_bf16.json
+aie2p_gemm_vm_strix_4x4.xclbin
+aie2p_gemm_vm_strix_4x4.json
+1x4_3.5.0.0-2351.xclbin
+4x4_3.5.0.0-2352.xclbin
+AMD_AIE2P_Nx4_Overlay_3.5.0.0-2353_ipu_2.xclbin
+AMD_AIE2P_4x4_Overlay_3.5.0.0-2354_ipu_2.xclbin
+1x4_3.5.0.0-2145_ipu_2.xclbin
+4x4_3.5.0.0-2160_ipu_2.xclbin
+AMD_AIE2P_4x4_Overlay_CFG0_3.5.0.0-2229_ipu_2.xclbin
+config_xclbin.txt
+ipustack.sys
+
+[IpuMcdmDriver.Dpu]
+df_bw.txt
+tct_1col.txt
+tct_4col.txt
+gemm_int8.txt
+aie_reconfig_overhead.txt
+
+[IpuMcdmDriver.Elf]
+nop_17f0_10.elf
+nop_17f0_11.elf
+nop_17f0_20.elf
+df_bw_17f0_10.elf
+df_bw_17f0_11.elf
+df_bw_17f0_20.elf
+tct_1col_17f0_10.elf
+tct_1col_17f0_11.elf
+tct_1col_17f0_20.elf
+tct_4col_17f0_10.elf
+tct_4col_17f0_11.elf
+tct_4col_17f0_20.elf
+aie_reconfig_overhead_17f0_10.elf
+aie_reconfig_overhead_17f0_11.elf
+aie_reconfig_overhead_17f0_20.elf
+gemm_int8_17f0_10.elf
+gemm_int8_17f0_11.elf
+gemm_int8_17f0_20.elf
+preemption_noop_4x4.elf
+preemption_noop_4x8.elf
+preemption_memtile_4x4.elf
+preemption_memtile_4x8.elf
+mobilenet_4col_17f0_10.elf
+mobilenet_4col_17f0_11.elf
+mobilenet_4col_17f0_20.elf
+
+[IpuMcdmDriver.Mobilenet]
+mobilenet_ifm.bin
+mobilenet_param.bin
+buffer_sizes.json
+
+[IpuMcdmDriver.AddReg]
+; Non-DX NPU Device
+HKR,,DXCoreAttributes,%REG_MULTI_SZ%,{D46140C4-ADD7-451B-9E56-06FE8C3B58ED}
+
+[IpuMcdmDriver.NT.Services]
+; Service Installation
+AddService = IpuMcdmDriver, 0x00000002, IpuMcdmDriver_Generic_Service_Inst, IpuMcdmDriver_EventLog_Inst
+
+[IpuMcdmDriver_EventLog_Inst]
+AddReg = IpuMcdmDriver_EventLog_AddReg
+
+[IpuMcdmDriver_EventLog_AddReg]
+HKR,,EventMessageFile,%REG_EXPAND_SZ%,"%%SystemRoot%%\System32\IoLogMsg.dll"
+HKR,,TypesSupported,%REG_DWORD%,7
+
+[IpuMcdmDriver_Generic_Service_Inst]
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START - Must be demand start
+ErrorControl   = 0                  ; SERVICE_ERROR_IGNORE
+LoadOrderGroup = Video
+AddReg         = IpuMcdm_Service_Inst_AddReg
+ServiceBinary  = %13%\ipustack.sys
+
+[IPUHW.AddReg]
+HKR,Interrupt Management,,0x00000010
+HKR,Interrupt Management\MessageSignaledInterruptProperties,,0x00000010
+HKR,Interrupt Management\MessageSignaledInterruptProperties,MSISupported,0x00010001,1
+HKR,Interrupt Management\MessageSignaledInterruptProperties,MessageNumberLimit,0x00010001,32
+HKR,IPU DriverStore Path,IPUDriverStore,,%13%
+HKR,,DeviceType,0x00010001,0x00000002
+HKR,,Security,,"D:P(A;;GA;;;SY)(A;;GA;;;BA)(A;;GXGWGR;;;WD)(A;;GXGR;;;RC)"
+HKR,,Characteristics,0x00010001,0x00000100
+
+[IpuMcdm_Service_Inst_AddReg]
+HKR,Parameters,DmaRemappingCompatible,0x00010001,1    ; where 1 = opt-in
+
+[Strings]
+; Non-Localizable Strings
+REG_MULTI_SZ  = 0x00010000
+REG_EXPAND_SZ = 0x00020000
+REG_DWORD     = 0x00010001
+
+; Localizable Strings
+IpuMcdmDriver="NPU Compute Accelerator Device"
+IpuMcdmDriverDisk = "IPU Accelerator Driver Disk"
+ManufacturerName="AMD"
+
+[IpuMcdmDriver.UserMode]
+maize.dll
+tvm_ipu.dll
+tvm_ipu_runtime.dll
+[IpuMcdmDriver.UserModeAMD]
+xrt-smi.exe
+
+[IpuMcdmDriver.Mfg.NTamd64.10.0...22000]
+%IpuMcdmDriver% = IpuMcdmDriver,PCI\VEN_1022&DEV_1502
+%IpuMcdmDriver% = IpuMcdmDriver,PCI\VEN_1022&DEV_17F0
+
+[IpuMcdmDriver.CopyMisc]
+aks.dll
+xdp_core.dll
+trace-logging-aks.dll
+akskernels.dll
+xrt_coreutil.dll
+vitis-ai-runtime.dll
+vitis-ai-runtime2.dll
+amd_taau_ops.rml_plugin.dll
+RadeonML.dll
+RadeonML_aks.dll
+RadeonML_DirectML.dll
+RadeonML_ipu.dll
+
+[IpuMcdmDriver.CopyXclbin]
+1x4_2.5.0.0-518_ipu_2.xclbin
+1x4_2.5.0.189-1.xclbin
+1x4_2.5.0.259-365.xclbin
+1x4_3.5.0.0-1482_ipu_2.xclbin
+1x4_3.5.0.0-1505.xclbin
+1x4_3.5.0.0-1791.xclbin
+1x4_3.5.0.0-1793_ipu_2.xclbin
+1x4_3.5.0.0-1990_ipu_2.xclbin
+1x4_3.5.0.0-2044_ipu_2.xclbin
+1x4_3.5.0.0-2145_ipu_2.xclbin
+1x4_3.5.0.0-2351.xclbin
+1x4_3.5.0.0-798.xclbin
+1x4_3.5.0.0-947_ipu_2.xclbin
+1x4_3.5.0.0-949.xclbin
+1x4_3.5.0.050-650.xclbin
+1x4_v0_122.xclbin
+4x4_3.5.0.0-1483_ipu_2.xclbin
+4x4_3.5.0.0-1506.xclbin
+4x4_3.5.0.0-1792.xclbin
+4x4_3.5.0.0-1794_ipu_2.xclbin
+4x4_3.5.0.0-1987_ipu_2.xclbin
+4x4_3.5.0.0-1989_ipu_2.xclbin
+4x4_3.5.0.0-2046_ipu_2.xclbin
+4x4_3.5.0.0-2160_ipu_2.xclbin
+4x4_3.5.0.0-2352.xclbin
+5x4_3.5.0.0-799.xclbin
+5x4_3.5.0.0-950.xclbin
+5x4_3.5.0.050-651.xclbin
+AMD_AIE2P_4x4_Overlay_3.5.0.0-2354_ipu_2.xclbin
+AMD_AIE2P_4x4_Overlay_CFG0_3.5.0.0-2229_ipu_2.xclbin
+AMD_AIE2P_Nx4_Overlay_3.5.0.0-2353_ipu_2.xclbin
+qdq.1x4_3.5.0.0-1481_ipu_2.xclbin
+

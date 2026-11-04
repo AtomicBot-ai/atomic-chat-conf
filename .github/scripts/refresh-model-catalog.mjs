@@ -10,6 +10,10 @@ if (!id || !repo || !COMMIT.test(revision ?? '')) throw new Error('Use a model i
 const catalog = validateCatalog(structuredClone(input))
 const model = catalog.models[id]
 if (!model) throw new Error(`Unknown model ${id}`)
+// The recursive legacy updater cannot resolve files through independent source
+// IDs, and changing a qualified source invalidates its live evidence. Fail before
+// fetching or mutating anything; FLM refreshes need a new complete staged plan.
+if (model.kind === 'fastflowlm') throw new Error('FastFlowLM source changes require a complete staged file plan and renewed qualification')
 const response = await request(`https://huggingface.co/api/models/${repo}/revision/${revision}?blobs=true&files_metadata=true`)
 if (!response.ok) throw new Error(`Hugging Face returned HTTP ${response.status}`)
 const metadata = await response.json()

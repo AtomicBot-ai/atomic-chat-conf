@@ -1,0 +1,9 @@
+{
+  "source": "https://www.catalog.update.microsoft.com/DownloadDialog.aspx",
+  "update_id": "7193bd4f-927d-44fd-ae77-c1e4ba75be1f",
+  "url": "https://catalog.s.download.windowsupdate.com/c/msdownload/update/driver/drvs/2025/11/bff3a5d0-92a6-4025-b4a6-441222f89117_4c46e3c98d8f4a730543be3f6dac7f8b4ebfa4b7.cab",
+  "sha256_base64": "MTQ64mmOiqYlOYHXVxdUEkuqfUjw2bcoDs+pt1cIwz4=",
+  "architecture": "AMD64",
+  "driver_version": "32.0.203.314",
+  "hardware_id": "PCI\\VEN_1022&DEV_17F0"
+}

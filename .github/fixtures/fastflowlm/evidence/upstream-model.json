@@ -1,0 +1,37 @@
+{
+  "repository": "ROCm/FastFlowLM",
+  "commit": "f37cdd29edc777cf3db1e385da8e7bfadc57d0b3",
+  "path": "src/model_list.json",
+  "checkpoint": "qwen3:0.6b",
+  "definition": {
+    "supported_platforms": [
+      "aie2p"
+    ],
+    "name": "Qwen3-0.6B-NPU2",
+    "url": "https://huggingface.co/FastFlowLM/Qwen3-0.6B-NPU2",
+    "file_url": "https://huggingface.co/api/models/FastFlowLM/Qwen3-0.6B-NPU2/tree/main",
+    "ms_url": "https://modelscope.cn/models/amd/Qwen3-0.6B-NPU2",
+    "modified_at": "2025-05-30T00:00:00Z",
+    "size": 600000000,
+    "flm_min_version": "0.9.22",
+    "files": [
+      "config.json",
+      "model.q4nx",
+      "tokenizer.json",
+      "tokenizer_config.json"
+    ],
+    "default_context_length": 32768,
+    "max_prefill_len": 4096,
+    "details": {
+      "family": "qwen3",
+      "think": false,
+      "think_toggleable": true,
+      "parameter_size": "0.6B",
+      "quantization_level": "Q4_1"
+    },
+    "label": [
+      "reasoning"
+    ],
+    "footprint": 0.66
+  }
+}

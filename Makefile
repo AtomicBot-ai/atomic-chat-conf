@@ -166,6 +166,10 @@ prism-withdraw:
 # runtime-descriptor-*.test.mjs files discover every one of them, schema
 # included, so a new engine's descriptor is checked without editing this list.
 validate:
+	node --test .github/scripts/fastflowlm-manifest.test.mjs
+	node --experimental-strip-types --test .github/scripts/fastflowlm-models.test.mjs
+	node --test .github/scripts/fastflowlm-candidates.test.mjs
+	node .github/scripts/fastflowlm-manifest-check.mjs
 	node --test .github/scripts/model-catalog.test.mjs
 	node .github/scripts/export-model-catalog.mjs --check
 	npx --yes ajv-cli@5 validate -s models/schema.catalog.json -d models/catalog.json --strict=false

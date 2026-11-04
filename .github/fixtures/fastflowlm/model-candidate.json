@@ -1,0 +1,148 @@
+{
+  "kind": "fastflowlm",
+  "format": "fastflowlm",
+  "definition": {
+    "model_id": "qwen3-0.6b",
+    "variant_id": "qwen3-0.6b-npu2",
+    "name": "Qwen3 0.6B (FastFlowLM NPU2 candidate)",
+    "checkpoint": "qwen3:0.6b",
+    "minimum_flm_version": "flm-1.0.11-r1",
+    "local_only_protocol": 1,
+    "npu_generation": "xdna2",
+    "context_length": 32768,
+    "license": "Apache-2.0",
+    "gated": false,
+    "capabilities": {
+      "chat": true,
+      "tools": false,
+      "reasoning": false,
+      "structured_output": false
+    },
+    "sources": [
+      {
+        "id": "flm",
+        "repo": "FastFlowLM/Qwen3-0.6B-NPU2",
+        "revision": "b584799232c962f693e0e5be99606fc4eca6811e"
+      },
+      {
+        "id": "license",
+        "repo": "Qwen/Qwen3-0.6B",
+        "revision": "c1899de289a04d12100db370d81485cdf75e47ca"
+      }
+    ],
+    "files": [
+      {
+        "source": "flm",
+        "source_path": "README.md",
+        "path": "README.md",
+        "size": 13197,
+        "sha256": "9e9cd51a3b822ae4bb3b6832534c38e938c75690473f12314d76d059b79a4419"
+      },
+      {
+        "source": "flm",
+        "source_path": "attn.xclbin",
+        "path": "attn.xclbin",
+        "size": 355915,
+        "sha256": "7fef95ff22e540bf4c98c7013efcfc7a8cae5d1a2e5d9e02cab63ae6156ff620"
+      },
+      {
+        "source": "flm",
+        "source_path": "config.json",
+        "path": "config.json",
+        "size": 869,
+        "sha256": "8a5ec72f5c96766168a4024f88d70841ae341900a0c84fd4fd23f8eeae16c6a7"
+      },
+      {
+        "source": "flm",
+        "source_path": "dequant.xclbin",
+        "path": "dequant.xclbin",
+        "size": 115179,
+        "sha256": "a1be8893482f4d6f3634621e9f1c52355ce082cb768300ead02a54b05026b74c"
+      },
+      {
+        "source": "flm",
+        "source_path": "layer.xclbin",
+        "path": "layer.xclbin",
+        "size": 307451,
+        "sha256": "288ae1338438aed8afef17c09f2c3f02eed90239cd818ced015d11d37a22b6f2"
+      },
+      {
+        "source": "flm",
+        "source_path": "lm_head.xclbin",
+        "path": "lm_head.xclbin",
+        "size": 153355,
+        "sha256": "4b6fbf300da031265251984dccde59044a83d4c6cfa73c4175cf5f58c2165501"
+      },
+      {
+        "source": "flm",
+        "source_path": "mm.xclbin",
+        "path": "mm.xclbin",
+        "size": 347675,
+        "sha256": "b1e88cd899e3fbef3b402ecaf2ab644f21cca2ee85dafe6e2521d89222c5a644"
+      },
+      {
+        "source": "flm",
+        "source_path": "model.q4nx",
+        "path": "model.q4nx",
+        "size": 683820832,
+        "sha256": "db8dec4dff653817218ff920c5d25d28d1805512906485e654f03980053fa667"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer.json",
+        "path": "tokenizer.json",
+        "size": 11422654,
+        "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer_config.json",
+        "path": "tokenizer_config.json",
+        "size": 10055,
+        "sha256": "51015f78470ac7f7b8c128a6b6ee31a0081285a453db4caba9d46104063908a2"
+      },
+      {
+        "source": "license",
+        "source_path": "LICENSE",
+        "path": "LICENSE",
+        "size": 11343,
+        "sha256": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e"
+      }
+    ],
+    "components": {
+      "weights": [
+        "model.q4nx"
+      ],
+      "tokenizer": [
+        "tokenizer.json",
+        "tokenizer_config.json"
+      ],
+      "config": [
+        "config.json"
+      ],
+      "chat_template": [
+        "tokenizer_config.json"
+      ],
+      "kernels": [
+        "attn.xclbin",
+        "dequant.xclbin",
+        "layer.xclbin",
+        "lm_head.xclbin",
+        "mm.xclbin"
+      ],
+      "metadata": [
+        "README.md",
+        "LICENSE"
+      ]
+    },
+    "qualification": {
+      "status": "candidate",
+      "evidence": []
+    }
+  },
+  "variants": {
+    "qwen3-0.6b-npu2": {
+      "selection": "all-required-files"
+    }
+  }
+}

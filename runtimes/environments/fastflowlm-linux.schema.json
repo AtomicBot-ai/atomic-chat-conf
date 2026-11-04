@@ -1,0 +1,270 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "engine",
+    "platform",
+    "manifest_id",
+    "recipes"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "engine": {
+      "const": "fastflowlm"
+    },
+    "platform": {
+      "const": "linux"
+    },
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^fastflowlm-linux-r[1-9][0-9]*$"
+    },
+    "recipes": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "recipe_id",
+          "revision",
+          "min_core_version",
+          "hardware",
+          "qualification",
+          "platforms",
+          "sources",
+          "packages",
+          "firmware_version",
+          "xrt",
+          "memlock_bytes",
+          "action"
+        ],
+        "properties": {
+          "recipe_id": {
+            "type": "string",
+            "pattern": "^fastflowlm-linux-[a-z0-9][a-z0-9.-]*$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "min_core_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+          },
+          "hardware": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "npu_generation",
+              "pci_device_ids"
+            ],
+            "properties": {
+              "npu_generation": {
+                "const": "xdna2"
+              },
+              "pci_device_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^1022:[0-9a-f]{4}$"
+                }
+              }
+            }
+          },
+          "qualification": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "evidence",
+              "build_version"
+            ],
+            "properties": {
+              "evidence": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "url",
+                  "size",
+                  "sha256"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "pattern": "^https://github\\.com/AtomicBot-ai/atomic-chat-core/releases/download/[^/?#]+/[^/?#]+$"
+                  },
+                  "size": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  }
+                }
+              },
+              "build_version": {
+                "type": "string",
+                "pattern": "^flm-(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)-r[1-9][0-9]*$"
+              }
+            }
+          },
+          "platforms": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "os",
+                "distribution",
+                "version",
+                "arch",
+                "kernel_release"
+              ],
+              "properties": {
+                "os": {
+                  "const": "linux"
+                },
+                "distribution": {
+                  "const": "ubuntu"
+                },
+                "version": {
+                  "enum": [
+                    "24.04",
+                    "26.04"
+                  ]
+                },
+                "arch": {
+                  "const": "x64"
+                },
+                "kernel_release": {
+                  "type": "string",
+                  "pattern": "^[0-9][0-9A-Za-z.+_-]+$"
+                }
+              }
+            }
+          },
+          "sources": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "url",
+                "suite",
+                "component",
+                "signing_fingerprint"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9-]+$"
+                },
+                "url": {
+                  "type": "string",
+                  "pattern": "^https://(ppa\\.launchpadcontent\\.net/lemonade-team/stable/ubuntu|archive\\.ubuntu\\.com/ubuntu|security\\.ubuntu\\.com/ubuntu)/$"
+                },
+                "suite": {
+                  "type": "string",
+                  "pattern": "^(noble|resolute)(-updates|-security)?$"
+                },
+                "component": {
+                  "enum": [
+                    "main",
+                    "restricted",
+                    "universe",
+                    "multiverse"
+                  ]
+                },
+                "signing_fingerprint": {
+                  "type": "string",
+                  "pattern": "^[A-F0-9]{40}$"
+                }
+              }
+            }
+          },
+          "packages": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name",
+                "version",
+                "architecture",
+                "source",
+                "path",
+                "size",
+                "sha256"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9+.-]*$"
+                },
+                "version": {
+                  "type": "string",
+                  "pattern": "^[0-9A-Za-z.+:~_-]+$"
+                },
+                "architecture": {
+                  "enum": [
+                    "amd64",
+                    "all"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9-]+$"
+                },
+                "path": {
+                  "type": "string",
+                  "pattern": "^pool/[A-Za-z0-9.+~_/-]+\\.deb$"
+                },
+                "size": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            }
+          },
+          "firmware_version": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$"
+          },
+          "xrt": {
+            "enum": [
+              "bundled",
+              "system"
+            ]
+          },
+          "memlock_bytes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "action": {
+            "const": "linux.install-amd-npu"
+          }
+        }
+      }
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FastFlowLM linux environment",
+  "description": "Data only; no commands, arguments or scripts. Empty recipes advertise no automatic setup. min_core_version is required on each qualified recipe; bootstrap makes no compatibility promise."
+}

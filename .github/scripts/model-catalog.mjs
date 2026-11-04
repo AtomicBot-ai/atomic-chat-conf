@@ -1,4 +1,5 @@
 // The only editable model data is models/catalog.json. Legacy files are projections.
+import { validateFastflowlm, projectFastflowlm } from './fastflowlm-models.mjs'
 export const COLLECTION_FIELDS = {
   audio: 'models', 'atomic-prism-models': 'families', 'staff-picks': 'picks', diffusion: 'families', embedding: 'models', decision: 'models',
   'litert-lm-models': 'models', 'geniex-models': 'models', 'foundry-local-models': 'models',
@@ -6,7 +7,7 @@ export const COLLECTION_FIELDS = {
 export const COMMIT = /^[0-9a-f]{40}$/
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
-export function validateCatalog(catalog) {
+export function validateCatalog(catalog, options) {
   if (!record(catalog) || catalog.schema_version !== 1 || !record(catalog.models) || !record(catalog.collections)) {
     throw new Error('Invalid Atomic Chat model catalog version or structure')
   }
@@ -19,20 +20,28 @@ export function validateCatalog(catalog) {
     if (value.revision !== undefined && !COMMIT.test(value.revision)) throw new Error('Invalid model revision')
     Object.values(value).forEach(checkSources)
   }
+  const flmVariants = new Set()
   for (const [id, model] of Object.entries(catalog.models)) {
     if (!id || !record(model) || typeof model.kind !== 'string' || typeof model.format !== 'string' || !record(model.variants) || !record(model.definition)) throw new Error(`Invalid model ${id}`)
     checkSources(model.definition)
+    if (model.kind === 'fastflowlm') {
+      validateFastflowlm(model, options)
+      if (flmVariants.has(model.definition.variant_id)) throw new Error('Duplicate FastFlowLM variant_id')
+      flmVariants.add(model.definition.variant_id)
+    }
     if (model.kind === 'chat' && (!Array.isArray(model.files) || model.files.length === 0)) throw new Error('Missing catalog file plan')
     if (Array.isArray(model.files)) for (const file of model.files) {
       if (!record(file) || typeof file.path !== 'string' || file.path.split(/[\\/]/).some(p => !p || p === '.' || p === '..') || !Number.isSafeInteger(file.size) || file.size < 0 || (file.sha256 !== undefined && !/^[0-9a-f]{64}$/.test(file.sha256))) throw new Error('Invalid catalog file metadata')
     }
   }
   for (const name of ['recommended', ...Object.keys(COLLECTION_FIELDS)]) projectCollection(catalog, name)
+  projectFastflowlm(catalog, options)
   return catalog
 }
 
 /** Restore the historical wire shape, including which entries did not expose revision. */
 export function projectCollection(catalog, name, pinned = false) {
+  if (name === 'fastflowlm-models') return projectFastflowlm(catalog)
   const collection = catalog.collections[name]
   if (!record(collection) || !record(collection.header)) throw new Error(`Missing model collection ${name}`)
   const model = (id, variant) => {

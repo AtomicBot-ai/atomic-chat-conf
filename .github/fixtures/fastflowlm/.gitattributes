@@ -1,0 +1,4 @@
+# Exact upstream evidence: whitespace and line endings are part of signed/hashed bytes.
+evidence/** -text -whitespace
+# Keep the pinned consumer source hash stable on Windows checkouts too.
+legacy-model-catalog.ts -text

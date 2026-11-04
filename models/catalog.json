@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.catalog.json",
   "schema_version": 1,
-  "updated_at": "2026-11-02T18:00:00Z",
+  "updated_at": "2026-11-04T14:00:00Z",
   "models": {
     "chat:AtomicChat/Qwen3.8-27B-GGUF": {
       "kind": "chat",
@@ -20540,6 +20540,12 @@
           "variant": "default"
         }
       ]
+    },
+    "fastflowlm-models": {
+      "header": {
+        "schema_version": 1
+      },
+      "entries": []
     }
   }
 }
