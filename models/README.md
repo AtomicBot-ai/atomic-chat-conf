@@ -38,8 +38,11 @@ ID, e.g. `flm-1.0.11-r1`), `local_only_protocol: 1`, `npu_generation: xdna2`,
 context, license, gated status and explicit chat/tools/reasoning/structured-output
 capabilities. A stock upstream version never proves local-only support.
 
-`sources` contains independent `{id, repo, revision}` Hugging Face sources,
-each pinned to a full commit. Each `files` entry has `source`, `source_path`,
+Each source contains `{id, repo, revision}` pinned to a full commit. The optional
+`host` is `huggingface` (default) or `github`. Resolve a Hugging Face file at
+`https://huggingface.co/<repo>/resolve/<revision>/<source_path>` and a public GitHub
+file at `https://raw.githubusercontent.com/<repo>/<revision>/<source_path>`.
+Send HF credentials only to the allowed Hugging Face origin. GitHub files are anonymous. Each `files` entry has `source`, `source_path`,
 local relative `path`, positive `size` and SHA-256. Small Git files need a hash
 of their **contents**, not their Git blob SHA-1. The separate `components`
 inventory names all weights, tokenizer, config, chat-template, kernels and
@@ -56,7 +59,7 @@ Capabilities in a candidate are targets for validation, not certified claims.
 The first production collection is empty pending core qualification.
 
 Use the [FastFlowLM consumer fixtures](../.github/fixtures/fastflowlm/README.md)
-to develop against unreleased conf. They include real model pins, two independent
+to develop against unreleased conf. They include real model pins, independent pinned
 sources, small-file evidence and a pinned copy of the pre-FLM core parser.
 
 The legacy `refresh-model-catalog.mjs` deliberately refuses FLM entries: repinning

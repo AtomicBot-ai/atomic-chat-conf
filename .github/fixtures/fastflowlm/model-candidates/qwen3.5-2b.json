@@ -1,0 +1,201 @@
+{
+  "kind": "fastflowlm",
+  "format": "fastflowlm",
+  "definition": {
+    "model_id": "qwen3.5-2b",
+    "variant_id": "qwen3.5-2b-npu2",
+    "name": "Qwen3.5-2B (FastFlowLM NPU2 candidate)",
+    "checkpoint": "qwen3.5:2b",
+    "minimum_flm_version": "flm-1.0.11-r1",
+    "local_only_protocol": 1,
+    "npu_generation": "xdna2",
+    "context_length": 32768,
+    "license": "Apache-2.0 AND LicenseRef-FastFlowLM-NPU-Binary",
+    "gated": false,
+    "capabilities": {
+      "chat": true,
+      "tools": false,
+      "reasoning": false,
+      "structured_output": false
+    },
+    "sources": [
+      {
+        "id": "flm",
+        "repo": "FastFlowLM/Qwen3.5-2B-NPU2",
+        "revision": "a78d639cbf2244a42cf79abdfac235c6dc67f996"
+      },
+      {
+        "id": "flm-kernels",
+        "host": "github",
+        "repo": "ROCm/FastFlowLM",
+        "revision": "f37cdd29edc777cf3db1e385da8e7bfadc57d0b3"
+      },
+      {
+        "id": "license",
+        "repo": "Qwen/Qwen3.5-2B",
+        "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc"
+      }
+    ],
+    "files": [
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.5-2B-NPU2/GateDeltaNet_prefill.xclbin",
+        "path": "GateDeltaNet_prefill.xclbin",
+        "size": 228636,
+        "sha256": "7babe91b3c3d8a5649c87e0399d188f43ada2ff0ff0a90c0094675ff149558b8"
+      },
+      {
+        "source": "license",
+        "source_path": "LICENSE",
+        "path": "LICENSE",
+        "size": 11544,
+        "sha256": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "LICENSE_BINARY.txt",
+        "path": "LICENSE_BINARY.txt",
+        "size": 978,
+        "sha256": "40f10a537b3a783a00531b2e6889b3456b3182e2dbbc3d16bfaab9cb83b87abc"
+      },
+      {
+        "source": "flm",
+        "source_path": "README.md",
+        "path": "README.md",
+        "size": 62814,
+        "sha256": "c0e83a849c776e6fa843d011f023132d942a0f0140d903205bf1c363adad2275"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.5-2B-NPU2/attn.xclbin",
+        "path": "attn.xclbin",
+        "size": 315900,
+        "sha256": "d2f96978e0627c9b61f11642755da7fe731803c952ea60acb8a1c4cdca881778"
+      },
+      {
+        "source": "flm",
+        "source_path": "chat_template.jinja",
+        "path": "chat_template.jinja",
+        "size": 7545,
+        "sha256": "0537aa8f59cf80f23dfd42253649959caf944d50f4214ce6b3efb766ce0bd079"
+      },
+      {
+        "source": "flm",
+        "source_path": "config.json",
+        "path": "config.json",
+        "size": 2968,
+        "sha256": "b07840163e9e0c3567d6b112222fa14fbbbff61bca3aa487bc432e19426f5940"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.5-2B-NPU2/conv.xclbin",
+        "path": "conv.xclbin",
+        "size": 386380,
+        "sha256": "67ba4fe7740ab828c139dd4988a117873dbb8430925de709833894d805f3766c"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.5-2B-NPU2/layer.xclbin",
+        "path": "layer.xclbin",
+        "size": 347964,
+        "sha256": "d819712b28ca7ee9ecac24c1b4413291f85838334796b10670da4b1388887da1"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.5-2B-NPU2/lm_head.xclbin",
+        "path": "lm_head.xclbin",
+        "size": 274123,
+        "sha256": "f135301c71f0a022df473429869ed6f4922f5cc357e52b593500fd400795dc56"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.5-2B-NPU2/mm.xclbin",
+        "path": "mm.xclbin",
+        "size": 194364,
+        "sha256": "f09ce18ed0176ccd669d36a56dcb6e94122a6c6054c22b3649473d5bee2e8086"
+      },
+      {
+        "source": "flm",
+        "source_path": "model.q4nx",
+        "path": "model.q4nx",
+        "size": 1339269144,
+        "sha256": "cb07e36b8997f1ee680317b46fb6b3ded1544ddbc54d44404d4d3a4a84ca1ee2"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer.json",
+        "path": "tokenizer.json",
+        "size": 12807982,
+        "sha256": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer_config.json",
+        "path": "tokenizer_config.json",
+        "size": 16791,
+        "sha256": "613f1afe2956c1288f548c052476a936fd6d908da9e0f98a07f48e55e662e232"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.5-2B-NPU2/vision_attn.xclbin",
+        "path": "vision_attn.xclbin",
+        "size": 542092,
+        "sha256": "1e0d4cfd81f70f3fce7647d6d8440d64c0f888ac310ecd4d409f0270583000a8"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.5-2B-NPU2/vision_mm.xclbin",
+        "path": "vision_mm.xclbin",
+        "size": 506588,
+        "sha256": "e78a55006c920f6312eb6893d3b3694fb001b79efae98c6184fd6ddc6043842d"
+      },
+      {
+        "source": "flm",
+        "source_path": "vision_weight.q4nx",
+        "path": "vision_weight.q4nx",
+        "size": 662866216,
+        "sha256": "508c9381e69173b838650cc0b97a81196eb438be692999436be7d518ffd4ebf2"
+      }
+    ],
+    "components": {
+      "weights": [
+        "model.q4nx",
+        "vision_weight.q4nx"
+      ],
+      "tokenizer": [
+        "tokenizer.json",
+        "tokenizer_config.json"
+      ],
+      "config": [
+        "config.json"
+      ],
+      "chat_template": [
+        "chat_template.jinja"
+      ],
+      "kernels": [
+        "GateDeltaNet_prefill.xclbin",
+        "attn.xclbin",
+        "conv.xclbin",
+        "layer.xclbin",
+        "lm_head.xclbin",
+        "mm.xclbin",
+        "vision_attn.xclbin",
+        "vision_mm.xclbin"
+      ],
+      "metadata": [
+        "LICENSE",
+        "LICENSE_BINARY.txt",
+        "README.md"
+      ]
+    },
+    "qualification": {
+      "status": "candidate",
+      "evidence": []
+    }
+  },
+  "variants": {
+    "qwen3.5-2b-npu2": {
+      "selection": "all-required-files"
+    }
+  }
+}

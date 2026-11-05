@@ -20,6 +20,31 @@ const candidate = () => read(new URL('model-candidate.json', fixtureRoot))
 const scratch = mkdtempSync(join(tmpdir(), 'flm-models-'))
 after(() => rmSync(scratch, { recursive: true, force: true }))
 const allow = { allowCandidates: true }
+const chatCheckpoints = [
+  'gemma4-it:12b', 'lfm2.5-tk:1.2b', 'lfm3:1.7b', 'minicpm-v-4.7:1b',
+  'nemotron3.5-bolt:e4b', 'qwen3.5:0.8b', 'qwen3.5:2b', 'qwen3.6-moe:35b-a3b', 'qwen3.8-mtp:27b',
+]
+
+test('chat staging offers the selected checkpoints with their own kernels, templates and weights', () => {
+  const catalog = consumerCatalog('chat')
+  const models = projectFastflowlm(catalog, allow).models
+  assert.deepEqual(models.map(d => d.checkpoint).sort(), chatCheckpoints)
+  for (const model of models) {
+    assert.equal(model.qualification.status, 'candidate')
+    const repo = model.sources.find(s => s.id === 'flm').repo.split('/')[1]
+    const kernelSource = model.sources.find(s => s.id === 'flm-kernels')
+    assert.equal(kernelSource.revision, 'f37cdd29edc777cf3db1e385da8e7bfadc57d0b3')
+    assert.ok(model.components.kernels.length > 0)
+    for (const name of model.components.kernels) {
+      const file = model.files.find(f => f.path === name)
+      assert.equal(file.source, kernelSource.id)
+      assert.equal(file.source_path, `src/xclbins/${repo}/${name}`)
+    }
+    assert.deepEqual(model.components.chat_template, ['chat_template.jinja'])
+    assert.ok(model.components.weights.includes('model.q4nx'))
+  }
+  assert.throws(() => validateCatalog(catalog), /unqualified candidate/)
+})
 
 test('real candidate includes every upstream-required file, kernels, embedded chat template and license', () => {
   const entry = candidate(), d = entry.definition
@@ -31,6 +56,20 @@ test('real candidate includes every upstream-required file, kernels, embedded ch
   assert.deepEqual(d.components.kernels.sort(), metadata.siblings.filter(f => f.rfilename.endsWith('.xclbin')).map(f => f.rfilename).sort())
   for (const file of d.files) {
     const source = d.sources.find(s => s.id === file.source)
+    if (source.host === 'github') {
+      const evidence = read(new URL('evidence/github-kernel-metadata.json', fixtureRoot))
+      assert.equal(source.repo, evidence.repo)
+      assert.equal(source.revision, evidence.revision)
+      const record = evidence.files[file.source_path]
+      assert.ok(record, file.source_path)
+      assert.equal(file.size, record.size)
+      assert.equal(file.sha256, record.sha256)
+      if (file.path === 'LICENSE_BINARY.txt') {
+        const bytes = readFileSync(new URL('evidence/LICENSE_BINARY.txt', fixtureRoot))
+        assert.equal(createHash('sha256').update(bytes).digest('hex'), file.sha256)
+      }
+      continue
+    }
     const meta = source.id === 'flm' ? metadata : read(new URL('evidence/hf-license-metadata.json', fixtureRoot))
     assert.equal(source.revision, meta.sha)
     const upstreamFile = meta.siblings.find(f => f.rfilename === file.source_path)
@@ -47,11 +86,29 @@ test('real candidate includes every upstream-required file, kernels, embedded ch
   assert.throws(() => validateFastflowlm(entry), /unqualified candidate/)
 })
 
+test('the candidate pins the four working Qwen3 kernels to the engine commit', () => {
+  const d = candidate().definition
+  const source = d.sources.find(s => s.host === 'github')
+  assert.ok(source, 'missing GitHub kernel source')
+  assert.equal(source.repo, 'ROCm/FastFlowLM')
+  assert.equal(source.revision, 'f37cdd29edc777cf3db1e385da8e7bfadc57d0b3')
+  for (const name of ['attn.xclbin', 'dequant.xclbin', 'layer.xclbin', 'mm.xclbin']) {
+    const file = d.files.find(f => f.path === name)
+    assert.equal(file.source, source.id)
+    assert.equal(file.source_path, 'src/xclbins/Qwen3-0.6B-NPU2/' + name)
+  }
+  assert.equal(d.files.find(f => f.path === 'lm_head.xclbin').source, 'flm')
+  assert.ok(d.files.some(f => f.source === source.id && f.path === 'LICENSE_BINARY.txt'))
+  assert.ok(d.components.metadata.includes('LICENSE_BINARY.txt'))
+})
+
 test('file plan rejects missing small-file hash, missing kernel, wrong source and unsafe paths', () => {
   for (const mutate of [
     d => delete d.files.find(f => f.path === 'config.json').sha256,
     d => d.files = d.files.filter(f => f.path !== d.components.kernels[0]),
     d => d.files[0].source = 'missing', d => d.sources[0].revision = 'main',
+    d => d.sources[0].host = 'https://example.org', d => d.sources[0].host = null,
+    d => d.sources[0].repo = '../outside', d => d.sources[0].repo = 'org/..',
     d => d.sources.push(d.sources[0]), d => d.files.push(d.files[0]),
     d => d.files[0].path = '../outside', d => d.files[0].path = 'C:/outside',
     d => d.files[0].source_path = 'weights\\model', d => d.files[0].path = 'NUL.txt',
@@ -71,8 +128,10 @@ test('strict catalog schema accepts candidate shape and rejects unknown FLM fiel
     const path = join(scratch, 'schema-input.json'); writeFileSync(path, JSON.stringify(data))
     return spawnSync('npx', ['--yes', 'ajv-cli@5', 'validate', '-s', 'models/schema.catalog.json', '-d', path, '--strict=false'], { encoding: 'utf8' })
   }
-  const good = check(consumerCatalog()); assert.equal(good.status, 0, good.stderr)
-  for (const mutate of [d => d.command = 'run', d => d.files[0].url = 'https://example.org/model', d => d.capabilities.vision = true, d => delete d.license]) {
+  for (const mode of ['candidate', 'chat']) {
+    const good = check(consumerCatalog(mode)); assert.equal(good.status, 0, good.stderr)
+  }
+  for (const mutate of [d => d.sources[0].host = 'http', d => d.sources[0].repo = '../outside', d => d.command = 'run', d => d.files[0].url = 'https://example.org/model', d => d.capabilities.vision = true, d => delete d.license]) {
     const data = consumerCatalog(); mutate(data.models['fastflowlm:qwen3-0.6b'].definition)
     const result = check(data); assert.notEqual(result.status, 0); assert.match(result.stdout + result.stderr, /invalid/)
   }
@@ -82,7 +141,7 @@ test('pinned old core parser reads new/unknown entries and every old collection 
   const provenance = read(new URL('legacy-model-catalog.provenance.json', fixtureRoot))
   assert.equal(createHash('sha256').update(readFileSync(new URL('legacy-model-catalog.ts', fixtureRoot))).digest('hex'), provenance.sha256)
   const baseline = consumerCatalog('old-cache')
-  for (const mode of ['production', 'candidate', 'unknown']) {
+  for (const mode of ['production', 'candidate', 'chat', 'unknown']) {
     const next = consumerCatalog(mode)
     parseAtomicModelCatalog(next)
     for (const name of ['recommended', ...Object.keys(COLLECTION_FIELDS)]) {
@@ -127,7 +186,7 @@ test('legacy refresh cannot silently repin FLM while retaining old hashes or qua
 })
 
 test('file and trusted HTTPS consumers receive identical fixtures without production URLs', async () => {
-  writeConsumerFixtures(scratch, 'candidate')
+  writeConsumerFixtures(scratch, 'chat')
   const cert = join(scratch, 'cert.pem'), key = join(scratch, 'key.pem')
   const openssl = spawnSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-keyout', key, '-out', cert, '-subj', '/CN=localhost', '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1'], { encoding: 'utf8' })
   assert.equal(openssl.status, 0, openssl.stderr)
@@ -144,7 +203,7 @@ test('file and trusted HTTPS consumers receive identical fixtures without produc
         }).on('error', reject)
       })
       assert.deepEqual(remote, local)
-      if (name === 'catalog.json') { parseAtomicModelCatalog(remote); assert.equal(projectFastflowlm(remote, allow).models.length, 1) }
+      if (name === 'catalog.json') { parseAtomicModelCatalog(remote); assert.equal(projectFastflowlm(remote, allow).models.length, chatCheckpoints.length) }
       else assert.deepEqual(remote.releases ?? remote.recipes, [])
     }
   } finally { await new Promise(resolve => server.close(resolve)) }

@@ -10,7 +10,7 @@
     "local_only_protocol": 1,
     "npu_generation": "xdna2",
     "context_length": 32768,
-    "license": "Apache-2.0",
+    "license": "Apache-2.0 AND LicenseRef-FastFlowLM-NPU-Binary",
     "gated": false,
     "capabilities": {
       "chat": true,
@@ -28,6 +28,12 @@
         "id": "license",
         "repo": "Qwen/Qwen3-0.6B",
         "revision": "c1899de289a04d12100db370d81485cdf75e47ca"
+      },
+      {
+        "id": "flm-kernels",
+        "host": "github",
+        "repo": "ROCm/FastFlowLM",
+        "revision": "f37cdd29edc777cf3db1e385da8e7bfadc57d0b3"
       }
     ],
     "files": [
@@ -39,11 +45,11 @@
         "sha256": "9e9cd51a3b822ae4bb3b6832534c38e938c75690473f12314d76d059b79a4419"
       },
       {
-        "source": "flm",
-        "source_path": "attn.xclbin",
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3-0.6B-NPU2/attn.xclbin",
         "path": "attn.xclbin",
-        "size": 355915,
-        "sha256": "7fef95ff22e540bf4c98c7013efcfc7a8cae5d1a2e5d9e02cab63ae6156ff620"
+        "size": 288796,
+        "sha256": "88ad573eb558881a8b43117dc8fbb6a0726f381940a00ad941d064e098ab0c65"
       },
       {
         "source": "flm",
@@ -53,18 +59,18 @@
         "sha256": "8a5ec72f5c96766168a4024f88d70841ae341900a0c84fd4fd23f8eeae16c6a7"
       },
       {
-        "source": "flm",
-        "source_path": "dequant.xclbin",
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3-0.6B-NPU2/dequant.xclbin",
         "path": "dequant.xclbin",
-        "size": 115179,
-        "sha256": "a1be8893482f4d6f3634621e9f1c52355ce082cb768300ead02a54b05026b74c"
+        "size": 114060,
+        "sha256": "575d45e47993315f95f601e07f9f21164f30515f80e232e16255d7c5f2a1d4bf"
       },
       {
-        "source": "flm",
-        "source_path": "layer.xclbin",
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3-0.6B-NPU2/layer.xclbin",
         "path": "layer.xclbin",
-        "size": 307451,
-        "sha256": "288ae1338438aed8afef17c09f2c3f02eed90239cd818ced015d11d37a22b6f2"
+        "size": 231659,
+        "sha256": "9e084785df7c4e37bc4c0de7ab1635c2cd3a18114a319494889d30362e0e6178"
       },
       {
         "source": "flm",
@@ -74,11 +80,11 @@
         "sha256": "4b6fbf300da031265251984dccde59044a83d4c6cfa73c4175cf5f58c2165501"
       },
       {
-        "source": "flm",
-        "source_path": "mm.xclbin",
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3-0.6B-NPU2/mm.xclbin",
         "path": "mm.xclbin",
-        "size": 347675,
-        "sha256": "b1e88cd899e3fbef3b402ecaf2ab644f21cca2ee85dafe6e2521d89222c5a644"
+        "size": 512220,
+        "sha256": "4afc2a6f2459c0ddcf7de61193a6e83e53a951a0f6c33521456d569bab2c7142"
       },
       {
         "source": "flm",
@@ -107,6 +113,13 @@
         "path": "LICENSE",
         "size": 11343,
         "sha256": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "LICENSE_BINARY.txt",
+        "path": "LICENSE_BINARY.txt",
+        "size": 978,
+        "sha256": "40f10a537b3a783a00531b2e6889b3456b3182e2dbbc3d16bfaab9cb83b87abc"
       }
     ],
     "components": {
@@ -132,7 +145,8 @@
       ],
       "metadata": [
         "README.md",
-        "LICENSE"
+        "LICENSE",
+        "LICENSE_BINARY.txt"
       ]
     },
     "qualification": {

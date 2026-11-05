@@ -23,6 +23,8 @@ export function validateFastflowlm(entry, { allowCandidates = false } = {}) {
   const sources = new Set(), used = new Set(), paths = new Map()
   for (const source of d.sources) {
     if (!object(source) || !id.test(source.id ?? '') || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(source.repo ?? '') || !/^[0-9a-f]{40}$/.test(source.revision ?? '')) fail('invalid immutable source')
+    if (source.host !== undefined && !['huggingface', 'github'].includes(source.host)) fail('unknown source host')
+    if (source.repo.split('/').some(segment => segment === '.' || segment === '..')) fail('unsafe source repo')
     if (sources.has(source.id)) fail('duplicate source id')
     sources.add(source.id)
   }

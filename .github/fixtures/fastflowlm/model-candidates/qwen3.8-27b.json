@@ -1,0 +1,233 @@
+{
+  "kind": "fastflowlm",
+  "format": "fastflowlm",
+  "definition": {
+    "model_id": "qwen3.8-27b",
+    "variant_id": "qwen3.8-27b-npu2",
+    "name": "Qwen3.8-27B (FastFlowLM NPU2 candidate)",
+    "checkpoint": "qwen3.8-mtp:27b",
+    "minimum_flm_version": "flm-1.0.11-r1",
+    "local_only_protocol": 1,
+    "npu_generation": "xdna2",
+    "context_length": 4096,
+    "license": "Apache-2.0 AND LicenseRef-FastFlowLM-NPU-Binary",
+    "gated": false,
+    "capabilities": {
+      "chat": true,
+      "tools": false,
+      "reasoning": false,
+      "structured_output": false
+    },
+    "sources": [
+      {
+        "id": "flm",
+        "repo": "FastFlowLM/Qwen3.8-27B-NPU2",
+        "revision": "071def594ad89b0dadd104a117722d6090a5fa26"
+      },
+      {
+        "id": "flm-kernels",
+        "host": "github",
+        "repo": "ROCm/FastFlowLM",
+        "revision": "f37cdd29edc777cf3db1e385da8e7bfadc57d0b3"
+      },
+      {
+        "id": "license",
+        "repo": "Qwen/Qwen3.8-27B",
+        "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+      }
+    ],
+    "files": [
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.8-27B-NPU2/GateDeltaNet_prefill.xclbin",
+        "path": "GateDeltaNet_prefill.xclbin",
+        "size": 228636,
+        "sha256": "cbd6006a23bd6f6d1c7c2d4c55694847d78c1efee392b4e15550db20b41765d5"
+      },
+      {
+        "source": "license",
+        "source_path": "LICENSE",
+        "path": "LICENSE",
+        "size": 11544,
+        "sha256": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "LICENSE_BINARY.txt",
+        "path": "LICENSE_BINARY.txt",
+        "size": 978,
+        "sha256": "40f10a537b3a783a00531b2e6889b3456b3182e2dbbc3d16bfaab9cb83b87abc"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.8-27B-NPU2/MTP_layer.xclbin",
+        "path": "MTP_layer.xclbin",
+        "size": 426412,
+        "sha256": "b534c771b48fd2be8d61ee1593e6cdf8707dc136d64661a679c579abc0b52638"
+      },
+      {
+        "source": "flm",
+        "source_path": "README.md",
+        "path": "README.md",
+        "size": 65012,
+        "sha256": "57e4bdb258ee1a7d2635c5174ebd4e56abe392505cdb5f8bbb356b0dc4293641"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.8-27B-NPU2/attention_layer.xclbin",
+        "path": "attention_layer.xclbin",
+        "size": 815900,
+        "sha256": "83dfe7077b095f4e005a3545fa7d18ea423bc77a29f82fe08840035430ccbc1e"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.8-27B-NPU2/attention_prefill.xclbin",
+        "path": "attention_prefill.xclbin",
+        "size": 316124,
+        "sha256": "e7e421a64927117d49c861210ca7d5ad796c6f157d503ff828d8ed9b44fde5eb"
+      },
+      {
+        "source": "flm",
+        "source_path": "chat_template.jinja",
+        "path": "chat_template.jinja",
+        "size": 8952,
+        "sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041"
+      },
+      {
+        "source": "flm",
+        "source_path": "config.json",
+        "path": "config.json",
+        "size": 3416,
+        "sha256": "7655c136a6b09ab69ec99d353a203a8c27d09be044b39930a11267c30b0837d5"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.8-27B-NPU2/conv.xclbin",
+        "path": "conv.xclbin",
+        "size": 398032,
+        "sha256": "9b717c216ff0d505009415e47cebcba858a92a298f1681ef0797671b3e3a789b"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.8-27B-NPU2/deltanet_layer.xclbin",
+        "path": "deltanet_layer.xclbin",
+        "size": 704684,
+        "sha256": "d33e3fe434e4916e3f302b2f152d4ddecff2c35d1747147a93a6af82cca94fb4"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.8-27B-NPU2/dequant_mm.xclbin",
+        "path": "dequant_mm.xclbin",
+        "size": 194364,
+        "sha256": "d67fa4b8b6c3727f975c23cc4814831356468f9ae2d07e022066988797670973"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.8-27B-NPU2/lm_head.xclbin",
+        "path": "lm_head.xclbin",
+        "size": 274124,
+        "sha256": "a4d924cc10cc6700aea6092288e62727022bfc24e6bb8d7ca7d8bb8cd5375daf"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.8-27B-NPU2/lm_head_8.xclbin",
+        "path": "lm_head_8.xclbin",
+        "size": 535884,
+        "sha256": "95cf5dce11c9b2f56bfabc2e482d985c0de52986929278d9ad19dba970c36ed4"
+      },
+      {
+        "source": "flm",
+        "source_path": "model.q4nx",
+        "path": "model.q4nx",
+        "size": 17097334824,
+        "sha256": "2f0c797f525d5bbacb9f0cde5ff2ea06a3b498a6fc55f5cccc8c97d7eaf00fa1"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer.json",
+        "path": "tokenizer.json",
+        "size": 12809320,
+        "sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer_config.json",
+        "path": "tokenizer_config.json",
+        "size": 18004,
+        "sha256": "b753650adaf085234140e41876bc0ffd84faf36ed7925675fbff4097a719805f"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.8-27B-NPU2/vision_attn.xclbin",
+        "path": "vision_attn.xclbin",
+        "size": 460524,
+        "sha256": "7e49dae4f1e08576fbfeed81c7d86f5e731a620fd8ea8040b149505ec4d32d8a"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.8-27B-NPU2/vision_mm_a.xclbin",
+        "path": "vision_mm_a.xclbin",
+        "size": 486316,
+        "sha256": "a13d8a7aa880f7b1b38300e1bd181f026ab022091213a138dae5c29940026dfc"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Qwen3.8-27B-NPU2/vision_mm_b.xclbin",
+        "path": "vision_mm_b.xclbin",
+        "size": 505772,
+        "sha256": "f9601f04299b284ad19425ab9fd23a2cceeecb94841a8807c6a37f196ed76cb8"
+      },
+      {
+        "source": "flm",
+        "source_path": "vision_weight.q4nx",
+        "path": "vision_weight.q4nx",
+        "size": 959336080,
+        "sha256": "5c257207454c6bb82618e68ef5558963e3ddaecd3efab6f8b528d2b9092715a2"
+      }
+    ],
+    "components": {
+      "weights": [
+        "model.q4nx",
+        "vision_weight.q4nx"
+      ],
+      "tokenizer": [
+        "tokenizer.json",
+        "tokenizer_config.json"
+      ],
+      "config": [
+        "config.json"
+      ],
+      "chat_template": [
+        "chat_template.jinja"
+      ],
+      "kernels": [
+        "GateDeltaNet_prefill.xclbin",
+        "MTP_layer.xclbin",
+        "attention_layer.xclbin",
+        "attention_prefill.xclbin",
+        "conv.xclbin",
+        "deltanet_layer.xclbin",
+        "dequant_mm.xclbin",
+        "lm_head.xclbin",
+        "lm_head_8.xclbin",
+        "vision_attn.xclbin",
+        "vision_mm_a.xclbin",
+        "vision_mm_b.xclbin"
+      ],
+      "metadata": [
+        "LICENSE",
+        "LICENSE_BINARY.txt",
+        "README.md"
+      ]
+    },
+    "qualification": {
+      "status": "candidate",
+      "evidence": []
+    }
+  },
+  "variants": {
+    "qwen3.8-27b-npu2": {
+      "selection": "all-required-files"
+    }
+  }
+}

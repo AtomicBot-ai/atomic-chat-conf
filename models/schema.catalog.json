@@ -327,9 +327,13 @@
                 "type": "string",
                 "pattern": "^[a-z0-9][a-z0-9._-]*$"
               },
+              "host": {
+                "enum": ["huggingface", "github"],
+                "default": "huggingface"
+              },
               "repo": {
                 "type": "string",
-                "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+                "pattern": "^(?!\\.{1,2}/)[A-Za-z0-9_.-]+/(?!\\.{1,2}$)[A-Za-z0-9_.-]+$"
               },
               "revision": {
                 "type": "string",

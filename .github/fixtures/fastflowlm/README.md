@@ -4,24 +4,71 @@ These are **unqualified candidates**, never production offers. Production
 builds, recipes and the FLM collection are empty until OpenSpec 1.6. No stock
 FLM binary is supplied or implied to support Atomic local-only protocol 1.
 
-## Model candidate
+## Chat candidates
 
-`model-candidate.json` is Qwen3 0.6B NPU2: 11 files, 696,558,525 bytes. The full
-plan includes five model-specific `.xclbin` kernels, weights, tokenizer/config,
-the embedded chat template, model card and license. Sources:
+Use the `chat` fixture for the XDNA2 chat candidates below. Sizes are
+the total file-plan bytes on disk rounded to decimal GB. Context is FLM's
+default in the pinned registry. Actual latency and answer quality still need
+on-device evaluation.
 
-- FastFlowLM v1.0.11, commit `f37cdd29edc777cf3db1e385da8e7bfadc57d0b3`:
-  https://github.com/ROCm/FastFlowLM/blob/f37cdd29edc777cf3db1e385da8e7bfadc57d0b3/src/model_list.json
-- Model: https://huggingface.co/FastFlowLM/Qwen3-0.6B-NPU2/tree/b584799232c962f693e0e5be99606fc4eca6811e
-- License: https://huggingface.co/Qwen/Qwen3-0.6B/blob/c1899de289a04d12100db370d81485cdf75e47ca/LICENSE
+### Compact desktop candidates
 
-`evidence/hf-*.json` preserves metadata from these revisions. Small files are
-stored under `evidence/` and SHA-256 is computed over their actual bytes. Large
-files use the pinned HF LFS SHA-256; weights have not been downloaded or run.
-The model's 32768-token context is upstream metadata, not a measured capacity.
-Chat is the intended qualification target; tools/reasoning/structured output
-remain disabled until verified. The minimum Atomic build ID is a contract
-requirement for future core builds, not an existing release.
+- `qwen3.5:0.8b` — 0.78 GB. First desktop bring-up candidate.
+- `lfm2.5-tk:1.2b` — 1.01 GB. LiquidAI's small thinking checkpoint.
+- `lfm3:1.7b` — 1.63 GB. Compact general chat model.
+- `qwen3.5:2b` — 2.02 GB. Larger general chat candidate for the same device.
+- `minicpm-v-4.7:1b` — 2.23 GB. Includes the vision weights required by FLM. Atomic qualification targets text chat.
+
+The four new candidates have a 32K default context. Both Qwen3.5 variants pin
+the registry's `flm_q4k_high_precision` branch by commit. FastFlowLM reports
+40.30 and 27.18 output tokens/s at 4K context on a Ryzen AI 7 350 with 32 GB
+for the 0.8B and 2B models. [Qwen3.5 benchmark](https://github.com/ROCm/FastFlowLM/blob/f37cdd29edc777cf3db1e385da8e7bfadc57d0b3/docs/docs/benchmarks/qwen3.5_results.md)
+
+### Larger candidates with upstream hardware runs
+
+Reported speeds below are output tokens/s at 4K context. RAM is the installed
+system memory of the benchmark host. Minimum free memory and first successful
+chat still need measurement on each Atomic target.
+
+- `gemma4-it:12b` — 9.35 GB on disk, 32K default. Ryzen AI 7 350, 32 GB RAM, 6.2 tokens/s. [Benchmark](https://github.com/ROCm/FastFlowLM/blob/f37cdd29edc777cf3db1e385da8e7bfadc57d0b3/docs/docs/benchmarks/gemma4_results.md)
+- `qwen3.8-mtp:27b` — 18.07 GB on disk, 4K default. Ryzen AI 5 340, 64 GB RAM, 1.50 tokens/s and 34.34 s to first token. Keep for capacity testing on this class of machine. [Benchmark](https://github.com/ROCm/FastFlowLM/blob/f37cdd29edc777cf3db1e385da8e7bfadc57d0b3/docs/docs/benchmarks/qwen3.8_results.md)
+- `qwen3.6-moe:35b-a3b` — 22.07 GB on disk, 32K default. Ryzen AI 7 350, 96 GB RAM, 16.59 tokens/s. The plan pins `flm_q4k_high_precision`; the published benchmark used an earlier FLM build. [Benchmark](https://github.com/ROCm/FastFlowLM/blob/f37cdd29edc777cf3db1e385da8e7bfadc57d0b3/docs/docs/benchmarks/qwen3.6_results.md)
+- `nemotron3.5-bolt:e4b` — 9.09 GB on disk, 32K default. Ryzen AI MAX+ PRO 395, 128 GB RAM, 11.9 tokens/s using an upstream local build. [Benchmark](https://github.com/ROCm/FastFlowLM/blob/f37cdd29edc777cf3db1e385da8e7bfadc57d0b3/docs/docs/benchmarks/nemotron3.5-bolt_results.md)
+
+Each plan under `model-candidates/` pins all required model files, the chat template,
+licensing materials and that model's kernels from the [FLM v1.0.11 source tree](https://github.com/ROCm/FastFlowLM/tree/f37cdd29edc777cf3db1e385da8e7bfadc57d0b3/src).
+Large-file hashes come from pinned HF LFS records. GitHub kernel hashes come
+from the corresponding Git blobs. Gemma's model card declares Apache-2.0;
+its package includes the standard text from SPDX. The initial qualification
+target for these models is text chat. The LFM3 package's optional upstream checksum
+list has an outdated entry for `config.json`. Its install plan omits that list
+and pins the SHA-256 of the actual config bytes at the [model revision](https://huggingface.co/FastFlowLM/LFM3-1.7B-NPU2/tree/e21accc3f02fcbabae964d50082eea595c1642c1).
+The separate `candidate` fixture continues
+to supply Qwen3 0.6B for core's offline smoke test.
+
+### Qwen3 0.6B hardware evidence
+
+`model-candidate.json` lists 12 files (696,580,018 bytes) for Qwen3 0.6B NPU2.
+Weights, config, tokenizer, chat template, model card and `lm_head.xclbin` come from
+the pinned Hugging Face model. The model's Apache-2.0 license comes from Qwen.
+The four kernels `attn.xclbin`, `dequant.xclbin`, `layer.xclbin` and `mm.xclbin`
+come from `src/xclbins/Qwen3-0.6B-NPU2/` of FastFlowLM v1.0.11. Install their
+`LICENSE_BINARY.txt` from the same commit alongside the unmodified files.
+
+On an Arch Linux Krackan 1 NPU the original HF kernel set timed out twice on
+the first chat request. Replacing these four files as a set produced an offline
+completion with the same weights and executable. The 32768-token context is
+upstream metadata. Chat is the qualification target. Windows and the Ubuntu
+preparation matrix still require live evidence.
+
+- [FastFlowLM kernel tree](https://github.com/ROCm/FastFlowLM/tree/f37cdd29edc777cf3db1e385da8e7bfadc57d0b3/src/xclbins/Qwen3-0.6B-NPU2)
+- [Model files](https://huggingface.co/FastFlowLM/Qwen3-0.6B-NPU2/tree/b584799232c962f693e0e5be99606fc4eca6811e)
+- [Model license](https://huggingface.co/Qwen/Qwen3-0.6B/blob/c1899de289a04d12100db370d81485cdf75e47ca/LICENSE)
+
+`evidence/github-kernel-metadata.json` records the Git object IDs, byte sizes
+and SHA-256 hashes of the five files from the FLM commit, computed from
+`git show <commit>:<source_path>`. The HF evidence records the pinned metadata,
+LFS content hashes and the contents of small files.
 
 ## System candidates
 
@@ -54,7 +101,7 @@ Materialize a complete catalog plus the three empty managed manifests:
 
 ```sh
 node .github/scripts/fastflowlm-fixtures.mjs /tmp/fastflowlm-conf candidate
-# Other modes: old-cache (no FLM collection), unknown (future entry/collection), production.
+# Use chat for the desktop and larger candidates. Other modes: old-cache (no FLM collection), unknown (future entry/collection), production.
 export ATOMIC_MODEL_CATALOG_URL=file:///tmp/fastflowlm-conf/catalog.json
 export ATOMIC_FASTFLOWLM_MANIFEST_URL=file:///tmp/fastflowlm-conf/fastflowlm-manifest.json
 export ATOMIC_FASTFLOWLM_ENVIRONMENT_MANIFEST_URL=file:///tmp/fastflowlm-conf/fastflowlm-linux.json

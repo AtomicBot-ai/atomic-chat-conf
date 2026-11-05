@@ -1,0 +1,202 @@
+{
+  "kind": "fastflowlm",
+  "format": "fastflowlm",
+  "definition": {
+    "model_id": "gemma4-12b-it",
+    "variant_id": "gemma4-12b-it-npu2",
+    "name": "Gemma4-12B-IT (FastFlowLM NPU2 candidate)",
+    "checkpoint": "gemma4-it:12b",
+    "minimum_flm_version": "flm-1.0.11-r1",
+    "local_only_protocol": 1,
+    "npu_generation": "xdna2",
+    "context_length": 32768,
+    "license": "Apache-2.0 AND LicenseRef-FastFlowLM-NPU-Binary",
+    "gated": false,
+    "capabilities": {
+      "chat": true,
+      "tools": false,
+      "reasoning": false,
+      "structured_output": false
+    },
+    "sources": [
+      {
+        "id": "flm",
+        "repo": "FastFlowLM/Gemma4-12B-IT-NPU2",
+        "revision": "5110666fec8e1f69de47f53ab318fd2dec62ebd7"
+      },
+      {
+        "id": "flm-kernels",
+        "host": "github",
+        "repo": "ROCm/FastFlowLM",
+        "revision": "f37cdd29edc777cf3db1e385da8e7bfadc57d0b3"
+      },
+      {
+        "id": "license",
+        "host": "github",
+        "repo": "spdx/license-list-data",
+        "revision": "31846481de7ea17d92f2f46fad76abe58b2e9bb0"
+      }
+    ],
+    "files": [
+      {
+        "source": "license",
+        "source_path": "text/Apache-2.0.txt",
+        "path": "LICENSE",
+        "size": 10280,
+        "sha256": "074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "LICENSE_BINARY.txt",
+        "path": "LICENSE_BINARY.txt",
+        "size": 978,
+        "sha256": "40f10a537b3a783a00531b2e6889b3456b3182e2dbbc3d16bfaab9cb83b87abc"
+      },
+      {
+        "source": "flm",
+        "source_path": "README.md",
+        "path": "README.md",
+        "size": 27955,
+        "sha256": "3e0608a6be80e3eb040a5aa6c76707809503deb85be6360184a118fb6156526c"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Gemma4-12B-IT-NPU2/attn_global.xclbin",
+        "path": "attn_global.xclbin",
+        "size": 383996,
+        "sha256": "1d1881c18387477e494c8f7387e147bbf3b6b951ec345cab5c368c8e938fc930"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Gemma4-12B-IT-NPU2/attn_global_image.xclbin",
+        "path": "attn_global_image.xclbin",
+        "size": 391612,
+        "sha256": "51d5d2bffecbe3161046f6f358e6fc535c356d8630dbe7f2df28996358bce833"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Gemma4-12B-IT-NPU2/attn_sliding.xclbin",
+        "path": "attn_sliding.xclbin",
+        "size": 406764,
+        "sha256": "c140e0103ec1e737904ed182fb40ee0fa11027fd97658016e309fe7d82fecf63"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Gemma4-12B-IT-NPU2/audio_image_mm.xclbin",
+        "path": "audio_image_mm.xclbin",
+        "size": 175932,
+        "sha256": "87d3153ab1c4589f60efccd06689e06dcc2a1a7355d6fd4dd5dcfbd1cb02126a"
+      },
+      {
+        "source": "flm",
+        "source_path": "chat_template.jinja",
+        "path": "chat_template.jinja",
+        "size": 18568,
+        "sha256": "f43f58422228fd6921afec56bcd44aa4405247682f48c71840fe5075244e4b22"
+      },
+      {
+        "source": "flm",
+        "source_path": "config.json",
+        "path": "config.json",
+        "size": 3654,
+        "sha256": "80b368d8315886437434548e7d1cabb4f2c80f89482dc8a2d95e0e3fd2c0a1cb"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Gemma4-12B-IT-NPU2/dequant_mm.xclbin",
+        "path": "dequant_mm.xclbin",
+        "size": 184444,
+        "sha256": "6105ef15e37c41ded2f941617c46291e0114781d1aac3e90808bce1df246b79a"
+      },
+      {
+        "source": "flm",
+        "source_path": "image_audio_weights.q4nx",
+        "path": "image_audio_weights.q4nx",
+        "size": 104760840,
+        "sha256": "b61ff2a265ef9cdbc20763603a28b7769d6fa23b807322ca60deb68ca82a633b"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Gemma4-12B-IT-NPU2/layer.xclbin",
+        "path": "layer.xclbin",
+        "size": 195068,
+        "sha256": "863e63d9bfe28fd92d831ad5db76dacd49971b3b36e2c69741c5908e5481053c"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Gemma4-12B-IT-NPU2/lm_head.xclbin",
+        "path": "lm_head.xclbin",
+        "size": 398540,
+        "sha256": "5b43b459787d70db3b879e22c8ce7344af35ab110add82d63dc68d5cd9a49dc6"
+      },
+      {
+        "source": "flm",
+        "source_path": "model.q4nx",
+        "path": "model.q4nx",
+        "size": 9215652096,
+        "sha256": "746f0a04fc08b6a4320cba34bb78b275149bc1fa60ad1345a2cb10e70553d3e6"
+      },
+      {
+        "source": "flm",
+        "source_path": "processor_config.json",
+        "path": "processor_config.json",
+        "size": 1384,
+        "sha256": "c518540ccad8db89cdac6b2b290c1635c4b8eadc1b3558015a734c53764c2683"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer.json",
+        "path": "tokenizer.json",
+        "size": 32169626,
+        "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer_config.json",
+        "path": "tokenizer_config.json",
+        "size": 3158,
+        "sha256": "bb7e004cc49c249e032383626fe177c86c102dc800716a40a457f6cfa3b5a322"
+      }
+    ],
+    "components": {
+      "weights": [
+        "image_audio_weights.q4nx",
+        "model.q4nx"
+      ],
+      "tokenizer": [
+        "tokenizer.json",
+        "tokenizer_config.json"
+      ],
+      "config": [
+        "config.json",
+        "processor_config.json"
+      ],
+      "chat_template": [
+        "chat_template.jinja"
+      ],
+      "kernels": [
+        "attn_global.xclbin",
+        "attn_global_image.xclbin",
+        "attn_sliding.xclbin",
+        "audio_image_mm.xclbin",
+        "dequant_mm.xclbin",
+        "layer.xclbin",
+        "lm_head.xclbin"
+      ],
+      "metadata": [
+        "LICENSE",
+        "LICENSE_BINARY.txt",
+        "README.md"
+      ]
+    },
+    "qualification": {
+      "status": "candidate",
+      "evidence": []
+    }
+  },
+  "variants": {
+    "gemma4-12b-it-npu2": {
+      "selection": "all-required-files"
+    }
+  }
+}
