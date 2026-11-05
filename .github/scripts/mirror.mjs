@@ -64,6 +64,7 @@ export const WHITELIST = [
     pattern: 'ubuntu-vulkan-x64\\.tar\\.gz',
     required: true,
   },
+  { platform: 'linux', pattern: 'ubuntu-rocm-10\\.0-x64\\.tar\\.gz', required: false },
   { platform: 'linux', pattern: 'ubuntu-arm64\\.tar\\.gz', required: true },
   {
     platform: 'linux',
