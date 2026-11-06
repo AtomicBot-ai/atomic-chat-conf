@@ -12,6 +12,8 @@ export function consumerCatalog(mode = 'candidate') {
     delete catalog.collections['fastflowlm-models']
     for (const [id, entry] of Object.entries(catalog.models)) if (entry.kind === 'fastflowlm') delete catalog.models[id]
   } else if (allowCandidates) {
+    // A staging selection replaces the FLM subset, including already qualified production entries.
+    for (const [id, entry] of Object.entries(catalog.models)) if (entry.kind === 'fastflowlm') delete catalog.models[id]
     const directory = new URL('model-candidates/', fixtureRoot)
     const candidates = mode === 'chat'
       ? readdirSync(directory).filter(name => name.endsWith('.json')).sort().map(name => read(new URL(name, directory)))
@@ -43,5 +45,5 @@ export function writeConsumerFixtures(directory, mode) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (!process.argv[2]) throw new Error('Usage: node .github/scripts/fastflowlm-fixtures.mjs OUTPUT_DIRECTORY [candidate|chat|old-cache|unknown|production]')
   writeConsumerFixtures(resolve(process.argv[2]), process.argv[3] ?? 'candidate')
-  console.log(`Consumer fixtures written to ${resolve(process.argv[2])}; no managed builds or qualified recipes supplied`)
+  console.log(`Consumer fixtures written to ${resolve(process.argv[2])}; staged models remain candidates; build and environment manifests match the current checkout`)
 }

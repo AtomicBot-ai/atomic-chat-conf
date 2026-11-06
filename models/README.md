@@ -56,7 +56,14 @@ Production definitions require `qualification.status: qualified` and HTTPS
 live evidence. `candidate` entries are accepted only by explicit test/staging
 validation and are never exported or offered in the production catalog.
 Capabilities in a candidate are targets for validation, not certified claims.
-The first production collection is empty pending core qualification.
+The first qualified entry is `qwen3-0.6b-npu2`, using `flm-1.0.11-r2` with core
+0.22.0 or newer. Its twelve-file plan retains the tested source commits and
+hashes, including four kernels from the pinned FLM source tree. Only chat is
+qualified; tools, reasoning and structured output remain false. The linked
+acceptance report covers context 2048 on existing-driver Windows 11 and manual
+Arch installations. Production limits the context to those tested 2048 tokens;
+the staging candidate retains the upstream 32768-token target. It does not qualify automatic driver installation, service
+accounts or the other staged models.
 
 Use the [FastFlowLM consumer fixtures](../.github/fixtures/fastflowlm/README.md)
 to develop against unreleased conf. They include real model pins, independent pinned

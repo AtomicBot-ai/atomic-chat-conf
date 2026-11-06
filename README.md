@@ -3200,8 +3200,23 @@ CI uses the PR target or pre-push tip, local validation defaults to `origin/main
 Model definitions remain exclusively in `models/catalog.json` (see
 [the model contract](models/README.md#fastflowlm-contract)).
 
-Production builds, environment recipes and FLM models stay empty until core's
-real releases and live tests on all three OS targets are available (OpenSpec
-1.6). Publishing/rollout is a separate gate (1.7); merging conf into main
-reaches installed clients within an hour. Neither is performed by the staging
-work in tasks 1.1–1.5.
+The first production build is `flm-1.0.11-r2`, requiring core **0.22.0** or newer.
+Its Windows and Linux archives and provenance are immutable assets of the
+[engine release](https://github.com/AtomicBot-ai/atomic-chat-core/releases/tag/flm-1.0.11-r2).
+The production model collection contains only the tested Qwen3 0.6B XDNA2 plan.
+[Acceptance evidence](https://github.com/AtomicBot-ai/atomic-chat-core/releases/download/flm-1.0.11-r2/flm-1.0.11-r2-acceptance.json)
+distinguishes the exact CI archive run on Windows from the earlier native Arch run.
+
+Qualification covers offline chat with an existing driver on Windows 11 and
+manual driver setup on Arch. Clean Windows driver installation and Ubuntu
+24.04/26.04 setup were excluded by the operator; service-account setup is not
+qualified. Both environment manifests therefore retain **empty `recipes`**.
+The nine additional chat candidates stay in staging. This scope follows the
+2026-11-06 amendment to OpenSpec `add-fastflowlm-runtime`.
+
+Publication on main can reach clients on their next refresh, within the existing
+one-hour cache window. Released cores before 0.22.0 do not gain FLM support from
+this data: their parsers ignore the new collection and existing legacy exports
+remain byte-identical. The engine prerelease does not replace the latest core
+application release. Eye CLI integrates the unreleased core through `bun link`
+before its own release.

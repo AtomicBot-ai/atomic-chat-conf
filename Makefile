@@ -169,6 +169,7 @@ validate:
 	node --test .github/scripts/fastflowlm-manifest.test.mjs
 	node --experimental-strip-types --test .github/scripts/fastflowlm-models.test.mjs
 	node --test .github/scripts/fastflowlm-candidates.test.mjs
+	node --test .github/scripts/fastflowlm-production.test.mjs
 	node .github/scripts/fastflowlm-manifest-check.mjs
 	node --test .github/scripts/model-catalog.test.mjs
 	node .github/scripts/export-model-catalog.mjs --check

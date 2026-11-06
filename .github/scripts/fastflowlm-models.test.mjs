@@ -204,7 +204,10 @@ test('file and trusted HTTPS consumers receive identical fixtures without produc
       })
       assert.deepEqual(remote, local)
       if (name === 'catalog.json') { parseAtomicModelCatalog(remote); assert.equal(projectFastflowlm(remote, allow).models.length, chatCheckpoints.length) }
-      else assert.deepEqual(remote.releases ?? remote.recipes, [])
+      else {
+        const source = name === 'fastflowlm-manifest.json' ? `backends/${name}` : `runtimes/environments/${name}`
+        assert.deepEqual(remote, read(new URL(`../../${source}`, import.meta.url)))
+      }
     }
   } finally { await new Promise(resolve => server.close(resolve)) }
 })
