@@ -73,3 +73,27 @@ The legacy `refresh-model-catalog.mjs` deliberately refuses FLM entries: repinni
 one source without rebuilding its full file plan would keep stale hashes and
 invalid qualification evidence. Stage and requalify a complete FLM definition
 when any source changes.
+
+
+### FastFlowLM upstream catalog
+
+`fastflowlm-models` contains all 44 XDNA2 chat checkpoints in the shipped FLM source revision.
+Ten entries have `definition.recommended: true`; all others remain available. Recommendations
+are editorial and independent of hardware qualification. `qualification.status: upstream`
+records upstream provenance; only `qualified` means Atomic's hardware acceptance passed.
+Existing GGUF/MLX recommendation exports are unchanged.
+
+Regenerate complete pinned file plans and matching core native profiles with:
+
+```sh
+python3 .github/scripts/import-fastflowlm.py /path/to/FastFlowLM ../atomic-chat-core
+make validate
+```
+
+The importer reads the engine manifest's exact source commit, retains existing recommendations
+and qualified entries, hashes small files and uses immutable Hub LFS hashes for weights.
+It caches fetched data under `/tmp/atomic-flm-catalog-import-cache`; remove that disposable
+cache before intentionally refreshing moving Hub branches. A failure aborts catalog writes.
+Deploy the matching core before using the new upstream entries. No model weights are fetched
+by this maintenance script. Standalone embeddings, decision/transcription models and models
+for other NPU platforms are outside the current chat adapter.

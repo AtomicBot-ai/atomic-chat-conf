@@ -9,6 +9,7 @@ export function safeModelPath(path) {
 export function validateFastflowlm(entry, { allowCandidates = false } = {}) {
   const fail = message => { throw new Error(`FastFlowLM: ${message}`) }
   const d = entry.definition
+  if (d?.recommended !== undefined && typeof d.recommended !== 'boolean') fail('invalid recommendation')
   if (entry.format !== 'fastflowlm' || !object(d)) fail('invalid format/definition')
   if (!id.test(d.model_id ?? '') || !id.test(d.variant_id ?? '') || !/^[a-z0-9][a-z0-9._-]*:[a-z0-9][a-z0-9._-]*$/.test(d.checkpoint ?? '')) fail('invalid model/variant/checkpoint')
   if (Object.keys(entry.variants).length !== 1 || !object(entry.variants[d.variant_id])) fail('variant must match definition.variant_id')
@@ -16,9 +17,9 @@ export function validateFastflowlm(entry, { allowCandidates = false } = {}) {
   if (!/^flm-\d+\.\d+\.\d+-r[1-9]\d*$/.test(d.minimum_flm_version ?? '') || d.local_only_protocol !== 1 || d.npu_generation !== 'xdna2') fail('incompatible engine/protocol/NPU')
   if (!Number.isSafeInteger(d.context_length) || d.context_length < 1 || !d.license?.trim() || typeof d.gated !== 'boolean') fail('missing context/license/gated')
   if (!object(d.capabilities) || ['chat', 'tools', 'reasoning', 'structured_output'].some(k => typeof d.capabilities[k] !== 'boolean') || !d.capabilities.chat) fail('invalid chat capabilities')
-  if (!object(d.qualification) || !['candidate', 'qualified'].includes(d.qualification.status) || !Array.isArray(d.qualification.evidence)) fail('missing qualification')
+  if (!object(d.qualification) || !['candidate', 'upstream', 'qualified'].includes(d.qualification.status) || !Array.isArray(d.qualification.evidence)) fail('missing qualification')
   if (d.qualification.status === 'candidate' && !allowCandidates) fail('unqualified candidate cannot enter production catalog')
-  if (d.qualification.status === 'qualified' && (d.qualification.evidence.length === 0 || d.qualification.evidence.some(url => !/^https:\/\//.test(url)))) fail('qualified model requires live evidence')
+  if (d.qualification.status !== 'candidate' && (d.qualification.evidence.length === 0 || d.qualification.evidence.some(url => !/^https:\/\//.test(url)))) fail('upstream or qualified model requires evidence')
   if (!Array.isArray(d.sources) || !d.sources.length || !Array.isArray(d.files) || !d.files.length) fail('missing immutable sources/full file plan')
   const sources = new Set(), used = new Set(), paths = new Map()
   for (const source of d.sources) {
