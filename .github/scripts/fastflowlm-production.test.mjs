@@ -6,7 +6,7 @@ const read = path => JSON.parse(readFileSync(new URL(`../../${path}`, import.met
 test('production qualifies only the tested Qwen3 plan against immutable r2 builds', () => {
   const catalog = read('models/catalog.json')
   const candidate = read('.github/fixtures/fastflowlm/model-candidate.json')
-  const selected = Object.entries(catalog.models).filter(([, model]) => model.kind === 'fastflowlm')
+  const selected = Object.entries(catalog.models).filter(([, model]) => model.kind === 'fastflowlm' && model.definition.qualification.status === 'qualified')
   assert.equal(selected.length, 1, 'one hardware-qualified chat model is required')
   const [key, entry] = selected[0]
   const definition = entry.definition
@@ -15,12 +15,14 @@ test('production qualifies only the tested Qwen3 plan against immutable r2 build
     ...candidate,
     definition: {
       ...candidate.definition,
+      name: candidate.definition.name.replace(' candidate', ''),
+      recommended: true,
       minimum_flm_version: 'flm-1.0.11-r2',
       context_length: 2048,
       qualification: { status: 'qualified', evidence: [release + 'flm-1.0.11-r2-acceptance.json'] },
     },
   })
-  assert.deepEqual(catalog.collections['fastflowlm-models'].entries, [{ model: key, variant: definition.variant_id }])
+  assert.ok(catalog.collections['fastflowlm-models'].entries.some(ref => ref.model === key && ref.variant === definition.variant_id))
   const manifest = read('backends/fastflowlm-manifest.json')
   assert.equal(manifest.releases.length, 1)
   const build = manifest.releases[0]

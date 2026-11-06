@@ -328,7 +328,10 @@
                 "pattern": "^[a-z0-9][a-z0-9._-]*$"
               },
               "host": {
-                "enum": ["huggingface", "github"],
+                "enum": [
+                  "huggingface",
+                  "github"
+                ],
                 "default": "huggingface"
               },
               "repo": {
@@ -452,6 +455,7 @@
             "status": {
               "enum": [
                 "candidate",
+                "upstream",
                 "qualified"
               ]
             },
@@ -469,7 +473,10 @@
               "if": {
                 "properties": {
                   "status": {
-                    "const": "qualified"
+                    "enum": [
+                      "qualified",
+                      "upstream"
+                    ]
                   }
                 }
               },
@@ -482,6 +489,9 @@
               }
             }
           ]
+        },
+        "recommended": {
+          "type": "boolean"
         }
       }
     }
