@@ -3158,3 +3158,65 @@ node .github/scripts/export-model-catalog.mjs --baseline ../Atomic-Chat/core/src
 ```
 
 Add `--check` to validate those copies offline. Publish compatible conf data, release core, then update the clients' exact core pins and lockfiles before releasing either client.
+
+
+## FastFlowLM builds and host environment
+
+`backends/fastflowlm-manifest.json` describes managed native FLM builds, not
+models. `fastflowlm-schema.json` rejects unknown fields, missing hashes,
+unsupported platforms and any `local_only_protocol` other than `1`. Empty
+`releases` means no installable build. A release contains an immutable
+`version: flm-<major>.<minor>.<patch>-r<N>`, full `upstream_commit`, matching
+`atomic_revision`, `min_core_version`, `published_at`, provenance and exactly
+one `win-x64-npu` and one `linux-x64-npu` archive. Provenance pins the core commit,
+patch hash, dependency-lock hash and a size/hash-checked provenance document.
+Archive and provenance URLs must use the same build tag in core's GitHub
+releases. Order is descending **numeric upstream semver, then numeric Atomic
+revision**, not timestamps or lexical order. Changing bytes requires a new
+build ID; withdrawing an entry is allowed.
+
+`runtimes/environments/fastflowlm-{windows,linux}.json` are separate data-only
+contracts. The existing container environment documents are unchanged. Empty
+`recipes` means no automatic setup is offered. Each qualified recipe carries
+its own `min_core_version`; the empty bootstrap makes no core-version promise.
+Documents have immutable `manifest_id: fastflowlm-<os>-r<N>`; a changed recipe
+also needs a new recipe `revision`. Platform entries identify Windows 11 x64
+or a specific Ubuntu 24.04/26.04 x64 kernel. Hardware IDs, package sources,
+versions, hashes, signing identity, live evidence and the qualified FLM build
+are explicit. Linux source suites must match the platform; system XRT requires
+its NPU plugin. Permission/memlock effects are scoped by core to the runtime
+account, not arbitrary commands in conf.
+
+Windows driver sources are limited to AMD downloads and Microsoft's driver
+catalog CDN; a recipe distinguishes `amd-installer` from `windows-update-cab`.
+The host executor must implement and qualify that fixed package kind, verify
+signatures and device matching, and never execute commands supplied by a
+manifest. A CAB candidate does not establish a tested automatic-install recipe.
+
+`make validate` and CI run the same FLM schema/negative-fixture, integrity,
+immutability, model-file-plan and consumer-compatibility gates. Set
+`FASTFLOWLM_BASE_REF` to the reviewed base ref when checking published content;
+CI uses the PR target or pre-push tip, local validation defaults to `origin/main`.
+Model definitions remain exclusively in `models/catalog.json` (see
+[the model contract](models/README.md#fastflowlm-contract)).
+
+The first production build is `flm-1.0.11-r2`, requiring core **0.22.0** or newer.
+Its Windows and Linux archives and provenance are immutable assets of the
+[engine release](https://github.com/AtomicBot-ai/atomic-chat-core/releases/tag/flm-1.0.11-r2).
+The production model collection contains only the tested Qwen3 0.6B XDNA2 plan.
+[Acceptance evidence](https://github.com/AtomicBot-ai/atomic-chat-core/releases/download/flm-1.0.11-r2/flm-1.0.11-r2-acceptance.json)
+distinguishes the exact CI archive run on Windows from the earlier native Arch run.
+
+Qualification covers offline chat with an existing driver on Windows 11 and
+manual driver setup on Arch. Clean Windows driver installation and Ubuntu
+24.04/26.04 setup were excluded by the operator; service-account setup is not
+qualified. Both environment manifests therefore retain **empty `recipes`**.
+The nine additional chat candidates stay in staging. This scope follows the
+2026-11-06 amendment to OpenSpec `add-fastflowlm-runtime`.
+
+Publication on main can reach clients on their next refresh, within the existing
+one-hour cache window. Released cores before 0.22.0 do not gain FLM support from
+this data: their parsers ignore the new collection and existing legacy exports
+remain byte-identical. The engine prerelease does not replace the latest core
+application release. Eye CLI integrates the unreleased core through `bun link`
+before its own release.

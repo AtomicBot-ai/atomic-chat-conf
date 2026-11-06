@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "qualification": "candidate",
+  "os": "windows",
+  "version": "11",
+  "arch": "x64",
+  "pci_device_ids": [
+    "1022:17f0"
+  ],
+  "kind": "windows-update-cab",
+  "driver_version": "32.0.203.314",
+  "catalog_update_id": "7193bd4f-927d-44fd-ae77-c1e4ba75be1f",
+  "catalog_page": "https://www.catalog.update.microsoft.com/ScopedViewInline.aspx?updateid=7193bd4f-927d-44fd-ae77-c1e4ba75be1f",
+  "url": "https://catalog.s.download.windowsupdate.com/c/msdownload/update/driver/drvs/2025/11/bff3a5d0-92a6-4025-b4a6-441222f89117_4c46e3c98d8f4a730543be3f6dac7f8b4ebfa4b7.cab",
+  "size": 21154403,
+  "sha256": "31343ae2698e8aa6253981d7571754124baa7d48f0d9b7280ecfa9b75708c33e",
+  "download_verified": true,
+  "signer": "Microsoft Windows Hardware Compatibility Publisher",
+  "catalog_sha256": "1449c4e8504f74cae200f9f9a61dff3fd5cf1f217d7b551a5e8c4ebdb3d67aad",
+  "inf_sha256": "1d6a1615c13a85c74b9fbd66353857f4ab333b3369123d5ddb00dd2336911a0f",
+  "signature_check": "PKCS#7 cryptographic integrity verified with openssl smime -verify -inform DER -noverify -binary; Windows trust/revocation/kernel policy deferred",
+  "remaining_checks": [
+    "Windows Authenticode trust, timestamp and revocation policy",
+    "device match from native Windows probe",
+    "fixed native CAB install action and exit/reboot codes",
+    "runtime validation and offline inference on XDNA2"
+  ]
+}

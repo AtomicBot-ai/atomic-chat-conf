@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isDeepStrictEqual } from 'node:util'
-import { projectCollection, validateCatalog } from './model-catalog.mjs'
+import { COLLECTION_FIELDS, projectCollection, validateCatalog } from './model-catalog.mjs'
 
 const directoryFlag = process.argv.indexOf('--directory')
 const directory = directoryFlag < 0 ? new URL('../../models/', import.meta.url) : pathToFileURL(resolve(process.argv[directoryFlag + 1]) + '/')
@@ -18,7 +18,9 @@ for (let i = 0; i < process.argv.length; i++) if (process.argv[i] === '--baselin
   } else writeFileSync(target, JSON.stringify(catalog, null, 2) + '\n')
 }
 
-for (const name of Object.keys(catalog.collections)) {
+// New collections have no released legacy URL. Never create a second FLM catalog.
+const exports = ['recommended', ...Object.keys(COLLECTION_FIELDS)]
+for (const name of exports) {
   const target = new URL(`${name}.json`, directory)
   const expected = projectCollection(catalog, name)
   if (process.argv.includes('--check')) {
@@ -30,4 +32,4 @@ for (const name of Object.keys(catalog.collections)) {
   } else writeFileSync(target, JSON.stringify(expected, null, 2) + '\n')
 }
 if (failed) process.exitCode = 1
-else console.log(`Model catalog: ${Object.keys(catalog.models).length} models, ${Object.keys(catalog.collections).length} compatible exports verified`)
+else console.log(`Model catalog: ${Object.keys(catalog.models).length} models, ${exports.length} compatible exports verified`)

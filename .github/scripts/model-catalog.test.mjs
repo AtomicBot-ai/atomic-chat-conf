@@ -6,12 +6,13 @@ import { spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
-import { validateCatalog, projectCollection } from './model-catalog.mjs'
+import { COLLECTION_FIELDS, validateCatalog, projectCollection } from './model-catalog.mjs'
 const catalog = JSON.parse(readFileSync(new URL('../../models/catalog.json', import.meta.url), 'utf8'))
+const legacyCollections = ['recommended', ...Object.keys(COLLECTION_FIELDS)]
 
 test('every legacy export preserves the published shape and values', () => {
   validateCatalog(catalog)
-  for (const name of Object.keys(catalog.collections)) {
+  for (const name of legacyCollections) {
     const old = JSON.parse(readFileSync(new URL(`../../models/${name}.json`, import.meta.url), 'utf8'))
     assert.deepEqual(projectCollection(catalog, name), old)
   }
@@ -47,13 +48,13 @@ test('generation is reproducible and an independently edited export fails CI', (
   try {
     writeFileSync(join(directory, 'catalog.json'), JSON.stringify(catalog))
     assert.equal(run().status, 0)
-    const first = Object.keys(catalog.collections).map(name => readFileSync(join(directory, `${name}.json`), 'utf8'))
+    const first = legacyCollections.map(name => readFileSync(join(directory, `${name}.json`), 'utf8'))
     assert.equal(run().status, 0)
-    assert.deepEqual(Object.keys(catalog.collections).map(name => readFileSync(join(directory, `${name}.json`), 'utf8')), first)
+    assert.deepEqual(legacyCollections.map(name => readFileSync(join(directory, `${name}.json`), 'utf8')), first)
     assert.equal(run('--check').status, 0)
     const edited = JSON.parse(first[0])
     edited.updated_at = '2000-01-01T00:00:00Z'
-    writeFileSync(join(directory, `${Object.keys(catalog.collections)[0]}.json`), JSON.stringify(edited))
+    writeFileSync(join(directory, `${legacyCollections[0]}.json`), JSON.stringify(edited))
     assert.equal(run('--check').status, 1)
     assert.equal(run().status, 0)
     assert.equal(run('--check').status, 0)

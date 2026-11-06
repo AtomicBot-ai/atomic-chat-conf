@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.catalog.json",
   "schema_version": 1,
-  "updated_at": "2026-11-02T18:00:00Z",
+  "updated_at": "2026-11-06T09:05:18Z",
   "models": {
     "chat:AtomicChat/Qwen3.8-27B-GGUF": {
       "kind": "chat",
@@ -19576,6 +19576,170 @@
           "selection": "q8_0"
         }
       }
+    },
+    "fastflowlm:qwen3-0.6b": {
+      "kind": "fastflowlm",
+      "format": "fastflowlm",
+      "definition": {
+        "model_id": "qwen3-0.6b",
+        "variant_id": "qwen3-0.6b-npu2",
+        "name": "Qwen3 0.6B (FastFlowLM NPU2 candidate)",
+        "checkpoint": "qwen3:0.6b",
+        "minimum_flm_version": "flm-1.0.11-r2",
+        "local_only_protocol": 1,
+        "npu_generation": "xdna2",
+        "context_length": 2048,
+        "license": "Apache-2.0 AND LicenseRef-FastFlowLM-NPU-Binary",
+        "gated": false,
+        "capabilities": {
+          "chat": true,
+          "tools": false,
+          "reasoning": false,
+          "structured_output": false
+        },
+        "sources": [
+          {
+            "id": "flm",
+            "repo": "FastFlowLM/Qwen3-0.6B-NPU2",
+            "revision": "b584799232c962f693e0e5be99606fc4eca6811e"
+          },
+          {
+            "id": "license",
+            "repo": "Qwen/Qwen3-0.6B",
+            "revision": "c1899de289a04d12100db370d81485cdf75e47ca"
+          },
+          {
+            "id": "flm-kernels",
+            "host": "github",
+            "repo": "ROCm/FastFlowLM",
+            "revision": "f37cdd29edc777cf3db1e385da8e7bfadc57d0b3"
+          }
+        ],
+        "files": [
+          {
+            "source": "flm",
+            "source_path": "README.md",
+            "path": "README.md",
+            "size": 13197,
+            "sha256": "9e9cd51a3b822ae4bb3b6832534c38e938c75690473f12314d76d059b79a4419"
+          },
+          {
+            "source": "flm-kernels",
+            "source_path": "src/xclbins/Qwen3-0.6B-NPU2/attn.xclbin",
+            "path": "attn.xclbin",
+            "size": 288796,
+            "sha256": "88ad573eb558881a8b43117dc8fbb6a0726f381940a00ad941d064e098ab0c65"
+          },
+          {
+            "source": "flm",
+            "source_path": "config.json",
+            "path": "config.json",
+            "size": 869,
+            "sha256": "8a5ec72f5c96766168a4024f88d70841ae341900a0c84fd4fd23f8eeae16c6a7"
+          },
+          {
+            "source": "flm-kernels",
+            "source_path": "src/xclbins/Qwen3-0.6B-NPU2/dequant.xclbin",
+            "path": "dequant.xclbin",
+            "size": 114060,
+            "sha256": "575d45e47993315f95f601e07f9f21164f30515f80e232e16255d7c5f2a1d4bf"
+          },
+          {
+            "source": "flm-kernels",
+            "source_path": "src/xclbins/Qwen3-0.6B-NPU2/layer.xclbin",
+            "path": "layer.xclbin",
+            "size": 231659,
+            "sha256": "9e084785df7c4e37bc4c0de7ab1635c2cd3a18114a319494889d30362e0e6178"
+          },
+          {
+            "source": "flm",
+            "source_path": "lm_head.xclbin",
+            "path": "lm_head.xclbin",
+            "size": 153355,
+            "sha256": "4b6fbf300da031265251984dccde59044a83d4c6cfa73c4175cf5f58c2165501"
+          },
+          {
+            "source": "flm-kernels",
+            "source_path": "src/xclbins/Qwen3-0.6B-NPU2/mm.xclbin",
+            "path": "mm.xclbin",
+            "size": 512220,
+            "sha256": "4afc2a6f2459c0ddcf7de61193a6e83e53a951a0f6c33521456d569bab2c7142"
+          },
+          {
+            "source": "flm",
+            "source_path": "model.q4nx",
+            "path": "model.q4nx",
+            "size": 683820832,
+            "sha256": "db8dec4dff653817218ff920c5d25d28d1805512906485e654f03980053fa667"
+          },
+          {
+            "source": "flm",
+            "source_path": "tokenizer.json",
+            "path": "tokenizer.json",
+            "size": 11422654,
+            "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+          },
+          {
+            "source": "flm",
+            "source_path": "tokenizer_config.json",
+            "path": "tokenizer_config.json",
+            "size": 10055,
+            "sha256": "51015f78470ac7f7b8c128a6b6ee31a0081285a453db4caba9d46104063908a2"
+          },
+          {
+            "source": "license",
+            "source_path": "LICENSE",
+            "path": "LICENSE",
+            "size": 11343,
+            "sha256": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e"
+          },
+          {
+            "source": "flm-kernels",
+            "source_path": "LICENSE_BINARY.txt",
+            "path": "LICENSE_BINARY.txt",
+            "size": 978,
+            "sha256": "40f10a537b3a783a00531b2e6889b3456b3182e2dbbc3d16bfaab9cb83b87abc"
+          }
+        ],
+        "components": {
+          "weights": [
+            "model.q4nx"
+          ],
+          "tokenizer": [
+            "tokenizer.json",
+            "tokenizer_config.json"
+          ],
+          "config": [
+            "config.json"
+          ],
+          "chat_template": [
+            "tokenizer_config.json"
+          ],
+          "kernels": [
+            "attn.xclbin",
+            "dequant.xclbin",
+            "layer.xclbin",
+            "lm_head.xclbin",
+            "mm.xclbin"
+          ],
+          "metadata": [
+            "README.md",
+            "LICENSE",
+            "LICENSE_BINARY.txt"
+          ]
+        },
+        "qualification": {
+          "status": "qualified",
+          "evidence": [
+            "https://github.com/AtomicBot-ai/atomic-chat-core/releases/download/flm-1.0.11-r2/flm-1.0.11-r2-acceptance.json"
+          ]
+        }
+      },
+      "variants": {
+        "qwen3-0.6b-npu2": {
+          "selection": "all-required-files"
+        }
+      }
     }
   },
   "collections": {
@@ -20538,6 +20702,17 @@
         {
           "model": "audio:stable-audio-3-small-sfx",
           "variant": "default"
+        }
+      ]
+    },
+    "fastflowlm-models": {
+      "header": {
+        "schema_version": 1
+      },
+      "entries": [
+        {
+          "model": "fastflowlm:qwen3-0.6b",
+          "variant": "qwen3-0.6b-npu2"
         }
       ]
     }

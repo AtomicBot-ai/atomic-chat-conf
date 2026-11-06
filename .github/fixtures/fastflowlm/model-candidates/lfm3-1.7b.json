@@ -1,0 +1,156 @@
+{
+  "kind": "fastflowlm",
+  "format": "fastflowlm",
+  "definition": {
+    "model_id": "lfm3-1.7b",
+    "variant_id": "lfm3-1.7b-npu2",
+    "name": "LFM3-1.7B (FastFlowLM NPU2 candidate)",
+    "checkpoint": "lfm3:1.7b",
+    "minimum_flm_version": "flm-1.0.11-r1",
+    "local_only_protocol": 1,
+    "npu_generation": "xdna2",
+    "context_length": 32768,
+    "license": "LicenseRef-LFM-Open-1.0 AND LicenseRef-FastFlowLM-NPU-Binary",
+    "gated": false,
+    "capabilities": {
+      "chat": true,
+      "tools": false,
+      "reasoning": false,
+      "structured_output": false
+    },
+    "sources": [
+      {
+        "id": "flm",
+        "repo": "FastFlowLM/LFM3-1.7B-NPU2",
+        "revision": "e21accc3f02fcbabae964d50082eea595c1642c1"
+      },
+      {
+        "id": "flm-kernels",
+        "host": "github",
+        "repo": "ROCm/FastFlowLM",
+        "revision": "f37cdd29edc777cf3db1e385da8e7bfadc57d0b3"
+      }
+    ],
+    "files": [
+      {
+        "source": "flm",
+        "source_path": "LICENSE",
+        "path": "LICENSE",
+        "size": 10574,
+        "sha256": "4d28ca14dedc0b3d0fcc2b3339f0e79931faa33874f3d24f522183a8fc70068c"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "LICENSE_BINARY.txt",
+        "path": "LICENSE_BINARY.txt",
+        "size": 978,
+        "sha256": "40f10a537b3a783a00531b2e6889b3456b3182e2dbbc3d16bfaab9cb83b87abc"
+      },
+      {
+        "source": "flm",
+        "source_path": "README.md",
+        "path": "README.md",
+        "size": 2575,
+        "sha256": "0f27a3456fc8c6c1d1131f9cb8c3ca5981ed3d54773135d53a19b88cb668591c"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/LFM3-1.7B-NPU2/attn.xclbin",
+        "path": "attn.xclbin",
+        "size": 284988,
+        "sha256": "18e93759086f0b280d83c6e8a7910db34429fc94474040c335a8eb784070ed7e"
+      },
+      {
+        "source": "flm",
+        "source_path": "chat_template.jinja",
+        "path": "chat_template.jinja",
+        "size": 12129,
+        "sha256": "f45005c50cd2a97329722bf3a2dee9f16c04cdf825a589b280fb7e99e6827818"
+      },
+      {
+        "source": "flm",
+        "source_path": "config.json",
+        "path": "config.json",
+        "size": 1480,
+        "sha256": "ed76b4e8045ba916c619773c1b04a14dc4e91063b88df2807cf42e51652b5a51"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/LFM3-1.7B-NPU2/dequant.xclbin",
+        "path": "dequant.xclbin",
+        "size": 112523,
+        "sha256": "92fe942189bfe29d436329a93cab44bbdd3a858e3e8488f6c671047159879614"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/LFM3-1.7B-NPU2/layer.xclbin",
+        "path": "layer.xclbin",
+        "size": 404716,
+        "sha256": "27878fd65060be9a056401eb07679e89ab321b1f751af9d4b24c5ec14a588691"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/LFM3-1.7B-NPU2/mm.xclbin",
+        "path": "mm.xclbin",
+        "size": 512219,
+        "sha256": "a6539bd3db99073abf0bccb65ffcddd641ed3d50c8ae92e3e40886a5f95c4722"
+      },
+      {
+        "source": "flm",
+        "source_path": "model.q4nx",
+        "path": "model.q4nx",
+        "size": 1605848864,
+        "sha256": "b97206b484ebc3f01859d9b8bf251d2438e8d48847172671e3ce6ed89a32f141"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer.json",
+        "path": "tokenizer.json",
+        "size": 17908635,
+        "sha256": "7e226e34bface23ccf6e495d157bf77186c1c30a7659880e1a8994db528c3701"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer_config.json",
+        "path": "tokenizer_config.json",
+        "size": 1606,
+        "sha256": "4b9315391077c1291abba3184c4c115508962e16efdc24f63059d88c78073573"
+      }
+    ],
+    "components": {
+      "weights": [
+        "model.q4nx"
+      ],
+      "tokenizer": [
+        "tokenizer.json",
+        "tokenizer_config.json"
+      ],
+      "config": [
+        "config.json"
+      ],
+      "chat_template": [
+        "chat_template.jinja"
+      ],
+      "kernels": [
+        "attn.xclbin",
+        "dequant.xclbin",
+        "layer.xclbin",
+        "mm.xclbin"
+      ],
+      "metadata": [
+        "LICENSE",
+        "LICENSE_BINARY.txt",
+        "README.md"
+      ]
+    },
+    "qualification": {
+      "status": "candidate",
+      "evidence": []
+    }
+  },
+  "variants": {
+    "lfm3-1.7b-npu2": {
+      "selection": "all-required-files"
+    }
+  }
+}

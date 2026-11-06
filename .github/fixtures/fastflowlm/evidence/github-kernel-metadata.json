@@ -1,0 +1,31 @@
+{
+  "repo": "ROCm/FastFlowLM",
+  "revision": "f37cdd29edc777cf3db1e385da8e7bfadc57d0b3",
+  "files": {
+    "src/xclbins/Qwen3-0.6B-NPU2/attn.xclbin": {
+      "blob": "5ee8005576000008c666a373158dc49d50c5dd5c",
+      "size": 288796,
+      "sha256": "88ad573eb558881a8b43117dc8fbb6a0726f381940a00ad941d064e098ab0c65"
+    },
+    "src/xclbins/Qwen3-0.6B-NPU2/dequant.xclbin": {
+      "blob": "5d09514acd463dd35e5bc9020f1f91b4b2418adc",
+      "size": 114060,
+      "sha256": "575d45e47993315f95f601e07f9f21164f30515f80e232e16255d7c5f2a1d4bf"
+    },
+    "src/xclbins/Qwen3-0.6B-NPU2/layer.xclbin": {
+      "blob": "a70bb3191f82f30b4b022c9de2e2b01d651a3aa0",
+      "size": 231659,
+      "sha256": "9e084785df7c4e37bc4c0de7ab1635c2cd3a18114a319494889d30362e0e6178"
+    },
+    "src/xclbins/Qwen3-0.6B-NPU2/mm.xclbin": {
+      "blob": "9e6d5b83abf46502a35268530df6a0d77e27bce1",
+      "size": 512220,
+      "sha256": "4afc2a6f2459c0ddcf7de61193a6e83e53a951a0f6c33521456d569bab2c7142"
+    },
+    "LICENSE_BINARY.txt": {
+      "blob": "d0476c9551245939a806b68e2d6c5824e98afd37",
+      "size": 978,
+      "sha256": "40f10a537b3a783a00531b2e6889b3456b3182e2dbbc3d16bfaab9cb83b87abc"
+    }
+  }
+}

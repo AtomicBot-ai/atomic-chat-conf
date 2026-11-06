@@ -1,0 +1,276 @@
+{
+  "kind": "fastflowlm",
+  "format": "fastflowlm",
+  "definition": {
+    "model_id": "nemotron-3.5-bolt-e4b",
+    "variant_id": "nemotron-3.5-bolt-e4b-npu2",
+    "name": "Nemotron-3.5-Bolt-E4B (FastFlowLM NPU2 candidate)",
+    "checkpoint": "nemotron3.5-bolt:e4b",
+    "minimum_flm_version": "flm-1.0.11-r1",
+    "local_only_protocol": 1,
+    "npu_generation": "xdna2",
+    "context_length": 32768,
+    "license": "OpenMDW-1.1 AND LicenseRef-FastFlowLM-NPU-Binary",
+    "gated": false,
+    "capabilities": {
+      "chat": true,
+      "tools": false,
+      "reasoning": false,
+      "structured_output": false
+    },
+    "sources": [
+      {
+        "id": "flm",
+        "repo": "FastFlowLM/Nemotron-3.5-Bolt-E4B-NPU2",
+        "revision": "f9ee21728399b0d570dd40273abe01f7662cbab8"
+      },
+      {
+        "id": "flm-kernels",
+        "host": "github",
+        "repo": "ROCm/FastFlowLM",
+        "revision": "f37cdd29edc777cf3db1e385da8e7bfadc57d0b3"
+      }
+    ],
+    "files": [
+      {
+        "source": "flm",
+        "source_path": "LICENSE.OpenMDW-1.1",
+        "path": "LICENSE.OpenMDW-1.1",
+        "size": 2619,
+        "sha256": "2ab44b68365473c112f5092211a38f231cb23e50de68b75a13369adbd76a74df"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "LICENSE_BINARY.txt",
+        "path": "LICENSE_BINARY.txt",
+        "size": 978,
+        "sha256": "40f10a537b3a783a00531b2e6889b3456b3182e2dbbc3d16bfaab9cb83b87abc"
+      },
+      {
+        "source": "flm",
+        "source_path": "MANIFEST.sha256",
+        "path": "MANIFEST.sha256",
+        "size": 1227,
+        "sha256": "53e2f09437f83b89fd09142f511f258f407f08d292c442cd56f92954da718f6d"
+      },
+      {
+        "source": "flm",
+        "source_path": "README.md",
+        "path": "README.md",
+        "size": 61669,
+        "sha256": "7c5796053cd3a25e97f8b6e3e04a53bedab0dedc54d24c9797c1cbcfdedb5681"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Nemotron-3.5-Bolt-E4B-NPU2/attn.xclbin",
+        "path": "attn.xclbin",
+        "size": 210299,
+        "sha256": "ffe48c3c36b8d09190c1d3077a67ee45f44363bec844f69496f8faa7944fa0f4"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Nemotron-3.5-Bolt-E4B-NPU2/audio_conv1d.xclbin",
+        "path": "audio_conv1d.xclbin",
+        "size": 123212,
+        "sha256": "b86065df880b78cefa6844394c44569643f443c37918b7ac19a65881824a2621"
+      },
+      {
+        "source": "flm",
+        "source_path": "audio_weight.q4nx",
+        "path": "audio_weight.q4nx",
+        "size": 956326424,
+        "sha256": "944fbd6cca496801437df8f98ed4c592f6a3b9b1d097d95b0723b218d4e27c47"
+      },
+      {
+        "source": "flm",
+        "source_path": "bias.md",
+        "path": "bias.md",
+        "size": 3254,
+        "sha256": "bbe310672de023a587ba92e5c1d5da2edc22955f8822b2f3ffe00afca2dd8de1"
+      },
+      {
+        "source": "flm",
+        "source_path": "bolt-smart-and-fast.png",
+        "path": "bolt-smart-and-fast.png",
+        "size": 444073,
+        "sha256": "244b8a0f465c13fbfa81c8046b0bd4471d2202c275ea950c4845374788852145"
+      },
+      {
+        "source": "flm",
+        "source_path": "chat_template.jinja",
+        "path": "chat_template.jinja",
+        "size": 20161,
+        "sha256": "35b7d0641b6fb4ee41c3bc623e85bdb7d583c40f6ae9f24514ae58a9d57119f3"
+      },
+      {
+        "source": "flm",
+        "source_path": "config.json",
+        "path": "config.json",
+        "size": 6781,
+        "sha256": "1ea9700c75542c657af3a545669d2b4219c9142168917b22454589e80bb8f3a1"
+      },
+      {
+        "source": "flm",
+        "source_path": "configuration.json",
+        "path": "configuration.json",
+        "size": 53,
+        "sha256": "fd90693c595be73f1bfa5b2029420491103dc9f6c718038b7226a6022a1b0511"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Nemotron-3.5-Bolt-E4B-NPU2/dequant.xclbin",
+        "path": "dequant.xclbin",
+        "size": 114059,
+        "sha256": "5c09a768705b2a52541eb6f9e5b6c58a2fd6ad7c185eb28a0da8ba3f4e9e7c41"
+      },
+      {
+        "source": "flm",
+        "source_path": "explainability.md",
+        "path": "explainability.md",
+        "size": 3315,
+        "sha256": "9e5041ee4c0ef08536f7ff43c5bde22e438309468781e66900e6a4cce540baec"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Nemotron-3.5-Bolt-E4B-NPU2/layer.xclbin",
+        "path": "layer.xclbin",
+        "size": 173547,
+        "sha256": "eff42c961a768697322379339e25af0e12bc9807558ae43ea1b1c49810bd7608"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Nemotron-3.5-Bolt-E4B-NPU2/lm_head.xclbin",
+        "path": "lm_head.xclbin",
+        "size": 274955,
+        "sha256": "e7664b8e3bb509fe9ab756e4e8461a4ed3073467939202ffedaf341139515476"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Nemotron-3.5-Bolt-E4B-NPU2/mm.xclbin",
+        "path": "mm.xclbin",
+        "size": 512220,
+        "sha256": "1cb2714c29e7f48ff37ee84632323906e0d69389fd72cba7f3898e3671c7a50a"
+      },
+      {
+        "source": "flm",
+        "source_path": "model.q4nx",
+        "path": "model.q4nx",
+        "size": 7142621252,
+        "sha256": "3681569f9dcc80cc9d4b18f310feef815ab47cb200c18f951f667383b17cea63"
+      },
+      {
+        "source": "flm",
+        "source_path": "privacy.md",
+        "path": "privacy.md",
+        "size": 1671,
+        "sha256": "c048eb257c10d128d35a8a90d8c98e7684e2019d9e110f7db1543cf88f1ce63a"
+      },
+      {
+        "source": "flm",
+        "source_path": "safety.md",
+        "path": "safety.md",
+        "size": 2292,
+        "sha256": "50df88aa4e1f25c3504522ed11738075f2d97150c15a89508a1eb6912aec22f0"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Nemotron-3.5-Bolt-E4B-NPU2/swa.xclbin",
+        "path": "swa.xclbin",
+        "size": 274235,
+        "sha256": "75c0f30531895d747b4801dc26fde69b70e7c9ae32182b586732eed369af2c8e"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer.json",
+        "path": "tokenizer.json",
+        "size": 32169626,
+        "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer_config.json",
+        "path": "tokenizer_config.json",
+        "size": 3142,
+        "sha256": "84c7ac5d2be7f4bb79863372874ebaf4f9a332489c2c94dd3615a1282e4c77f1"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Nemotron-3.5-Bolt-E4B-NPU2/vision_attn.xclbin",
+        "path": "vision_attn.xclbin",
+        "size": 542091,
+        "sha256": "8bd11f76db8cbc189f290d51fe92dc293cac9eed89f79d20d8698f779213fb0a"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Nemotron-3.5-Bolt-E4B-NPU2/vision_mm.xclbin",
+        "path": "vision_mm.xclbin",
+        "size": 520923,
+        "sha256": "1bc40120cfbf4a6afd35ada1235e7ef34046f5d574d73cf4f448133e5024cab4"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/Nemotron-3.5-Bolt-E4B-NPU2/vision_mm_high_precision.xclbin",
+        "path": "vision_mm_high_precision.xclbin",
+        "size": 312540,
+        "sha256": "8bb18f08459ea19a9b5fde756a477c5de968017c14be1d13b77649d51b317a21"
+      },
+      {
+        "source": "flm",
+        "source_path": "vision_weight.q4nx",
+        "path": "vision_weight.q4nx",
+        "size": 956326592,
+        "sha256": "9b943744723fb611adb54c2d4e74f3c0ccaf763d8cec0f2156903c91a5dc1d65"
+      }
+    ],
+    "components": {
+      "weights": [
+        "audio_weight.q4nx",
+        "model.q4nx",
+        "vision_weight.q4nx"
+      ],
+      "tokenizer": [
+        "tokenizer.json",
+        "tokenizer_config.json"
+      ],
+      "config": [
+        "config.json",
+        "configuration.json"
+      ],
+      "chat_template": [
+        "chat_template.jinja"
+      ],
+      "kernels": [
+        "attn.xclbin",
+        "audio_conv1d.xclbin",
+        "dequant.xclbin",
+        "layer.xclbin",
+        "lm_head.xclbin",
+        "mm.xclbin",
+        "swa.xclbin",
+        "vision_attn.xclbin",
+        "vision_mm.xclbin",
+        "vision_mm_high_precision.xclbin"
+      ],
+      "metadata": [
+        "LICENSE.OpenMDW-1.1",
+        "LICENSE_BINARY.txt",
+        "MANIFEST.sha256",
+        "README.md",
+        "bias.md",
+        "bolt-smart-and-fast.png",
+        "explainability.md",
+        "privacy.md",
+        "safety.md"
+      ]
+    },
+    "qualification": {
+      "status": "candidate",
+      "evidence": []
+    }
+  },
+  "variants": {
+    "nemotron-3.5-bolt-e4b-npu2": {
+      "selection": "all-required-files"
+    }
+  }
+}

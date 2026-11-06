@@ -24,10 +24,22 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # The pinned pre-FLM consumer parser is TypeScript; test its exact
+          # source with Node's type stripping instead of a rewritten copy.
+          node-version: "22"
 
       - name: Install ajv-cli
         run: npm install -g ajv-cli@5
+
+      - name: Check FastFlowLM contracts and immutable published data
+        env:
+          FASTFLOWLM_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: |
+          node --test .github/scripts/fastflowlm-manifest.test.mjs
+          node --experimental-strip-types --test .github/scripts/fastflowlm-models.test.mjs
+          node --test .github/scripts/fastflowlm-candidates.test.mjs
+          node --test .github/scripts/fastflowlm-production.test.mjs
+          node .github/scripts/fastflowlm-manifest-check.mjs
 
       - name: Check the unified model catalog and compatible exports
         run: |

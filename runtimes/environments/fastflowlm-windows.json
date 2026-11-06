@@ -1,0 +1,8 @@
+{
+  "$schema": "./fastflowlm-windows.schema.json",
+  "schema_version": 1,
+  "engine": "fastflowlm",
+  "platform": "windows",
+  "manifest_id": "fastflowlm-windows-r1",
+  "recipes": []
+}
