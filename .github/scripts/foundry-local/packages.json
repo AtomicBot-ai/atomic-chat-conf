@@ -1,0 +1,20 @@
+[
+  {
+    "id": "Microsoft.AI.Foundry.Local.Runtime",
+    "version": "2.4.0",
+    "packageHash": "k06v/s2VD1ivipVUxAGV1vPTNKysIwfZOY0+qdNJPfnuXI8SXcApDKlnOC3ibmRG6zEZ2UQ/CmY/BFNfmjPP4w==",
+    "@id": "https://api.nuget.org/v3/catalog0/data/2026.11.09.19.38.55/microsoft.ai.foundry.local.runtime.2.4.0.json"
+  },
+  {
+    "id": "Microsoft.ML.OnnxRuntime",
+    "version": "1.31.0",
+    "packageHash": "J7arTn+7nrWdZ+PF2Sl9aNW1/Ba5DCt1ywZ3r5l3LKqzj3w8oC7Cl/uagG3Xp1ivuYJYQAMSuew0ef/74f7XCw==",
+    "@id": "https://api.nuget.org/v3/catalog0/data/2026.10.09.04.46.40/microsoft.ml.onnxruntime.1.31.0.json"
+  },
+  {
+    "id": "Microsoft.ML.OnnxRuntimeGenAI.Foundry",
+    "version": "0.19.0",
+    "packageHash": "n6NhQwAgZJGQBeq4buICEmv5TdxoWnyqinrGQLnrLFxZOUHH7h/pv91sDKZZcKlfvQdJuLYSOMmyL+FJ2dRNdA==",
+    "@id": "https://api.nuget.org/v3/catalog0/data/2026.11.04.00.13.40/microsoft.ml.onnxruntimegenai.foundry.0.19.0.json"
+  }
+]
