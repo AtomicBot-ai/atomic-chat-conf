@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Atomic Chat Foundry Local Runtime Manifest",
-  "description": "Schema for the release catalog of the `foundry-local` engine build: microsoft/foundry-local release archives the core installs to run ONNX Runtime GenAI models. One archive per platform, pinned by size and sha256. A published release is never rewritten; a new upstream release is a new entry. Cores skip releases whose `min_core_version` is newer than themselves or whose `c_api_version` their host does not support.",
+  "description": "Schema for the release catalog of the `foundry-local` engine build: Microsoft release archives or native NuGet archives repacked by atomic-chat-conf, installed by core to run ONNX Runtime GenAI models. One archive per platform, pinned by size and sha256. A published release is never rewritten; a new upstream release is a new entry. Cores skip releases whose `min_core_version` is newer than themselves or whose `c_api_version` their host does not support.",
   "type": "object",
   "required": ["schema_version", "upstream_repo", "releases"],
   "additionalProperties": false,
@@ -29,6 +29,10 @@
           "type": "string",
           "pattern": "^v\\d+\\.\\d+\\.\\d+$",
           "description": "Upstream release tag, e.g. v2.1.0."
+        },
+        "distribution": {
+          "const": "atomic-conf",
+          "description": "Uses https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download/foundry-local-<tag>/<name>. Omitted for Microsoft release archives."
         },
         "published_at": { "type": "string", "format": "date-time" },
         "min_core_version": {
