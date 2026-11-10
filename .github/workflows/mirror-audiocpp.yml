@@ -389,6 +389,12 @@ jobs:
     name: Sign Windows (${{ matrix.asset.name }})
     needs: select
     runs-on: windows-latest
+    # Signs through Azure Key Vault: the app's OIDC federated credential is
+    # bound to this environment, which also holds the AZURE_* variables.
+    environment: codesign
+    permissions:
+      contents: read
+      id-token: write
     strategy:
       # One job per archive: the CUDA archives are hundreds of megabytes each
       # and signing them in sequence would blow the job timeout.
@@ -419,9 +425,10 @@ jobs:
         uses: ./.github/actions/windows-code-sign
         with:
           path: extract
-          sm-api-key: ${{ secrets.SM_API_KEY }}
-          sm-client-cert-b64: ${{ secrets.SM_CLIENT_CERT_FILE_B64 }}
-          sm-client-cert-password: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          key-vault: ${{ vars.AZURE_KEY_VAULT }}
+          certificate: ${{ vars.AZURE_CODESIGN_CERT }}
 
       - name: Repack
         shell: pwsh
