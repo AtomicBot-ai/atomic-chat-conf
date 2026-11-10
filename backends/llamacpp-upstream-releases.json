@@ -1,10 +1,109 @@
 {
   "$schema": "./llamacpp-upstream-releases-schema.json",
   "schema_version": 1,
-  "updated_at": "2026-10-31T06:30:31Z",
+  "updated_at": "2026-11-10T12:21:55Z",
   "upstream_repo": "ggml-org/llama.cpp",
   "download_base": "https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download",
   "releases": [
+    {
+      "tag": "b12244",
+      "commit": "d5bbcd1f31dba754f716a26c3a4784502a6b9ede",
+      "published_at": "2026-11-10T07:25:25Z",
+      "min_core_version": "0.0.0",
+      "notes_url": "https://github.com/ggml-org/llama.cpp/releases/tag/b12244",
+      "assets": [
+        {
+          "name": "llama-b12244-bin-macos-arm64.tar.gz",
+          "sha256": "930a62f05f655bb8e2490f4dd67fb9e5fa9bdc94337bf70a00fea7afbdcefb61",
+          "size": 16784416,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-ubuntu-arm64.tar.gz",
+          "sha256": "cb00825e1d4b51a674ef1aa92af5445852719ed54c79bfe66675f0daca69efa1",
+          "size": 18802425,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-ubuntu-cuda-13.5-arm64.tar.gz",
+          "sha256": "6579e99ce6a065a76b920da742655622f9d3da663b6ba283f48a5403bc9fa5a9",
+          "size": 164871578,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-ubuntu-rocm-10.0-x64.tar.gz",
+          "sha256": "f7cd4846d41abb330df94e5967dcea9229e5db1dce34c949cebb131c9d4a753e",
+          "size": 255660732,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-ubuntu-vulkan-arm64.tar.gz",
+          "sha256": "f15b0a83a57c5fcc77c3775fbde48ee786b131d3782f4d6cdef42c3b1b9b4401",
+          "size": 29254084,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-ubuntu-vulkan-x64.tar.gz",
+          "sha256": "469196c25f24ed05817d7c0954521079e8b6029227593a2d99d2fcf81020e8af",
+          "size": 35970259,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-ubuntu-x64.tar.gz",
+          "sha256": "c1d7e7f31b5c43f3e5d44f667b4d57104217be3e5f2060320cd3735651238849",
+          "size": 23158204,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-win-cpu-arm64.zip",
+          "sha256": "52b52eaea63c97fba4d10a0a2fe4fa0799498be60f0395f39fa1a4a7a2c91969",
+          "size": 11395621,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-win-cpu-x64.zip",
+          "sha256": "9316b5207b2e986a211c129199d7ffe341fc52d4a61d9b532ff0a380ccef862a",
+          "size": 18857780,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-win-cuda-12.4-x64.zip",
+          "sha256": "8683e79b94ed533671cc489ca21a2684aa640486357e0c4c269e291e2f209934",
+          "size": 282145487,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-win-cuda-13.5-arm64.zip",
+          "sha256": "6e9dd7c49b0077157bd3bdbe5d4ea05feab27011a7b4a7def2f78515249b3f48",
+          "size": 156302175,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-win-cuda-13.5-x64.zip",
+          "sha256": "2007d48d12bcd925ff8d8371177b12bd9667988660f0dd38f6124c0ea43586b7",
+          "size": 164174976,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-win-opencl-adreno-arm64.zip",
+          "sha256": "fb4b1a0ea43fc0b6dc1bcb92dbdde20f96ac1b078558362c3e256d0ed0ace29c",
+          "size": 12114070,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-win-rocm-10.0-x64.zip",
+          "sha256": "3062946193f75224b749f1034cb5c728617a881811cf3159ce193f3836e137d5",
+          "size": 260742784,
+          "validation": "candidate"
+        },
+        {
+          "name": "llama-b12244-bin-win-vulkan-x64.zip",
+          "sha256": "3a58fa682523ba551fb6e7c95f7e94e38c2cb62711729fd6960975296018d399",
+          "size": 31073392,
+          "validation": "candidate"
+        }
+      ]
+    },
     {
       "tag": "b12019",
       "commit": "1052f7e1d62611d328ccc65d38c77cd194ee59fc",
