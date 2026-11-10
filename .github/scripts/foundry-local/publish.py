@@ -22,6 +22,12 @@ def gh(*args):
     return subprocess.check_output(["gh", *args], text=True)
 
 
+def authenticated_release():
+    # Drafts have no public tag endpoint until publication.
+    info = json.loads(gh("release", "view", TAG, "--repo", REPO, "--json", "apiUrl"))
+    return json.loads(gh("api", info["apiUrl"]))
+
+
 def digest(path):
     with path.open("rb") as src:
         return hashlib.file_digest(src, "sha256").hexdigest()
@@ -60,7 +66,7 @@ def publish(cache, assets, candidate, min_core_version, target):
                "--title", "Foundry Local 2.4.0 native runtime",
                "--notes", "Five native archives repacked from the pinned Microsoft NuGet packages. "
                "Includes upstream licenses. The production manifest is published after consumer qualification.")
-        release = json.loads(gh("api", f"repos/{REPO}/releases/tags/{TAG}"))
+        release = authenticated_release()
 
     remote = {asset["name"]: asset for asset in release["assets"]}
     expected = {archive_name(rid) for rid in RIDS}
@@ -79,7 +85,7 @@ def publish(cache, assets, candidate, min_core_version, target):
         if release["draft"]:
             gh("release", "edit", TAG, "--repo", REPO, "--draft=false", "--latest=false")
 
-        release = json.loads(gh("api", f"repos/{REPO}/releases/tags/{TAG}"))
+        release = authenticated_release()
         remote = {asset["name"]: asset for asset in release["assets"]}
         if set(remote) != expected:
             raise ValueError("Published release does not have exactly five assets")
