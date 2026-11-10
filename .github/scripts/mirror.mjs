@@ -23,13 +23,16 @@ const GGML_ORG_DOWNLOAD_BASE =
 export const MIRROR_DOWNLOAD_BASE =
   'https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download'
 
-// What the Atomic Chat backend matrix can actually use. Everything else that
-// upstream publishes (android, xcframework, ui, s390x, sycl, openvino, the
-// Linux Snapdragon build, x64 Linux CUDA, macos-x64) is deliberately absent:
-// mirroring a build no client asks for costs release storage and buys
-// nothing. Windows arm64 is mirrored for the Windows on ARM app build: CPU,
-// OpenCL (Qualcomm Adreno) and CUDA 13. Linux arm64 is mirrored for the
-// Linux ARM app build: CPU, Vulkan and CUDA 13.
+// What the Atomic Chat backend matrix can use. Everything else that upstream
+// publishes (android, xcframework, ui, s390x, sycl, openvino, the Linux
+// Snapdragon build, macos-x64) is deliberately absent: mirroring a build no
+// client asks for costs release storage and buys nothing. Windows arm64 is
+// mirrored for the Windows on ARM app build: CPU, OpenCL (Qualcomm Adreno),
+// Vulkan and CUDA 13. Linux arm64 is mirrored for the Linux ARM app build:
+// CPU, Vulkan and CUDA 13. Linux x64 CUDA (both toolkits upstream ships) is
+// mirrored since ggml-org started publishing it; a core that does not know the
+// variant yet simply never picks it. ROCm is matched by pattern on both
+// platforms, so a ROCm version bump upstream keeps being mirrored.
 //
 // `required: false` marks a variant upstream only started shipping recently.
 // A tag that predates it still mirrors fine; the client's matrix simply will
@@ -58,13 +61,19 @@ export const WHITELIST = [
     pattern: 'win-cuda-\\d+\\.\\d+-arm64\\.zip',
     required: false,
   },
+  { platform: 'windows', pattern: 'win-vulkan-arm64\\.zip', required: false },
   { platform: 'linux', pattern: 'ubuntu-x64\\.tar\\.gz', required: true },
   {
     platform: 'linux',
     pattern: 'ubuntu-vulkan-x64\\.tar\\.gz',
     required: true,
   },
-  { platform: 'linux', pattern: 'ubuntu-rocm-10\\.0-x64\\.tar\\.gz', required: false },
+  { platform: 'linux', pattern: 'ubuntu-rocm-[\\d.]+-x64\\.tar\\.gz', required: false },
+  {
+    platform: 'linux',
+    pattern: 'ubuntu-cuda-\\d+\\.\\d+-x64\\.tar\\.gz',
+    required: false,
+  },
   { platform: 'linux', pattern: 'ubuntu-arm64\\.tar\\.gz', required: true },
   {
     platform: 'linux',
@@ -118,7 +127,7 @@ async function fetchUpstreamRelease(tag) {
   return resp.json()
 }
 
-function selectAssets(tag, upstreamAssets) {
+export function selectAssets(tag, upstreamAssets) {
   const selected = []
   const missing = []
 

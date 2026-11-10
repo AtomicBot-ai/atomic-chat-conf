@@ -204,6 +204,7 @@ validate:
 	npx --yes ajv-cli@5 validate -s backends/schema.json -d backends/manifest.json --strict=false
 	node --test .github/scripts/upstream-releases.test.mjs
 	node --test .github/scripts/upstream-verify.test.mjs
+	node --test .github/scripts/mirror.test.mjs
 	npx --yes ajv-cli@5 validate -s backends/llamacpp-upstream-releases-schema.json -d backends/llamacpp-upstream-releases.json --strict=false
 	node .github/scripts/upstream-releases.mjs check
 	npx --yes ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false

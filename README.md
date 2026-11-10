@@ -641,9 +641,12 @@ is what a tag we have not mirrored has to do.
   own, already signed by NVIDIA, and mirroring them would triple the size of
   every release for no gain).
 - Windows (x64 and arm64), Linux (x64 and arm64) and `macos-arm64` assets are
-  listed. Linux arm64 is CPU, Vulkan and CUDA 13; the Snapdragon build is not
+  listed. Windows arm64 is CPU, OpenCL (Adreno), Vulkan and CUDA 13; Linux
+  arm64 is CPU, Vulkan and CUDA 13; Linux x64 is CPU, Vulkan, ROCm and CUDA
+  (every toolkit upstream ships, 12.x and 13.x). ROCm is matched by version
+  pattern on both platforms. The Snapdragon, SYCL and OpenVINO builds are not
   mirrored. The Linux CUDA companion carries the tag in its name
-  (`cudart-llama-<tag>-bin-ubuntu-cuda-<toolkit>-arm64.tar.gz`). macOS used to be
+  (`cudart-llama-<tag>-bin-ubuntu-cuda-<toolkit>-<arch>.tar.gz`). macOS used to be
   bundled-only and was deliberately omitted; it now resolves from this
   manifest like the other platforms, so an engine update reaches macOS users
   without an Atomic Chat release. The client still ships a bundled macOS build
