@@ -93,7 +93,7 @@ app/
   workflows/sdcpp-approve.yml   # Moves a checked sd.cpp build from staging to the live manifest
   workflows/mirror-audiocpp.yml # Mirrors + signs an audio.cpp build from the Atomic fork into the staging manifest
   workflows/audiocpp-approve.yml # Moves a checked audio.cpp build from staging to the live manifest
-  actions/windows-code-sign/    # Authenticode signing via DigiCert KeyLocker
+  actions/windows-code-sign/    # Authenticode signing with the Azure Key Vault HSM key (AzureSignTool, OIDC)
   scripts/mirror.mjs            # Asset whitelist + manifest generation
   scripts/upstream-releases.mjs # Release list upkeep: add, approve, promote, withdraw, prune, check
   scripts/prism-manifest.mjs    # PrismML release list: latest, add, gate, approve, withdraw, check
@@ -641,9 +641,12 @@ is what a tag we have not mirrored has to do.
   own, already signed by NVIDIA, and mirroring them would triple the size of
   every release for no gain).
 - Windows (x64 and arm64), Linux (x64 and arm64) and `macos-arm64` assets are
-  listed. Linux arm64 is CPU, Vulkan and CUDA 13; the Snapdragon build is not
+  listed. Windows arm64 is CPU, OpenCL (Adreno), Vulkan and CUDA 13; Linux
+  arm64 is CPU, Vulkan and CUDA 13; Linux x64 is CPU, Vulkan, ROCm and CUDA
+  (every toolkit upstream ships, 12.x and 13.x). ROCm is matched by version
+  pattern on both platforms. The Snapdragon, SYCL and OpenVINO builds are not
   mirrored. The Linux CUDA companion carries the tag in its name
-  (`cudart-llama-<tag>-bin-ubuntu-cuda-<toolkit>-arm64.tar.gz`). macOS used to be
+  (`cudart-llama-<tag>-bin-ubuntu-cuda-<toolkit>-<arch>.tar.gz`). macOS used to be
   bundled-only and was deliberately omitted; it now resolves from this
   manifest like the other platforms, so an engine update reaches macOS users
   without an Atomic Chat release. The client still ships a bundled macOS build
@@ -730,7 +733,7 @@ make verify-release TAG=b10405  # check the published macOS asset's signature
 
 [`.github/workflows/mirror-upstream.yml`](.github/workflows/mirror-upstream.yml)
 downloads the whitelisted assets from ggml-org, signs the Windows binaries
-with DigiCert KeyLocker and the macOS binaries with our Developer ID
+with our DigiCert code signing key in Azure Key Vault and the macOS binaries with our Developer ID
 (hardened runtime, secure timestamp), repacks each archive with its original
 layout, publishes them under the upstream tag, then lists the tag in the
 release list as a candidate, with a `sha256` per archive, and commits it to
@@ -746,9 +749,14 @@ archive, and clients already hold the old hashes. Older mirrored releases are
 pruned (`RETAIN=3` by default), except the ones the release list still offers
 and the one `backends/manifest.json` names.
 
-Required secrets: `SM_API_KEY`, `SM_CLIENT_CERT_FILE_B64`,
-`SM_CLIENT_CERT_PASSWORD` (Windows), `APPLE_CERTIFICATE`,
-`APPLE_CERTIFICATE_PASSWORD` (macOS). The temporary keychain the macOS job
+Windows signing needs no secret: the `sign-windows` jobs run in the
+`codesign` environment, sign in to Azure through GitHub OIDC (the Entra app's
+federated credential is bound to that environment) and read `AZURE_CLIENT_ID`,
+`AZURE_TENANT_ID`, `AZURE_KEY_VAULT` and `AZURE_CODESIGN_CERT` from its
+variables. The key is a non-exportable RSA-HSM key in Key Vault Premium; the
+app holds Key Vault Crypto User and Key Vault Certificate User on that vault
+only. Required secrets: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`
+(macOS). The temporary keychain the macOS job
 creates gets a password generated on the runner, so that one is not a secret.
 
 ### How to update the backends manifest
@@ -883,7 +891,7 @@ upstream llama.cpp does not load). Schema:
 - PrismML ships its macOS binaries ad-hoc-signed and its Windows binaries
   unsigned, so they are mirrored and signed like upstream llama.cpp and
   sd.cpp: [`mirror-prism.yml`](.github/workflows/mirror-prism.yml) signs the
-  Windows binaries (DigiCert KeyLocker, after dropping every tool but
+  Windows binaries (Azure Key Vault key, after dropping every tool but
   `llama-server`) and the macOS ones (Developer ID, hardened runtime),
   publishes the desktop archives as a release here under the PrismML tag and
   lists them with their own `sha256`. Linux archives and the cudart companions

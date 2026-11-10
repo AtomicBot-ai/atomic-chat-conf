@@ -44,8 +44,8 @@ help:
 	@echo ""
 	@echo "Variables: RETAIN=$(RETAIN) (releases kept), REPO=$(REPO)"
 
-# Signing has to happen on native runners: signtool and the DigiCert KeyLocker
-# KSP exist only on Windows, codesign only on macOS. One local command cannot
+# Signing has to happen on native runners: AzureSignTool and signtool (the
+# Key Vault signing path) run only on Windows, codesign only on macOS. One local command cannot
 # cover both platforms, so this is a thin wrapper around the workflow.
 mirror:
 	@test -n "$(TAG)" || { echo "Usage: make mirror TAG=b10405"; exit 1; }
@@ -204,6 +204,7 @@ validate:
 	npx --yes ajv-cli@5 validate -s backends/schema.json -d backends/manifest.json --strict=false
 	node --test .github/scripts/upstream-releases.test.mjs
 	node --test .github/scripts/upstream-verify.test.mjs
+	node --test .github/scripts/mirror.test.mjs
 	npx --yes ajv-cli@5 validate -s backends/llamacpp-upstream-releases-schema.json -d backends/llamacpp-upstream-releases.json --strict=false
 	node .github/scripts/upstream-releases.mjs check
 	npx --yes ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
