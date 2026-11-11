@@ -1,82 +1,82 @@
 {
   "$schema": "./audiocpp-schema.json",
-  "updated_at": "2026-11-02T17:16:00Z",
+  "updated_at": "2026-11-11T11:44:59Z",
   "upstream_repo": "AtomicBot-ai/audio.cpp",
-  "tag_name": "v0.9.3-abf1872f",
+  "tag_name": "v0.9.4-afcac6bb",
   "download_base": "https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download",
   "assets": [
     {
       "backend": "linux-cpu-arm64",
-      "name": "audio-v0.9.3-bin-linux-cpu-arm64.zip",
-      "sha256": "2fdf7ef06207e11c1b900be08f2264e5ab1b0a26d3617eb0e3c0ed897f8a187c",
-      "size": 41397572
+      "name": "audio-v0.9.4-bin-linux-cpu-arm64.zip",
+      "sha256": "bcfc5d7733280e3d3666f2cd14ddd6350014e695db63527715d01089e760b4ad",
+      "size": 44261581
     },
     {
       "backend": "linux-cpu-x64",
-      "name": "audio-v0.9.3-bin-linux-cpu-x64.zip",
-      "sha256": "cc615c8a905e0a3be7151e50747b9a9757d557422aad166bda55b516ada0fdb7",
-      "size": 50380958
+      "name": "audio-v0.9.4-bin-linux-cpu-x64.zip",
+      "sha256": "1071439923b9baaee5db8a34b8ab729ee3225f75672441cbc6621c54982c182e",
+      "size": 53526004
     },
     {
       "backend": "linux-cuda13-arm64",
-      "name": "audio-v0.9.3-bin-linux-cuda13-arm64.zip",
-      "sha256": "4f012bf5ad1007896d4081f4dc8df3d2c84896a5178692db8d93a81a0fe7418f",
-      "size": 841726770
+      "name": "audio-v0.9.4-bin-linux-cuda13-arm64.zip",
+      "sha256": "ccd828cc55ab24504769e0f596ba3f24f5e0192c8b9071549ac3ce58d87c6526",
+      "size": 844582448
     },
     {
       "backend": "linux-vulkan-x64",
-      "name": "audio-v0.9.3-bin-linux-vulkan-x64.zip",
-      "sha256": "d4246e9919c247f7a9c726eeec05885bc645d780a2e08c6a761e736eda3cb29b",
-      "size": 63925704
+      "name": "audio-v0.9.4-bin-linux-vulkan-x64.zip",
+      "sha256": "d99450b09ab657d219a1658ee44c8dc6acc5f67729a350b9b6f11d1bf037d3e0",
+      "size": 67102668
     },
     {
       "backend": "macos-arm64",
-      "name": "audio-v0.9.3-bin-macos-arm64.zip",
-      "sha256": "496e686ed56d71f3a8f29b9ff2b73b0571da9b68c45a0f1a3f0b1893b40b3cf8",
-      "size": 65864535
+      "name": "audio-v0.9.4-bin-macos-arm64.zip",
+      "sha256": "6ec26ba0b873517b3ec6f06f271e8b1610beedacd182e31e9b7fc1e4e584eddf",
+      "size": 70064498
     },
     {
       "backend": "win-cpu-arm64",
-      "name": "audio-v0.9.3-bin-win-cpu-arm64.zip",
-      "sha256": "73a75386a6c4c448d2f5c1a05a1bd1871c744b43f3ed24db645eb06edd1ebf6f",
-      "size": 30519128
+      "name": "audio-v0.9.4-bin-win-cpu-arm64.zip",
+      "sha256": "c0b515fb8774696b84f1495a414ffac4533df5e585e5f4285a8a6dd6c8122036",
+      "size": 32504221
     },
     {
       "backend": "win-cpu-x64",
-      "name": "audio-v0.9.3-bin-win-cpu-x64.zip",
-      "sha256": "4ae7b6452e77dc01dd1547784c3b340fd16e76f161abe8257129f0937277f5cc",
-      "size": 29355951
+      "name": "audio-v0.9.4-bin-win-cpu-x64.zip",
+      "sha256": "6d2afe686709f2207d46d862a55406752e87afca81b72b6b7d48a5140c3a29f7",
+      "size": 31004738
     },
     {
       "backend": "win-cuda12-x64",
-      "name": "audio-v0.9.3-bin-win-cuda12-x64.zip",
-      "sha256": "5f4104a58d8c00db653a7b1a0f6f85bf189c12ac3bac39d77eb0d9116ccbadc4",
-      "size": 139883402
+      "name": "audio-v0.9.4-bin-win-cuda12-x64.zip",
+      "sha256": "57fb54e1e3f51ba967ee65df214fe614d53b5989d7f22aa58ddfa9f696d32397",
+      "size": 141552457
     },
     {
       "backend": "win-cuda13-arm64",
-      "name": "audio-v0.9.3-bin-win-cuda13-arm64.zip",
-      "sha256": "8ea6428f84828e47c1e612c971bee9de1dc0474f43ad025e4e2a4157d3cf1a7f",
-      "size": 227149585
+      "name": "audio-v0.9.4-bin-win-cuda13-arm64.zip",
+      "sha256": "9789077ea53dacf364a878a6e2adf5492d9ccd86c91c5bf82585b6de79425af3",
+      "size": 229110462
     },
     {
       "backend": "win-cuda13-x64",
-      "name": "audio-v0.9.3-bin-win-cuda13-x64.zip",
-      "sha256": "fe39d2aecfa62a1c51e993e2b9159f2d0b52712644f32b8c950a39bb833f8c0c",
-      "size": 712182261
+      "name": "audio-v0.9.4-bin-win-cuda13-x64.zip",
+      "sha256": "46876e4612cbc439c774c6d94cd06b2c3f681532bb8c1ef5d13a400cfa7fccd9",
+      "size": 713984503
     },
     {
       "backend": "win-cudart-cu12",
-      "name": "audio-v0.9.3-cudart-win-cu12-x64.zip",
+      "name": "audio-v0.9.4-cudart-win-cu12-x64.zip",
       "sha256": "1dddc44895c1e33117fd777c4897f734962270c80e40735b9fa4f7d67472a118",
       "size": 750681117,
       "companion": true
     },
     {
       "backend": "win-vulkan-x64",
-      "name": "audio-v0.9.3-bin-win-vulkan-x64.zip",
-      "sha256": "8aa562952a5e3f36bb03acbe736e516ab7d6268dd47718bbd80276a650860e2f",
-      "size": 45586377
+      "name": "audio-v0.9.4-bin-win-vulkan-x64.zip",
+      "sha256": "6c836cf07b963c84cf1a328546da6e6292002dbeb6aa3ed9d04a5c7ee44746c0",
+      "size": 47265397
     }
   ]
 }
