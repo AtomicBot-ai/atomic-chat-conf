@@ -14290,6 +14290,123 @@
         }
       }
     },
+    "diffusion:minimax-h3-image": {
+      "kind": "diffusion",
+      "definition": {
+        "id": "minimax-h3-image",
+        "name": "MiniMax-H3-Image",
+        "developer": "MiniMax",
+        "modality": "image",
+        "description": "MiniMax's text-to-image and editing model of the H3 family: a 33B diffusion transformer (20B weights with its AdaLN branches folded into a table), distilled to 6 steps at CFG 1, with MiniMax-H3's Qwen3-VL-32B text encoder and its own 2D image VAE. It works best at 4 to 16 megapixels, 2048x2048 by default, and expects a long, detailed English description of the whole image: a short prompt gives a generic picture. AD_Q5_K is recommended; AD_Q4_K and AD_Q3_K are the lower-memory options and Q8_0 the closest to the original. The text encoder adds 18.2 GB (Q4_K_M). LICENSE: the MiniMax-H3-Image Community License is limited to its Applicable Territory, worldwide excluding the European Union, the United Kingdom, the Republic of Korea and the United States; its Acceptable Use Policy applies to every use, and products above US$1M annual revenue or hosted services need MiniMax's written authorization. Official model: https://huggingface.co/MiniMaxAI/MiniMax-H3-Image. GGUF packaging and measurements by Atomic Chat: https://huggingface.co/AtomicChat/MiniMax-H3-Image-GGUF.",
+        "license": "minimax-h3-image-community-license",
+        "engines": [
+          "sdcpp"
+        ],
+        "transformer": {
+          "repo": "AtomicChat/MiniMax-H3-Image-GGUF",
+          "quants": [
+            {
+              "id": "ad_q3_k",
+              "label": "AD_Q3_K",
+              "filename": "MiniMax-H3-Image-AD-Q3_K.gguf",
+              "bytes": 8726118624,
+              "sha256": "fc1e22aecb7443cd1eaadf76916718dca6a9421ea3c2955cd868dfbb31f35b36"
+            },
+            {
+              "id": "ad_q4_k",
+              "label": "AD_Q4_K",
+              "filename": "MiniMax-H3-Image-AD-Q4_K.gguf",
+              "bytes": 11571097824,
+              "sha256": "df3f3734c1729765a2b7108bebd69b79d00b85fec5bceaf7363924afa84af1e7"
+            },
+            {
+              "id": "ad_q5_k",
+              "label": "AD_Q5_K",
+              "filename": "MiniMax-H3-Image-AD-Q5_K.gguf",
+              "bytes": 13841060064,
+              "sha256": "84dee5e23df0424736682820aed0e0256f2b450f93a9261f6a88927a47de3984",
+              "recommended": true
+            },
+            {
+              "id": "q8_0",
+              "label": "Q8_0",
+              "filename": "MiniMax-H3-Image-Q8_0.gguf",
+              "bytes": 21448745184,
+              "sha256": "828468e9755aa9ef9a60412ca91398daab5b992a4274a310dd6516940d472bab"
+            }
+          ],
+          "revision": "1cdb25117d9abdf5f3bfe98399e8216050c5444f"
+        },
+        "vae": {
+          "repo": "Comfy-Org/MiniMax-H3-Image",
+          "filename": "vae/minimax_h3_image_vae_fp16.safetensors",
+          "bytes": 1168505312,
+          "sha256": "d80e9c2e5cfc9844869961ff5a58c9a9e52182df6bfb30b26018dd7f348721af",
+          "revision": "0bb149f51e3156ed4b90dd45d5620346bfe1df8f"
+        },
+        "text_encoders": [
+          {
+            "repo": "leejet/MiniMax-H3-GGUF",
+            "filename": "qwen3vl_32b_minimax_h3-Q4_K_M.gguf",
+            "bytes": 18218065024,
+            "sha256": "11e6efe70a57ce7f4838c47bdbd1a1c4b8ce10e2b7747f1b065990b70f4b05fc",
+            "field": "llm",
+            "revision": "d9c4c6312b4728a68a15a35626d84775a6523783"
+          }
+        ],
+        "defaults": {
+          "steps": 6,
+          "cfg_scale": 1,
+          "sampling_method": "euler",
+          "width": 2048,
+          "height": 2048,
+          "sigmas": [
+            1.0,
+            0.9675236940383911,
+            0.8875485062599182,
+            0.75,
+            0.5327739119529724,
+            0.23200887441635132
+          ]
+        },
+        "ranges": {
+          "steps": [
+            6,
+            6
+          ],
+          "dims": [
+            1024,
+            4096
+          ],
+          "dim_multiple": 32
+        },
+        "capabilities": {
+          "negative_prompt": false,
+          "guidance": false,
+          "workflows": [
+            "create"
+          ]
+        }
+      },
+      "format": "diffusion",
+      "variants": {
+        "default": {
+          "selection": "all-required-files"
+        },
+        "ad_q3_k": {
+          "selection": "ad_q3_k"
+        },
+        "ad_q4_k": {
+          "selection": "ad_q4_k"
+        },
+        "ad_q5_k": {
+          "selection": "ad_q5_k"
+        },
+        "q8_0": {
+          "selection": "q8_0"
+        }
+      }
+    },
     "diffusion:flux.1": {
       "kind": "diffusion",
       "definition": {
@@ -27618,6 +27735,10 @@
         },
         {
           "model": "diffusion:flux.3-klein",
+          "variant": "default"
+        },
+        {
+          "model": "diffusion:minimax-h3-image",
           "variant": "default"
         },
         {
