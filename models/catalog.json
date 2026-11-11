@@ -14297,7 +14297,7 @@
         "name": "MiniMax-H3-Image",
         "developer": "MiniMax",
         "modality": "image",
-        "description": "MiniMax's text-to-image and editing model of the H3 family: a 33B diffusion transformer (20B weights with its AdaLN branches folded into a table), distilled to 6 steps at CFG 1, with MiniMax-H3's Qwen3-VL-32B text encoder and its own 2D image VAE. It works best at 4 to 16 megapixels, 2048x2048 by default, and expects a long, detailed English description of the whole image: a short prompt gives a generic picture. AD_Q5_K is recommended; AD_Q4_K and AD_Q3_K are the lower-memory options and Q8_0 the closest to the original. The text encoder adds 18.2 GB (Q4_K_M). LICENSE: the MiniMax-H3-Image Community License is limited to its Applicable Territory, worldwide excluding the European Union, the United Kingdom, the Republic of Korea and the United States; its Acceptable Use Policy applies to every use, and products above US$1M annual revenue or hosted services need MiniMax's written authorization. Official model: https://huggingface.co/MiniMaxAI/MiniMax-H3-Image. GGUF packaging and measurements by Atomic Chat: https://huggingface.co/AtomicChat/MiniMax-H3-Image-GGUF.",
+        "description": "MiniMax's text-to-image and editing model of the H3 family: a 33B diffusion transformer (20B weights with its AdaLN branches folded into a table), distilled to 6 steps at CFG 1, with MiniMax-H3's Qwen3-VL-32B text encoder and its own 2D image VAE. It works best at 4 to 16 megapixels, 2048x2048 by default, and expects a long, detailed English description of the whole image: a short prompt gives a generic picture. Edits take the source and extra pictures as references, numbered <Picture 1>, <Picture 2> and so on in the prompt. AD_Q5_K is recommended; AD_Q6_K and Q8_0 are closer to the original, AD_Q4_K, AD_Q3_K and AD_Q2_K are the lower-memory options. The text encoder adds 18.2 GB (Q4_K_M). LICENSE: the MiniMax-H3-Image Community License is limited to its Applicable Territory, worldwide excluding the European Union, the United Kingdom, the Republic of Korea and the United States; its Acceptable Use Policy applies to every use, and products above US$1M annual revenue or hosted services need MiniMax's written authorization. Official model: https://huggingface.co/MiniMaxAI/MiniMax-H3-Image. GGUF packaging and measurements by Atomic Chat: https://huggingface.co/AtomicChat/MiniMax-H3-Image-GGUF.",
         "license": "minimax-h3-image-community-license",
         "engines": [
           "sdcpp"
@@ -14305,6 +14305,13 @@
         "transformer": {
           "repo": "AtomicChat/MiniMax-H3-Image-GGUF",
           "quants": [
+            {
+              "id": "ad_q2_k",
+              "label": "AD_Q2_K",
+              "filename": "MiniMax-H3-Image-AD-Q2_K.gguf",
+              "bytes": 7567053024,
+              "sha256": "7e94438c704c2520ccddf664b3c8f59da49af76c30f7a052560f68c19f355d92"
+            },
             {
               "id": "ad_q3_k",
               "label": "AD_Q3_K",
@@ -14326,6 +14333,13 @@
               "bytes": 13841060064,
               "sha256": "84dee5e23df0424736682820aed0e0256f2b450f93a9261f6a88927a47de3984",
               "recommended": true
+            },
+            {
+              "id": "ad_q6_k",
+              "label": "AD_Q6_K",
+              "filename": "MiniMax-H3-Image-AD-Q6_K.gguf",
+              "bytes": 16670986464,
+              "sha256": "b46c32a127b7ad343c902caa8a2ff015c58b4455c836e67bc16e9eeb32c836c3"
             },
             {
               "id": "q8_0",
@@ -14384,7 +14398,9 @@
           "negative_prompt": false,
           "guidance": false,
           "workflows": [
-            "create"
+            "create",
+            "reference",
+            "edit"
           ]
         }
       },
@@ -14392,6 +14408,9 @@
       "variants": {
         "default": {
           "selection": "all-required-files"
+        },
+        "ad_q2_k": {
+          "selection": "ad_q2_k"
         },
         "ad_q3_k": {
           "selection": "ad_q3_k"
@@ -14401,6 +14420,9 @@
         },
         "ad_q5_k": {
           "selection": "ad_q5_k"
+        },
+        "ad_q6_k": {
+          "selection": "ad_q6_k"
         },
         "q8_0": {
           "selection": "q8_0"
