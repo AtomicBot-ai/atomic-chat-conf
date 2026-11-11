@@ -236,6 +236,185 @@
       }
     },
     {
+      "id": "minimax-h3-image",
+      "name": "MiniMax-H3-Image",
+      "developer": "MiniMax",
+      "modality": "image",
+      "description": "MiniMax's text-to-image and editing model of the H3 family: a 33B diffusion transformer (20B weights with its AdaLN branches folded into a table), distilled to 6 steps at CFG 1, with MiniMax-H3's Qwen3-VL-32B text encoder and its own 2D image VAE. It works best at 4 to 16 megapixels, 2048x2048 by default, and expects a long, detailed English description of the whole image: a short prompt gives a generic picture. Edits take the source and extra pictures as references, numbered <Picture 1>, <Picture 2> and so on in the prompt. AD_Q5_K is recommended; AD_Q6_K and Q8_0 are closer to the original, AD_Q4_K, AD_Q3_K and AD_Q2_K are the lower-memory options. The text encoder adds 18.2 GB (Q4_K_M). LICENSE: the MiniMax-H3-Image Community License is limited to its Applicable Territory, worldwide excluding the European Union, the United Kingdom, the Republic of Korea and the United States; its Acceptable Use Policy applies to every use, and products above US$1M annual revenue or hosted services need MiniMax's written authorization. Official model: https://huggingface.co/MiniMaxAI/MiniMax-H3-Image. GGUF packaging and measurements by Atomic Chat: https://huggingface.co/AtomicChat/MiniMax-H3-Image-GGUF.",
+      "license": "minimax-h3-image-community-license",
+      "engines": ["sdcpp"],
+      "transformer": {
+        "repo": "AtomicChat/MiniMax-H3-Image-GGUF",
+        "quants": [
+          {
+            "id": "ad_q2_k",
+            "label": "AD_Q2_K",
+            "filename": "MiniMax-H3-Image-AD-Q2_K.gguf",
+            "bytes": 7567053024,
+            "sha256": "7e94438c704c2520ccddf664b3c8f59da49af76c30f7a052560f68c19f355d92"
+          },
+          {
+            "id": "ad_q3_k",
+            "label": "AD_Q3_K",
+            "filename": "MiniMax-H3-Image-AD-Q3_K.gguf",
+            "bytes": 8726118624,
+            "sha256": "fc1e22aecb7443cd1eaadf76916718dca6a9421ea3c2955cd868dfbb31f35b36"
+          },
+          {
+            "id": "ad_q4_k",
+            "label": "AD_Q4_K",
+            "filename": "MiniMax-H3-Image-AD-Q4_K.gguf",
+            "bytes": 11571097824,
+            "sha256": "df3f3734c1729765a2b7108bebd69b79d00b85fec5bceaf7363924afa84af1e7"
+          },
+          {
+            "id": "ad_q5_k",
+            "label": "AD_Q5_K",
+            "filename": "MiniMax-H3-Image-AD-Q5_K.gguf",
+            "bytes": 13841060064,
+            "sha256": "84dee5e23df0424736682820aed0e0256f2b450f93a9261f6a88927a47de3984",
+            "recommended": true
+          },
+          {
+            "id": "ad_q6_k",
+            "label": "AD_Q6_K",
+            "filename": "MiniMax-H3-Image-AD-Q6_K.gguf",
+            "bytes": 16670986464,
+            "sha256": "b46c32a127b7ad343c902caa8a2ff015c58b4455c836e67bc16e9eeb32c836c3"
+          },
+          {
+            "id": "q8_0",
+            "label": "Q8_0",
+            "filename": "MiniMax-H3-Image-Q8_0.gguf",
+            "bytes": 21448745184,
+            "sha256": "828468e9755aa9ef9a60412ca91398daab5b992a4274a310dd6516940d472bab"
+          }
+        ],
+        "revision": "1cdb25117d9abdf5f3bfe98399e8216050c5444f"
+      },
+      "vae": {
+        "repo": "Comfy-Org/MiniMax-H3-Image",
+        "filename": "vae/minimax_h3_image_vae_fp16.safetensors",
+        "bytes": 1168505312,
+        "sha256": "d80e9c2e5cfc9844869961ff5a58c9a9e52182df6bfb30b26018dd7f348721af",
+        "revision": "0bb149f51e3156ed4b90dd45d5620346bfe1df8f"
+      },
+      "text_encoders": [
+        {
+          "repo": "leejet/MiniMax-H3-GGUF",
+          "filename": "qwen3vl_32b_minimax_h3-Q4_K_M.gguf",
+          "bytes": 18218065024,
+          "sha256": "11e6efe70a57ce7f4838c47bdbd1a1c4b8ce10e2b7747f1b065990b70f4b05fc",
+          "field": "llm",
+          "revision": "d9c4c6312b4728a68a15a35626d84775a6523783"
+        }
+      ],
+      "defaults": {
+        "steps": 6,
+        "cfg_scale": 1,
+        "sampling_method": "euler",
+        "width": 2048,
+        "height": 2048,
+        "sigmas": [1, 0.9675236940383911, 0.8875485062599182, 0.75, 0.5327739119529724, 0.23200887441635132]
+      },
+      "ranges": {
+        "steps": [6, 6],
+        "dims": [1024, 4096],
+        "dim_multiple": 32
+      },
+      "capabilities": {
+        "negative_prompt": false,
+        "guidance": false,
+        "workflows": ["create", "reference", "edit"]
+      }
+    },
+    {
+      "id": "p-h3-image",
+      "name": "P-H3-Image",
+      "developer": "Pruna AI",
+      "modality": "image",
+      "description": "Pruna AI's text-to-image and editing model on MiniMax-H3's 33B transformer (20B weights with its AdaLN branches folded into a table), distilled to 8 steps at CFG 1, with Qwen3-VL-4B and its P-H3 text connector as the text encoder and its own image VAE. It works best at high resolution, up to about 8 megapixels, 2048x2048 by default, and expects a long, detailed English description of the whole image: a short prompt gives a generic picture. Edits take the source and extra pictures as references, numbered <Picture 1>, <Picture 2> and so on in the prompt; a plain instruction is applied to <Picture 1>. AD_Q5_K is recommended; AD_Q6_K and Q8_0 are closer to the original, AD_Q4_K and AD_Q3_K are the lower-memory options. The text encoder adds 9.1 GB and the VAE 5.6 GB (BF16). LICENSE: the MiniMax H3 Community License is limited to its Applicable Territory, worldwide excluding the European Union, the United Kingdom, the Republic of Korea and the United States; its Acceptable Use Policy applies to every use, and commercial products above US$20M yearly revenue need MiniMax's written authorization. Official model: https://huggingface.co/PrunaAI/P-H3-Image. GGUF packaging and measurements by Atomic Chat: https://huggingface.co/AtomicChat/P-H3-Image-GGUF.",
+      "license": "minimax-h3-community-license",
+      "engines": ["sdcpp"],
+      "transformer": {
+        "repo": "AtomicChat/P-H3-Image-GGUF",
+        "quants": [
+          {
+            "id": "ad_q3_k",
+            "label": "AD_Q3_K",
+            "filename": "P-H3-Image-AD-Q3_K.gguf",
+            "bytes": 8977943200,
+            "sha256": "f1a9797fa1976323f50e569af0e77c51c7a1ed2ecffb6661f9116d736b3a2616"
+          },
+          {
+            "id": "ad_q4_k",
+            "label": "AD_Q4_K",
+            "filename": "P-H3-Image-AD-Q4_K.gguf",
+            "bytes": 11597130400,
+            "sha256": "409c4b406d794b74a5cf40efbae0a83904825d87f2730e45b988d5d1963b06fd"
+          },
+          {
+            "id": "ad_q5_k",
+            "label": "AD_Q5_K",
+            "filename": "P-H3-Image-AD-Q5_K.gguf",
+            "bytes": 13277022880,
+            "sha256": "60bd288d4678a8f4dbc2d93568c54233f4262c1bdf5663145ceb4f140ff3459b",
+            "recommended": true
+          },
+          {
+            "id": "ad_q6_k",
+            "label": "AD_Q6_K",
+            "filename": "P-H3-Image-AD-Q6_K.gguf",
+            "bytes": 16790346400,
+            "sha256": "219743066a2bd683235c115ffa4c5dc07a69571bd63408ee4f1cb9bf43dd9cc6"
+          },
+          {
+            "id": "q8_0",
+            "label": "Q8_0",
+            "filename": "P-H3-Image-Q8_0.gguf",
+            "bytes": 21682506400,
+            "sha256": "9eec2a899ff4b6e3cbaa16ae0786a77e6b576696857a590af7e417dfb4e2c30d"
+          }
+        ],
+        "revision": "371ae0bd4159dc07963a463fda0ae47f537f9b78"
+      },
+      "vae": {
+        "repo": "PrunaAI/P-H3-Image-Comfy",
+        "filename": "vae/p-h3-image_vae_bf16.safetensors",
+        "bytes": 5559036680,
+        "sha256": "a1f2a7a98d0f2d1e761656fc5701dd43d7cf46d1bbdaa5d866a3e961e97487d7",
+        "revision": "44a0fb73f299da1bb715bdb5ff59ce3fd3c6f543"
+      },
+      "text_encoders": [
+        {
+          "repo": "PrunaAI/P-H3-Image-Comfy",
+          "filename": "text_encoders/p-h3-image_text_encoder_bf16.safetensors",
+          "bytes": 9138027824,
+          "sha256": "ae0c83cb35207dcc0a81361768094a5d1e3f92d1a95b8ff75a0328dfefbbc3d8",
+          "field": "llm",
+          "revision": "44a0fb73f299da1bb715bdb5ff59ce3fd3c6f543"
+        }
+      ],
+      "defaults": {
+        "steps": 8,
+        "cfg_scale": 1,
+        "sampling_method": "euler",
+        "width": 2048,
+        "height": 2048,
+        "sigmas": [1, 0.984753, 0.967905, 0.951688, 0.925372, 0.881923, 0.810083, 0.528718]
+      },
+      "ranges": {
+        "steps": [8, 8],
+        "dims": [1024, 2912],
+        "dim_multiple": 32
+      },
+      "capabilities": {
+        "negative_prompt": false,
+        "guidance": false,
+        "workflows": ["create", "reference", "edit"]
+      }
+    },
+    {
       "id": "flux.1",
       "name": "FLUX.1 schnell",
       "developer": "Black Forest Labs",

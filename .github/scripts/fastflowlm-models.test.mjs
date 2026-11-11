@@ -164,13 +164,38 @@ test('pinned old core parser reads new/unknown entries and every old collection 
   assert.throws(() => validateCatalog(duplicateVariant, allow), /Duplicate FastFlowLM variant_id/)
 })
 
+// Models added to a legacy collection after the pinned baseline: their whole entries are the only
+// bytes a legacy export may gain (older clients skip a family id they do not know).
+const ADDED_SINCE_BASELINE = { diffusion: ['minimax-h3-image', 'p-h3-image'] }
+
+/** `text` without the pretty-printed array entries whose `"id"` is in `ids`, and their leading comma. */
+function withoutEntries(text, ids) {
+  for (const id of ids) {
+    const at = text.indexOf(`"id": "${id}"`)
+    assert.notEqual(at, -1, `${id} is not in the export`)
+    const open = text.lastIndexOf('{', at)
+    let depth = 0, end = open
+    for (; end < text.length; end++) {
+      if (text[end] === '{') depth++
+      else if (text[end] === '}' && --depth === 0) break
+    }
+    const comma = text.lastIndexOf(',', open)
+    assert.match(text.slice(comma, open), /^,\s*$/, `${id} is not a whole array entry`)
+    text = text.slice(0, comma) + text.slice(end + 1)
+  }
+  return text
+}
+
 test('all legacy payload bytes match the pre-FLM git baseline', () => {
-  // Pinned merge base; changing a legacy export is outside tasks 1.1–1.5.
+  // Pinned merge base; changing a legacy export is outside tasks 1.1–1.5. Later model additions
+  // (ADDED_SINCE_BASELINE) are removed before the comparison, so every older byte still has to match.
   for (const name of ['recommended', ...Object.keys(COLLECTION_FIELDS)]) {
     const path = `models/${name}.json`
     const before = spawnSync('git', ['show', `5741fd4:${path}`])
     assert.equal(before.status, 0)
-    assert.deepEqual(readFileSync(path), before.stdout, path)
+    const added = ADDED_SINCE_BASELINE[name]
+    if (added) assert.equal(withoutEntries(readFileSync(path, 'utf8'), added), before.stdout.toString('utf8'), path)
+    else assert.deepEqual(readFileSync(path), before.stdout, path)
   }
   assert.equal(existsSync('models/fastflowlm-models.json'), false)
 })
