@@ -16,5 +16,11 @@
     "version": "0.19.0",
     "packageHash": "n6NhQwAgZJGQBeq4buICEmv5TdxoWnyqinrGQLnrLFxZOUHH7h/pv91sDKZZcKlfvQdJuLYSOMmyL+FJ2dRNdA==",
     "@id": "https://api.nuget.org/v3/catalog0/data/2026.11.04.00.13.40/microsoft.ml.onnxruntimegenai.foundry.0.19.0.json"
+  },
+  {
+    "id": "Intel.ML.OnnxRuntime.EP.OpenVINO",
+    "version": "1.8.1",
+    "packageHash": "TB485OwROvJclrRCoB+X4LrB/I0NcGjP9S3tS0bhwrljxVBadxJ3cilHrGPIXpUZusHeiR9KO+x6DCnQjmQOsg==",
+    "@id": "https://api.nuget.org/v3/catalog0/data/2026.10.26.05.23.12/intel.ml.onnxruntime.ep.openvino.1.8.1.json"
   }
 ]

@@ -6,16 +6,16 @@
     {
       "tag": "v2.4.0",
       "published_at": "2026-11-10T11:53:44Z",
-      "min_core_version": "0.22.0",
+      "min_core_version": "0.22.4",
       "c_api_version": 3,
       "notes_url": "https://github.com/AtomicBot-ai/atomic-chat-conf/releases/tag/foundry-local-v2.4.0",
       "distribution": "atomic-conf",
       "assets": [
         {
           "platform": "win-x64",
-          "name": "foundry-local-win-x64.zip",
-          "size": 16129525,
-          "sha256": "899c5aeac3cac414790ab327436a98833c92e2e0b139a68dac1de2a978e829b7"
+          "name": "foundry-local-win-x64-openvino-1-8-1.zip",
+          "size": 93972839,
+          "sha256": "23ce1fea75d64254e99042c3e99e1fc2bb0dd5befff07d4a013857920c67b2a1"
         },
         {
           "platform": "win-arm64",

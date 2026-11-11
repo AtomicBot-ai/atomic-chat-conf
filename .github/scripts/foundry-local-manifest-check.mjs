@@ -49,7 +49,10 @@ for (const path of paths) {
     for (const a of r.assets ?? []) {
       const rid = a.platform === 'macos-arm64' ? 'osx-arm64' : a.platform
       const extension = a.platform?.startsWith('win-') ? 'zip' : 'tgz'
-      if (r.distribution === 'atomic-conf' && a.name !== `foundry-local-${rid}.${extension}`) {
+      const allowedNames = [`foundry-local-${rid}.${extension}`]
+      if (r.tag === 'v2.4.0' && a.platform === 'win-x64')
+        allowedNames.push('foundry-local-win-x64-openvino-1-8-1.zip')
+      if (r.distribution === 'atomic-conf' && !allowedNames.includes(a.name)) {
         errors.push(`Release ${r.tag}: unexpected archive name for ${a.platform}`)
       }
       if (!PLATFORMS.includes(a.platform)) errors.push(`Release ${r.tag}: unknown platform ${a.platform}`)

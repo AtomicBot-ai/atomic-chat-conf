@@ -14,13 +14,18 @@ from contextlib import ExitStack
 from pathlib import Path
 from urllib.request import urlopen
 from shutil import copyfileobj
+from xml.etree import ElementTree
 
 PINS = json.loads(Path(__file__).with_name("packages.json").read_text())
 RIDS = ("win-x64", "win-arm64", "osx-arm64", "linux-x64", "linux-arm64")
+INTEL_PACKAGE = "Intel.ML.OnnxRuntime.EP.OpenVINO"
+LEGACY_WINDOWS_ARCHIVE = "foundry-local-win-x64.zip"
 LICENSES = {"LICENSE", "LICENSE.txt", "ThirdPartyNotices.txt", "Privacy.md"}
 
 
 def archive_name(rid):
+    if rid == "win-x64":
+        return "foundry-local-win-x64-openvino-1-8-1.zip"
     extension = "zip" if rid.startswith("win-") else "tgz"
     return f"foundry-local-{rid}.{extension}"
 
@@ -54,10 +59,21 @@ def payload(rid, packages):
     links = {}
     prefix = f"runtimes/{rid}/native/"
     for package, source in packages:
+        if package == INTEL_PACKAGE and rid != "win-x64":
+            continue
         names = source.namelist()
         natives = [name for name in names if name.startswith(prefix) and not name.endswith("/")]
         licenses = LICENSES.intersection(names)
-        if not natives or not {"LICENSE", "LICENSE.txt"}.intersection(licenses):
+        if package == INTEL_PACKAGE:
+            nuspec = f"{package}.nuspec"
+            if nuspec not in names or "README.md" not in names or prefix + "third-party-programs.txt" not in names:
+                raise ValueError(f"{package}: missing license metadata or notices")
+            metadata = ElementTree.fromstring(source.read(nuspec))
+            license_info = next((node for node in metadata.iter() if node.tag.split("}")[-1] == "license"), None)
+            if license_info is None or license_info.attrib.get("type") != "expression" or license_info.text != "MIT":
+                raise ValueError(f"{package}: unexpected license expression")
+            licenses.update({nuspec, "README.md"})
+        if not natives or (package != INTEL_PACKAGE and not {"LICENSE", "LICENSE.txt"}.intersection(licenses)):
             raise ValueError(f"{package}: missing {rid} natives or license")
         for name in sorted([*natives, *licenses]):
             if name in licenses:
@@ -66,7 +82,8 @@ def payload(rid, packages):
                 basename = name.removeprefix(prefix)
                 if not basename or "/" in basename or "\\" in basename or basename in (".", ".."):
                     raise ValueError(f"Unexpected native path {name}")
-                dest = f"lib/{basename}"
+                subdir = "openvino/" if package == INTEL_PACKAGE else ""
+                dest = f"lib/{subdir}{basename}"
             if dest in files:
                 raise ValueError(f"Duplicate archive path {dest}")
             executable = source.getinfo(name).external_attr >> 16 & 0o111
@@ -136,25 +153,26 @@ def verify_archive(path, files, links):
                     raise ValueError(f"Wrong ORT alias {name}")
 
 
-def build(cache, out):
+def build(cache, out, rids=RIDS):
     cache.mkdir(parents=True, exist_ok=True)
     out.mkdir(parents=True, exist_ok=True)
     with ExitStack() as stack, tempfile.TemporaryDirectory(dir=out) as tmp:
         packages = [(pin["id"], stack.enter_context(zipfile.ZipFile(package_path(cache, pin)))) for pin in PINS]
-        for rid in RIDS:
+        for rid in rids:
             path = Path(tmp) / archive_name(rid)
             files, links = payload(rid, packages)
             write_archive(path, files, links)
             verify_archive(path, files, links)
             print(f"{rid}: verified {len(files)} files and {len(links)} links", flush=True)
-        for rid in RIDS:
+        for rid in rids:
             name = archive_name(rid)
             os.replace(Path(tmp) / name, out / name)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("cache", type=Path, help="Directory for the three pinned nupkgs")
+    parser.add_argument("cache", type=Path, help="Directory for the four pinned nupkgs")
     parser.add_argument("out", type=Path, help="Directory for the five verified archives")
+    parser.add_argument("--rid", choices=RIDS, action="append", help="Build only the selected RID(s)")
     args = parser.parse_args()
-    build(args.cache, args.out)
+    build(args.cache, args.out, args.rid or RIDS)

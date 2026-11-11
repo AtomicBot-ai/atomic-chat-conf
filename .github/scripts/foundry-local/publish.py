@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
-from pack import PINS, RIDS, archive_name, package_path, payload, verify_archive
+from pack import INTEL_PACKAGE, LEGACY_WINDOWS_ARCHIVE, PINS, RIDS, archive_name, package_path, payload, verify_archive
 
 REPO = "AtomicBot-ai/atomic-chat-conf"
 TAG = "foundry-local-v2.4.0"
@@ -37,6 +37,15 @@ def download(url, path):
     with urlopen(url, timeout=180) as src, path.open("wb") as dst:
         while block := src.read(1024 * 1024):
             dst.write(block)
+
+
+def verify_existing_asset(name, path, assets, packages):
+    if name == LEGACY_WINDOWS_ARCHIVE:
+        # Keep the already-published pre-NPU archive immutable and independently verifiable.
+        original = [(name, source) for name, source in packages if name != INTEL_PACKAGE]
+        verify_archive(path, *payload("win-x64", original))
+    elif path.stat().st_size != (assets / name).stat().st_size or digest(path) != digest(assets / name):
+        raise ValueError(f"Published asset differs: {name}")
 
 
 def publish(cache, assets, candidate, min_core_version, target):
@@ -64,13 +73,13 @@ def publish(cache, assets, candidate, min_core_version, target):
                 raise RuntimeError(result.stderr)
             gh("release", "create", TAG, "--repo", REPO, "--draft", "--target", target,
                "--title", "Foundry Local 2.4.0 native runtime",
-               "--notes", "Five native archives repacked from the pinned Microsoft NuGet packages. "
+               "--notes", "Five native archives repacked from the pinned Microsoft and Intel NuGet packages. "
                "Includes upstream licenses. The production manifest is published after consumer qualification.")
         release = authenticated_release()
 
     remote = {asset["name"]: asset for asset in release["assets"]}
     expected = {archive_name(rid) for rid in RIDS}
-    if remote.keys() - expected:
+    if remote.keys() - expected - {LEGACY_WINDOWS_ARCHIVE}:
         raise ValueError("Unexpected assets in release")
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
@@ -78,8 +87,9 @@ def publish(cache, assets, candidate, min_core_version, target):
         for name, asset in remote.items():
             path = tmp / name
             gh("release", "download", TAG, "--repo", REPO, "--pattern", name, "--dir", str(tmp))
-            if path.stat().st_size != (assets / name).stat().st_size or digest(path) != digest(assets / name):
-                raise ValueError(f"Published asset differs: {name}")
+            with ExitStack() as stack:
+                packages = [(pin["id"], stack.enter_context(zipfile.ZipFile(package_path(cache, pin)))) for pin in PINS]
+                verify_existing_asset(name, path, assets, packages)
         for name in sorted(expected - remote.keys()):
             gh("release", "upload", TAG, str(assets / name), "--repo", REPO)
         if release["draft"]:
@@ -87,8 +97,8 @@ def publish(cache, assets, candidate, min_core_version, target):
 
         release = authenticated_release()
         remote = {asset["name"]: asset for asset in release["assets"]}
-        if set(remote) != expected:
-            raise ValueError("Published release does not have exactly five assets")
+        if set(remote) - {LEGACY_WINDOWS_ARCHIVE} != expected:
+            raise ValueError("Published release does not have the five qualified platform assets")
         entries = []
         for rid in RIDS:
             name = archive_name(rid)

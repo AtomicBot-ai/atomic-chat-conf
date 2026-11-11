@@ -1334,24 +1334,42 @@ integrity checks below, and open a PR.
 
 ### Preparing the 2.4.0 candidate
 
-The five native archives are published in
+The five selected native archives and the retained original Windows x64 ZIP are published in
 [foundry-local-v2.4.0](https://github.com/AtomicBot-ai/atomic-chat-conf/releases/tag/foundry-local-v2.4.0).
 [The candidate](backends/foundry-local-manifest.candidate.json) contains both
-2.4.0 (C API 3) and the original 2.1.0 (C API 2). Its temporary
-`min_core_version: 0.22.0` enables development on the current core checkout.
-Before promotion, replace this minimum with the actual compatible core release
-from task 2.7 and complete app/server qualification in tasks 3.3 and 4.3.
-Core 0.22.0 filters out 2.4.0 by C API and still selects the original 2.1.0.
+2.4.0 (C API 3) and the original 2.1.0 (C API 2). Windows x64 selects the
+NPU-compatible `foundry-local-win-x64-openvino-1-8-1.zip`, whose public bytes,
+size (93,972,839) and SHA-256
+(`23ce1fea75d64254e99042c3e99e1fc2bb0dd5befff07d4a013857920c67b2a1`)
+were verified after publication. The five original release assets are unchanged. The candidate requires core 0.22.4, the release that includes managed CUDA
+preparation and Windows DLL isolation. Promote it after that core release is
+published and app/server qualification in tasks 3.3 and 4.3 is complete.
+Older cores continue to select the original 2.1.0.
 
 Build with Python 3.11 or later. Only the release maintainer needs Python,
 network access to NuGet and authenticated `gh` for publication.
-[packages.json](.github/scripts/foundry-local/packages.json) pins the three
-NuGet versions and their catalog SHA-512 hashes. The packer validates all
+[packages.json](.github/scripts/foundry-local/packages.json) pins the three Microsoft NuGet packages and Intel OpenVINO 1.8.1
+(Windows x64 only), including their versions and catalog SHA-512 hashes. The packer validates all
 inputs before packaging native files for each RID, preserves native bytes,
 includes each package's licenses and notices, and verifies every output
 member, runtime JSON hash, executable mode and ORT symlink.
 macOS ORT aliases resolve to the same versioned dylib. Windows archives
-include the supplied WinML DLLs and import libraries.
+include the supplied WinML DLLs and import libraries. The NPU-compatible Windows
+x64 archive is named `foundry-local-win-x64-openvino-1-8-1.zip`; it adds the pinned
+Intel EP and its native dependencies under `lib/openvino/`. The Intel package
+uses an MIT license expression instead of a root LICENSE file: retain its
+original nuspec, README and third-party notices. Core 2.4 hosts explicitly
+register this EP on their shared ORT environment instead of the system WinML
+OpenVINO 1.8 EP, whose experimental API calls fail on ORT 1.31. Both native DLL
+signatures and all other platforms' original payloads are preserved.
+
+The original `foundry-local-win-x64.zip` remains in the release unchanged. The
+publisher verifies it against the original three Microsoft packages and adds
+the new archive under its own name. A candidate must point Windows x64 at the
+new name only after the new public download is verified. Existing development
+installs of the original 2.4.0 archive must be unloaded and explicitly removed
+before installing the corrected candidate: the immutable build check correctly
+refuses to replace a recorded digest silently. This does not remove models.
 
 ```bash
 python3 .github/scripts/foundry-local/pack.py /tmp/foundry-nuget /tmp/foundry-assets
@@ -1364,10 +1382,15 @@ Archive timestamps and ownership are normalized for repeat builds. An existing
 release asset must match the verified local archive before any missing asset
 is uploaded. Publication never overwrites an asset. A rerun resumes an
 interrupted draft or verifies the existing public release. The candidate is
-written only after all five public downloads match local bytes, GitHub sizes
+written only after all five selected public downloads match local bytes, GitHub sizes
 and SHA-256 digests. Preserve the original Python/zlib environment when
 reproducing compressed bytes (this release used Python 3.11.11 and zlib 1.2.12). A different compressor producing a different
 archive is rejected by the publication check.
+
+For a Windows-only packaging change, use `pack.py <cache> <out> --rid win-x64`.
+The focused checks are `python3 .github/scripts/foundry-local/test_pack.py` and
+`python3 .github/scripts/foundry-local/test_publish.py`, followed by
+`node --test .github/scripts/foundry-local-manifest-check.test.mjs`.
 
 Use the absolute path of the candidate in the core process environment.
 
