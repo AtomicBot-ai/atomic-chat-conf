@@ -596,11 +596,11 @@ jobs:
         run: |
           ajv validate \
             -s backends/foundry-local-schema.json \
-            -d backends/foundry-local-manifest.json \
+            -d 'backends/foundry-local-manifest*.json' \
             --strict=false
 
       - name: Check Foundry Local runtime manifest integrity
-        run: node .github/scripts/foundry-local-manifest-check.mjs
+        run: node .github/scripts/foundry-local-manifest-check.mjs backends/foundry-local-manifest.json backends/foundry-local-manifest.candidate.json
 
       - name: Validate Foundry Local model list against schema
         run: |

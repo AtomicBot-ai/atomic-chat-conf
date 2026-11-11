@@ -4,9 +4,7 @@
 // as arguments to check a local copy instead.
 import { readFileSync } from 'node:fs'
 
-// The core picks the archive by host platform. A release without one of these
-// leaves that platform with no runtime at all, since the core does not fall
-// back to an older release for a single platform.
+// Every published release supplies one archive for each supported host platform.
 const PLATFORMS = ['win-x64', 'win-arm64', 'macos-arm64', 'linux-x64', 'linux-arm64']
 
 const paths = process.argv.slice(2)
@@ -37,9 +35,27 @@ for (const path of paths) {
       previous = { tag: r.tag, at }
     }
 
+    if (r.distribution !== undefined && r.distribution !== 'atomic-conf') {
+      errors.push(`Release ${r.tag}: unsupported distribution ${r.distribution}`)
+    }
+    if (r.distribution === 'atomic-conf') {
+      const notes = `https://github.com/AtomicBot-ai/atomic-chat-conf/releases/tag/foundry-local-${r.tag}`
+      if (r.notes_url !== notes) errors.push(`Release ${r.tag}: notes_url must be ${notes}`)
+      if (r.c_api_version < 3) errors.push(`Release ${r.tag}: atomic-conf requires C API 3 or newer`)
+    }
+
     const platforms = new Set()
     const names = new Set()
     for (const a of r.assets ?? []) {
+      const rid = a.platform === 'macos-arm64' ? 'osx-arm64' : a.platform
+      const extension = a.platform?.startsWith('win-') ? 'zip' : 'tgz'
+      const allowedNames = [`foundry-local-${rid}.${extension}`]
+      if (r.tag === 'v2.4.0' && a.platform === 'win-x64')
+        allowedNames.push('foundry-local-win-x64-openvino-1-8-1.zip')
+      if (r.distribution === 'atomic-conf' && !allowedNames.includes(a.name)) {
+        errors.push(`Release ${r.tag}: unexpected archive name for ${a.platform}`)
+      }
+      if (!PLATFORMS.includes(a.platform)) errors.push(`Release ${r.tag}: unknown platform ${a.platform}`)
       if (platforms.has(a.platform)) errors.push(`Release ${r.tag}: duplicate platform ${a.platform}`)
       platforms.add(a.platform)
       if (names.has(a.name)) errors.push(`Release ${r.tag}: duplicate asset name ${a.name}`)

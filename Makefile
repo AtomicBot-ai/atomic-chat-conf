@@ -225,8 +225,8 @@ validate:
 	node --test .github/scripts/audiocpp-approve.test.mjs
 	npx --yes ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.json --strict=false
 	node --test .github/scripts/mlx-manifest.test.mjs
-	npx --yes ajv-cli@5 validate -s backends/foundry-local-schema.json -d backends/foundry-local-manifest.json --strict=false
-	node .github/scripts/foundry-local-manifest-check.mjs
+	npx --yes ajv-cli@5 validate -s backends/foundry-local-schema.json -d 'backends/foundry-local-manifest*.json' --strict=false
+	node .github/scripts/foundry-local-manifest-check.mjs backends/foundry-local-manifest.json backends/foundry-local-manifest.candidate.json
 	npx --yes ajv-cli@5 validate -s models/schema.foundry-local-models.json -d models/foundry-local-models.json --strict=false
 	node .github/scripts/foundry-local-models-check.mjs
 	npx --yes ajv-cli@5 validate -s backends/litert-lm-schema.json -d backends/litert-lm-manifest.json --strict=false

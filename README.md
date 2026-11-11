@@ -1259,7 +1259,7 @@ CI is green.
 ## Foundry Local runtime manifest
 
 [`backends/foundry-local-manifest.json`](backends/foundry-local-manifest.json)
-lists the `microsoft/foundry-local` releases Atomic Chat core installs as the
+lists the Foundry Local releases Atomic Chat core installs as the
 `foundry-local` engine build: the native Foundry Local library and ONNX
 Runtime GenAI that run the `foundry-local` provider's models. Schema:
 [`backends/foundry-local-schema.json`](backends/foundry-local-schema.json);
@@ -1288,8 +1288,11 @@ integrity checks:
 
 Core reads it from `main` with an hour's cache and a copy on disk, and installs
 a release only when the client asks (`POST /atomic/v1/engine-builds/foundry-local/install`).
-The archive is downloaded straight from the upstream GitHub release,
-`github.com/<upstream_repo>/releases/download/<tag>/<name>`, and checked
+Without `distribution`, the archive URL is
+`https://github.com/<upstream_repo>/releases/download/<tag>/<name>`.
+With `distribution: "atomic-conf"`, it is
+`https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download/foundry-local-<tag>/<name>`.
+Every download is checked
 against `size` and `sha256` before it is unpacked. `ATOMIC_FOUNDRY_LOCAL_MANIFEST_URL`
 (`https://` or `file://`) points core at another copy during development.
 
@@ -1306,11 +1309,13 @@ against `size` and `sha256` before it is unpacked. `ATOMIC_FOUNDRY_LOCAL_MANIFES
     `sdk_v2/cpp/include/foundry_local/foundry_local_c.h` at that tag. **Core
     skips a release whose `c_api_version` its host does not support**: a C API
     bump changes the structures the host passes to the library.
+  - `distribution` — optional, the only accepted value is `atomic-conf`.
+    Omit it for the original Microsoft archives.
   - `assets` — one archive per platform, all five required: `win-x64`,
     `win-arm64`, `macos-arm64`, `linux-x64`, `linux-arm64`. Core selects by
-    `platform`, never by parsing `name`. `size` and `sha256` come from the
-    GitHub asset `digest`; the pinned hash is the only check on what core
-    loads into its own process.
+    `platform`, never by parsing `name`. `size` and `sha256` identify the
+    published archive. Repacked assets are also downloaded from their final
+    URLs and compared with the verified local archives before listing.
 
 Besides the schema, CI rejects a duplicate `tag`, a duplicate `platform` or
 asset name within a release, a release missing one of the five platforms, and
@@ -1332,7 +1337,87 @@ gh api "repos/microsoft/foundry-local/contents/sdk_v2/cpp/include/foundry_local/
 
 Map each asset to its `platform` (`osx-arm64` is `macos-arm64`), set
 `min_core_version` to the first core release that supports this release,
-insert the entry at the top of `releases`, run `make validate`, and open a PR.
+insert the entry at the top of `releases`, validate the Foundry schema and
+integrity checks below, and open a PR.
+
+### Preparing the 2.4.0 candidate
+
+The five selected native archives and the retained original Windows x64 ZIP are published in
+[foundry-local-v2.4.0](https://github.com/AtomicBot-ai/atomic-chat-conf/releases/tag/foundry-local-v2.4.0).
+[The candidate](backends/foundry-local-manifest.candidate.json) contains both
+2.4.0 (C API 3) and the original 2.1.0 (C API 2). Windows x64 selects the
+NPU-compatible `foundry-local-win-x64-openvino-1-8-1.zip`, whose public bytes,
+size (93,972,839) and SHA-256
+(`23ce1fea75d64254e99042c3e99e1fc2bb0dd5befff07d4a013857920c67b2a1`)
+were verified after publication. The five original release assets are unchanged. The candidate requires core 0.22.4, the release that includes managed CUDA
+preparation and Windows DLL isolation. Promote it after that core release is
+published and app/server qualification in tasks 3.3 and 4.3 is complete.
+Older cores continue to select the original 2.1.0.
+
+Build with Python 3.11 or later. Only the release maintainer needs Python,
+network access to NuGet and authenticated `gh` for publication.
+[packages.json](.github/scripts/foundry-local/packages.json) pins the three Microsoft NuGet packages and Intel OpenVINO 1.8.1
+(Windows x64 only), including their versions and catalog SHA-512 hashes. The packer validates all
+inputs before packaging native files for each RID, preserves native bytes,
+includes each package's licenses and notices, and verifies every output
+member, runtime JSON hash, executable mode and ORT symlink.
+macOS ORT aliases resolve to the same versioned dylib. Windows archives
+include the supplied WinML DLLs and import libraries. The NPU-compatible Windows
+x64 archive is named `foundry-local-win-x64-openvino-1-8-1.zip`; it adds the pinned
+Intel EP and its native dependencies under `lib/openvino/`. The Intel package
+uses an MIT license expression instead of a root LICENSE file: retain its
+original nuspec, README and third-party notices. Core 2.4 hosts explicitly
+register this EP on their shared ORT environment instead of the system WinML
+OpenVINO 1.8 EP, whose experimental API calls fail on ORT 1.31. Both native DLL
+signatures and all other platforms' original payloads are preserved.
+
+The original `foundry-local-win-x64.zip` remains in the release unchanged. The
+publisher verifies it against the original three Microsoft packages and adds
+the new archive under its own name. A candidate must point Windows x64 at the
+new name only after the new public download is verified. Existing development
+installs of the original 2.4.0 archive must be unloaded and explicitly removed
+before installing the corrected candidate: the immutable build check correctly
+refuses to replace a recorded digest silently. This does not remove models.
+
+```bash
+python3 .github/scripts/foundry-local/pack.py /tmp/foundry-nuget /tmp/foundry-assets
+python3 .github/scripts/foundry-local/publish.py /tmp/foundry-nuget /tmp/foundry-assets backends/foundry-local-manifest.candidate.json --min-core-version 0.22.0 --target change/upgrade-foundry-local-2-4
+npx --yes ajv-cli@5 validate -s backends/foundry-local-schema.json -d 'backends/foundry-local-manifest*.json' --strict=false
+node .github/scripts/foundry-local-manifest-check.mjs backends/foundry-local-manifest.json backends/foundry-local-manifest.candidate.json
+```
+
+Archive timestamps and ownership are normalized for repeat builds. An existing
+release asset must match the verified local archive before any missing asset
+is uploaded. Publication never overwrites an asset. A rerun resumes an
+interrupted draft or verifies the existing public release. The candidate is
+written only after all five selected public downloads match local bytes, GitHub sizes
+and SHA-256 digests. Preserve the original Python/zlib environment when
+reproducing compressed bytes (this release used Python 3.11.11 and zlib 1.2.12). A different compressor producing a different
+archive is rejected by the publication check.
+
+For a Windows-only packaging change, use `pack.py <cache> <out> --rid win-x64`.
+The focused checks are `python3 .github/scripts/foundry-local/test_pack.py` and
+`python3 .github/scripts/foundry-local/test_publish.py`, followed by
+`node --test .github/scripts/foundry-local-manifest-check.test.mjs`.
+
+Use the absolute path of the candidate in the core process environment.
+
+```bash
+export ATOMIC_FOUNDRY_LOCAL_MANIFEST_URL="file://$PWD/backends/foundry-local-manifest.candidate.json"
+```
+
+Set this variable before starting core. Implement the distribution URL and
+C API 3 support in core against this candidate. Native loading, accelerator
+preparation and model generation are qualified in the core/app/server tasks.
+
+### Withdrawing 2.4.0
+
+Remove its entry from the production manifest to stop new offers as caches
+refresh. Keep release assets immutable. An installed runtime stays selected
+until an explicit local action. To return a host to its retained 2.1.0,
+unload the 2.4.0 sessions, delete only the 2.4.0 build through
+`DELETE /atomic/v1/engine-builds/foundry-local/v2.4.0/<platform>`,
+then confirm selection of 2.1.0 and a response from the existing model.
 
 ## Foundry Local model list
 
