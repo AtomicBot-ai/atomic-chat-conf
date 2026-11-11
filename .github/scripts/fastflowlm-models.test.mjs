@@ -166,7 +166,7 @@ test('pinned old core parser reads new/unknown entries and every old collection 
 
 // Models added to a legacy collection after the pinned baseline: their whole entries are the only
 // bytes a legacy export may gain (older clients skip a family id they do not know).
-const ADDED_SINCE_BASELINE = { diffusion: ['minimax-h3-image'] }
+const ADDED_SINCE_BASELINE = { diffusion: ['minimax-h3-image', 'p-h3-image'] }
 
 /** `text` without the pretty-printed array entries whose `"id"` is in `ids`, and their leading comma. */
 function withoutEntries(text, ids) {
