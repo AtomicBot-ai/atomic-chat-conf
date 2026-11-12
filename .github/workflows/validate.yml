@@ -524,8 +524,8 @@ jobs:
 
       # Includes the rule older cores depend on: backends/manifest.json names an
       # approved release of the list that every core runs, with the same bytes.
-      # upstream-verify.test.mjs covers the approval gates (llama.cpp, sd.cpp and
-      # audio.cpp).
+      # upstream-verify.test.mjs covers the approval gates (llama.cpp, sd.cpp,
+      # audio.cpp and MLX).
       - name: Check upstream llama.cpp release list integrity
         run: |
           node --test .github/scripts/upstream-releases.test.mjs
@@ -582,15 +582,18 @@ jobs:
           node --test .github/scripts/audiocpp-manifest-check.test.mjs
           node --test .github/scripts/audiocpp-approve.test.mjs
 
-      - name: Validate MLX server manifest against schema
+      # Same pair for MLX (mirror-mlx.yml, mlx-approve.yml): the staging
+      # manifest is the candidate slot and obeys the same rules.
+      - name: Validate MLX server manifests against schema
         run: |
-          ajv validate \
-            -s backends/mlx-schema.json \
-            -d backends/mlx-manifest.json \
-            --strict=false
+          for m in backends/mlx-manifest.json backends/mlx-manifest.staging.json; do
+            ajv validate -s backends/mlx-schema.json -d "$m" --strict=false
+          done
 
       - name: Check MLX server manifest integrity
-        run: node --test .github/scripts/mlx-manifest.test.mjs
+        run: |
+          node --test .github/scripts/mlx-manifest.test.mjs
+          node --test .github/scripts/mlx-approve.test.mjs
 
       - name: Validate Foundry Local runtime manifest against schema
         run: |
