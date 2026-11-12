@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 import { fakeGhPath as fakeAudioGhPath } from '../fixtures/audiocpp/gh.mjs'
 import { fakeGhPath } from '../fixtures/sdcpp/gh.mjs'
+import { MIRROR_REPO } from './upstream-releases.mjs'
 import {
+  GATES,
   candidateId,
   checkedRun,
   dispatchedRun,
@@ -169,7 +171,7 @@ test('the gate CLI reads results.json for sd-cpp, not for llama.cpp', () => {
   const bare = cli('gate', '--engine', 'sd-cpp', '--tag', 'master-883-137f740')
   assert.equal(bare.status, 1)
   assert.match(bare.stderr, /--tag must look like master-883-137f740-a36f1b1a/)
-  assert.match(cli('gate', '--engine', 'whisper', '--tag', SIGNED).stderr, /--engine must be one of llamacpp-upstream, sd-cpp, audio-cpp/)
+  assert.match(cli('gate', '--engine', 'whisper', '--tag', SIGNED).stderr, /--engine must be one of llamacpp-upstream, sd-cpp, audio-cpp, mlx/)
   assert.match(cli('gate', '--engine', 'toString', '--tag', SIGNED).stderr, /--engine must be one of/)
   assert.match(cli('verify', '--engine', 'sd-cpp', '--tag', SIGNED).stderr, /verify checks llama.cpp tags only/)
 })
@@ -233,4 +235,16 @@ test('the gate CLI reads results.json for audio-cpp', () => {
   assert.equal(side.status, 1)
   assert.match(side.stderr, /--tag must look like v0\.9\.3-a1b2c3d4/)
   assert.match(cli('verify', '--engine', 'audio-cpp', '--tag', AUDIO_SIGNED).stderr, /verify checks llama.cpp tags only/)
+})
+
+test('results.json must pass mlx on the mirrored build of the very tag', () => {
+  const MLX_TAG = 'mlxvlm-macos-arm64-a1b2c3d'
+  const pass = { status: 'pass', engine: 'mlx', candidate: { repo: MIRROR_REPO, tag: MLX_TAG } }
+  assert.equal(resultsRefusal(pass, 'mlx', MLX_TAG), null)
+  assert.match(MLX_TAG, GATES.mlx.tagRe)
+  assert.doesNotMatch('v0.7.12', GATES.mlx.tagRe)
+  assert.equal(GATES.mlx.readsResults, true)
+  // The fork's own release of the upstream tag is not what clients download.
+  const fork = { ...pass, candidate: { repo: 'AtomicBot-ai/mlx-vlm', tag: 'v0.7.12' } }
+  assert.equal(resultsRefusal(fork, 'mlx', MLX_TAG), 'candidate.repo is AtomicBot-ai/mlx-vlm, candidate.tag is v0.7.12')
 })

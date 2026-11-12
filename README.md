@@ -61,6 +61,7 @@ backends/
   audiocpp-manifest.staging.json # audio.cpp candidate slot: test builds, then audiocpp-approve.yml
   audiocpp-schema.json     # JSON Schema (Draft-07) for the audio.cpp manifest
   mlx-manifest.json        # The pinned mlx-server build (read by core and the desktop Makefile)
+  mlx-manifest.staging.json # The MLX candidate slot (mirror-mlx.yml, mlx-approve.yml)
   mlx-schema.json          # JSON Schema (Draft-07) for the MLX manifest
   foundry-local-manifest.json # microsoft/foundry-local releases (read by core)
   foundry-local-schema.json   # JSON Schema (Draft-07) for the Foundry Local manifest
@@ -1184,26 +1185,35 @@ manifests name.
 ## MLX server manifest
 
 [`backends/mlx-manifest.json`](backends/mlx-manifest.json) pins the one
-`mlx-server` build Atomic Chat runs MLX models with on Apple Silicon: a
-release of the `AtomicBot-ai/mlx-vlm` fork. Schema:
+`mlx-server` build Atomic Chat runs MLX models with on Apple Silicon. Builds
+come from the `AtomicBot-ai/mlx-vlm` fork, which builds a
+[Neywa-Labs/mlx-vlm](https://github.com/Neywa-Labs/mlx-vlm) release tag with
+its patch series, signs the binary with the Developer ID and notarizes it.
+[`mirror-mlx.yml`](.github/workflows/mirror-mlx.yml) copies such a build into
+a release here; the manifest points at that copy. Schema:
 [`backends/mlx-schema.json`](backends/mlx-schema.json).
 
 ```json
 {
   "$schema": "./mlx-schema.json",
-  "upstream_repo": "AtomicBot-ai/mlx-vlm",
-  "tag_name": "mlxvlm-macos-arm64-07ba5a1",
-  "published_at": "2026-08-28T10:38:38Z",
+  "upstream_repo": "AtomicBot-ai/atomic-chat-conf",
+  "tag_name": "mlxvlm-macos-arm64-a1b2c3d",
+  "upstream_tag": "v0.7.12",
+  "published_at": "2026-11-12T10:00:00Z",
   "assets": [
     {
       "backend": "macos-arm64",
       "name": "mlxvlm-mlx-server-macos-arm64.tar.gz",
-      "sha256": "cce16896300c340da22e34ce007b2da081d2f9b8d156d8dd61bf7fc3700f9d88",
-      "size": 210514030
+      "sha256": "…",
+      "size": 287000000
     }
   ]
 }
 ```
+
+[`backends/mlx-manifest.staging.json`](backends/mlx-manifest.staging.json) is
+the candidate slot, in the same form: `mirror-mlx.yml` writes it, core's
+`engine-candidate` checks it, `mlx-approve.yml` copies it into the live one.
 
 ### Who reads it
 
@@ -1217,44 +1227,72 @@ release of the `AtomicBot-ai/mlx-vlm` fork. Schema:
   writes `{tag, published_at}` next to the binary so core can compare the
   bundled build with downloaded ones. `MLX_MANIFEST=<file>` points it at a
   local copy.
+- **The hatchet pipeline** compares new Neywa-Labs/mlx-vlm releases with
+  `upstream_tag`.
 
 Because core reads `main` directly, **merging a newer `published_at` offers
 that build as an update to every running client** within about an hour.
 
 ### Fields
 
-- `tag_name` — the fork's release tag, `mlxvlm-macos-arm64-<commit>`. The
-  commit hash says nothing about order.
+- `upstream_repo` — the repository whose release holds the archive: this one
+  for a mirrored build, `AtomicBot-ai/mlx-vlm` for the builds before
+  `mirror-mlx.yml`. The download URL is
+  `https://github.com/<upstream_repo>/releases/download/<tag_name>/<name>`.
+- `tag_name` — `mlxvlm-macos-arm64-<commit>`, the fork commit the build was
+  made at. Released cores accept no other form. The commit hash says nothing
+  about order.
+- `upstream_tag` (optional) — the Neywa-Labs/mlx-vlm release the build is
+  based on. Clients ignore it.
 - `published_at` — the release's `publishedAt` on GitHub. This is the version
   order: clients treat a build as an update only when it was published
   strictly later than the active one, so rolling the manifest back to an older
-  release never downgrades anyone.
+  release never downgrades anyone. A bad build is fixed by a newer one.
 - `assets` — exactly one archive, `backend: "macos-arm64"`. `sha256` and
-  `size` are mandatory: the archive is downloaded straight from the fork's
-  GitHub release, not mirrored here, so the pinned hash is the only check on
-  what gets executed. `sha256` is the asset's GitHub `digest` without the
-  `sha256:` prefix.
+  `size` are mandatory: the pinned hash is the only check on what gets
+  executed. `sha256` is the asset's GitHub `digest` without the `sha256:`
+  prefix.
 
 ### The referenced release is never deleted or re-uploaded
 
-The `AtomicBot-ai/mlx-vlm` release that `backends/mlx-manifest.json` on `main`
-points at **must not be deleted, and its asset must not be re-uploaded**.
-Deleting it breaks every MLX install and every desktop build (404); re-uploading
-the archive changes its hash, so every install and build fails the `sha256`
-check. To ship a different build, publish a new release and repoint the
-manifest. Once `main` points elsewhere, the old release may go.
+The release that `backends/mlx-manifest.json` on `main` points at **must not
+be deleted, and its asset must not be re-uploaded**. Deleting it breaks every
+MLX install and every desktop build (404); re-uploading the archive changes
+its hash, so every install and build fails the `sha256` check. To ship a
+different build, publish a new release and repoint the manifest. Once `main`
+points elsewhere, the old release may go. `mirror-mlx.yml` refuses to mirror
+the tag the live manifest names, and prunes only mirrored MLX releases no
+manifest names.
 
-### How to update the MLX manifest
+### Updating MLX
 
-Take the new release from the fork and print the manifest fields:
+The hatchet pipeline does this for every new Neywa-Labs/mlx-vlm release; by
+hand it is the same three steps:
 
-```bash
-gh release view mlxvlm-macos-arm64-07ba5a1 -R AtomicBot-ai/mlx-vlm --json tagName,publishedAt,assets --jq '{tag_name: .tagName, published_at: .publishedAt, assets: [.assets[] | {backend: "macos-arm64", name, sha256: (.digest | ltrimstr("sha256:")), size}]}'
-```
+1. **Mirror the fork's build** of the tag. `atomic_rev` is the first seven
+   characters of the fork commit the build ran at (in the fork release's
+   notes):
 
-Copy `tag_name`, `published_at` and `assets` into the manifest (keep
-`$schema` and `upstream_repo`), run `make validate`, open a PR, and merge once
-CI is green.
+   ```bash
+   gh workflow run mirror-mlx.yml -R AtomicBot-ai/atomic-chat-conf -f tag=v0.7.12 -f atomic_rev=a1b2c3d
+   ```
+
+   It checks the Developer ID signature and the notarization on macOS, copies
+   the archive into the release `mlxvlm-macos-arm64-<atomic_rev>` here and
+   writes the staging manifest.
+2. **Check it on a core release**: core's `engine-candidate.yml` with
+   `engine=mlx`, `repo=AtomicBot-ai/atomic-chat-conf`,
+   `tag=mlxvlm-macos-arm64-<atomic_rev>`. Its `results.json` must say `pass`;
+   `conf.sha` in it is the commit of this repository it read.
+3. **Approve** with that commit:
+
+   ```bash
+   gh workflow run mlx-approve.yml -R AtomicBot-ai/atomic-chat-conf -f tag=mlxvlm-macos-arm64-a1b2c3d -f conf_sha=<conf.sha>
+   ```
+
+   It checks the staging manifest of that commit against the release, refuses
+   a tag no passing `engine-candidate` run backs, and pushes it to
+   `backends/mlx-manifest.json`.
 
 ## Foundry Local runtime manifest
 
@@ -3067,12 +3105,14 @@ every push and pull request. It performs the following checks:
   the schema and those rules on broken copies, and
   `.github/scripts/audiocpp-approve.test.mjs` checks the approval against a
   fixture release (`.github/fixtures/audiocpp/`).
-- `ajv` validates `backends/mlx-manifest.json` against
-  `backends/mlx-schema.json`, and `node --test` over
-  `.github/scripts/mlx-manifest.test.mjs` checks the tag pattern, exactly one
-  `macos-arm64` asset with `sha256` and `size`, and an RFC 3339
-  `published_at` (ajv ignores `format` here), plus that broken copies fail
-  the schema.
+- `ajv` validates `backends/mlx-manifest.json` and
+  `backends/mlx-manifest.staging.json` against `backends/mlx-schema.json`, and
+  `node --test` over `.github/scripts/mlx-manifest.test.mjs` checks the tag
+  pattern, the `upstream_tag` form, exactly one `macos-arm64` asset with
+  `sha256` and `size`, and an RFC 3339 `published_at` (ajv ignores `format`
+  here) on both, plus that broken copies fail the schema.
+  `.github/scripts/mlx-approve.test.mjs` checks the approval against a fixture
+  release (`.github/fixtures/mlx/`).
 - `ajv` validates `backends/foundry-local-manifest.json` against
   `backends/foundry-local-schema.json`, and
   `.github/scripts/foundry-local-manifest-check.mjs` checks unique tags,
@@ -3184,6 +3224,7 @@ npx ajv-cli@5 validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.
 npx ajv-cli@5 validate -s backends/audiocpp-schema.json -d backends/audiocpp-manifest.staging.json --strict=false
 node .github/scripts/audiocpp-manifest-check.mjs
 npx ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.json --strict=false
+npx ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.staging.json --strict=false
 npx ajv-cli@5 validate -s backends/foundry-local-schema.json -d backends/foundry-local-manifest.json --strict=false
 node .github/scripts/foundry-local-manifest-check.mjs
 npx ajv-cli@5 validate -s models/schema.foundry-local-models.json -d models/foundry-local-models.json --strict=false

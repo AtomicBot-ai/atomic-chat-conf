@@ -2,6 +2,7 @@
   "$schema": "./mlx-schema.json",
   "upstream_repo": "AtomicBot-ai/mlx-vlm",
   "tag_name": "mlxvlm-macos-arm64-07ba5a1",
+  "upstream_tag": "v0.6.15",
   "published_at": "2026-08-28T10:38:38Z",
   "assets": [
     {
