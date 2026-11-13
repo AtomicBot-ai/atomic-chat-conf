@@ -1,5 +1,6 @@
 // The only editable model data is models/catalog.json. Legacy files are projections.
 import { validateFastflowlm, projectFastflowlm } from './fastflowlm-models.mjs'
+import { validateStrataModel, projectStrata } from './strata-catalog.mjs'
 export const COLLECTION_FIELDS = {
   audio: 'models', 'atomic-prism-models': 'families', 'staff-picks': 'picks', diffusion: 'families', embedding: 'models', decision: 'models',
   'litert-lm-models': 'models', 'geniex-models': 'models', 'foundry-local-models': 'models',
@@ -24,6 +25,7 @@ export function validateCatalog(catalog, options) {
   for (const [id, model] of Object.entries(catalog.models)) {
     if (!id || !record(model) || typeof model.kind !== 'string' || typeof model.format !== 'string' || !record(model.variants) || !record(model.definition)) throw new Error(`Invalid model ${id}`)
     checkSources(model.definition)
+    if (model.kind === 'strata') validateStrataModel(model, options?.strataCandidate)
     if (model.kind === 'fastflowlm') {
       validateFastflowlm(model, options)
       if (flmVariants.has(model.definition.variant_id)) throw new Error('Duplicate FastFlowLM variant_id')
@@ -36,11 +38,13 @@ export function validateCatalog(catalog, options) {
   }
   for (const name of ['recommended', ...Object.keys(COLLECTION_FIELDS)]) projectCollection(catalog, name)
   projectFastflowlm(catalog, options)
+  projectStrata(catalog, options?.strataCandidate)
   return catalog
 }
 
 /** Restore the historical wire shape, including which entries did not expose revision. */
 export function projectCollection(catalog, name, pinned = false) {
+  if (name === 'strata-models') return projectStrata(catalog)
   if (name === 'fastflowlm-models') return projectFastflowlm(catalog)
   const collection = catalog.collections[name]
   if (!record(collection) || !record(collection.header)) throw new Error(`Missing model collection ${name}`)

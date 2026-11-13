@@ -1,0 +1,536 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Strata immutable runtime bundles",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "releases"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "releases": {
+      "type": "array",
+      "minItems": 0,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/definitions/release"
+      }
+    }
+  },
+  "definitions": {
+    "notice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "license",
+        "url",
+        "sha256"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^\\s?#]+$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "urls"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "upstream-supported",
+            "atomic-qualified"
+          ]
+        },
+        "urls": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^https://[^\\s?#]+$"
+          }
+        }
+      }
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "arch",
+        "minimum_os_version",
+        "cpu_features",
+        "gpu_vendor",
+        "gpu_architectures"
+      ],
+      "properties": {
+        "os": {
+          "enum": [
+            "windows",
+            "linux",
+            "macos"
+          ]
+        },
+        "arch": {
+          "enum": [
+            "x64",
+            "arm64"
+          ]
+        },
+        "minimum_os_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cpu_features": {
+          "type": "array",
+          "minItems": 0,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "gpu_vendor": {
+          "enum": [
+            "nvidia",
+            "amd",
+            "intel",
+            "apple"
+          ]
+        },
+        "gpu_architectures": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "minimum_driver": {
+          "type": "string",
+          "minLength": 1
+        },
+        "device_family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "distribution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minimum_glibc": {
+          "type": "string",
+          "minLength": 1
+        },
+        "excluded_device_families": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "version",
+        "platform",
+        "url",
+        "sha256",
+        "size",
+        "unpacked_bytes",
+        "executable_paths",
+        "archive",
+        "source_revision",
+        "notices"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "kind": {
+          "enum": [
+            "control",
+            "qwen",
+            "deepseek"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "platform": {
+          "enum": [
+            "windows-x64",
+            "linux-x64",
+            "macos-arm64",
+            "linux-arm64-spark"
+          ]
+        },
+        "backend": {
+          "enum": [
+            "cuda12",
+            "cuda13",
+            "hip",
+            "metal",
+            "sycl"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^\\s?#]+$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "unpacked_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "executable_paths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*[A-Za-z0-9_]$"
+          }
+        },
+        "archive": {
+          "enum": [
+            "tar.gz",
+            "zip"
+          ]
+        },
+        "source_revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "notices": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/definitions/notice"
+          }
+        },
+        "python_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "python_modules": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "structured_output": {
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "control"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "python_version",
+              "python_modules",
+              "structured_output"
+            ],
+            "not": {
+              "required": [
+                "backend"
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "backend"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "python_version"
+                  ]
+                },
+                {
+                  "required": [
+                    "python_modules"
+                  ]
+                },
+                {
+                  "required": [
+                    "structured_output"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "platform",
+        "backend",
+        "host",
+        "components",
+        "families",
+        "qualification",
+        "bundle"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "platform": {
+          "enum": [
+            "windows-x64",
+            "linux-x64",
+            "macos-arm64",
+            "linux-arm64-spark"
+          ]
+        },
+        "backend": {
+          "enum": [
+            "cuda12",
+            "cuda13",
+            "hip",
+            "metal",
+            "sycl"
+          ]
+        },
+        "host": {
+          "$ref": "#/definitions/host"
+        },
+        "components": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]*$"
+          }
+        },
+        "families": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "qwen38",
+              "qwen36",
+              "deepseek41"
+            ]
+          }
+        },
+        "qualification": {
+          "$ref": "#/definitions/evidence"
+        },
+        "family_gpu_architectures": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "deepseek41"
+          ],
+          "properties": {
+            "deepseek41": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "bundle": {
+          "$ref": "#/definitions/bundle"
+        }
+      }
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "release_id",
+        "engine_version",
+        "minimum_core_version",
+        "adapter_contract_version",
+        "preparation_abi",
+        "components",
+        "variants",
+        "control_versions"
+      ],
+      "properties": {
+        "release_id": {
+          "type": "string",
+          "pattern": "^strata-[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?-r[1-9][0-9]*$"
+        },
+        "engine_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "minimum_core_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "adapter_contract_version": {
+          "const": 1
+        },
+        "preparation_abi": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "components": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/definitions/component"
+          }
+        },
+        "variants": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/definitions/variant"
+          }
+        },
+        "control_versions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+          }
+        }
+      }
+    },
+    "bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url",
+        "sha256",
+        "size",
+        "unpacked_bytes",
+        "archive",
+        "bundle_manifest_sha256",
+        "python",
+        "component_roots"
+      ],
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^\\s?#]+$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "unpacked_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "archive": {
+          "enum": [
+            "tar.gz",
+            "zip"
+          ]
+        },
+        "bundle_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "python": {
+          "type": "string",
+          "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*[A-Za-z0-9_]$"
+        },
+        "component_roots": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "control",
+            "qwen"
+          ],
+          "properties": {
+            "control": {
+              "const": "control"
+            },
+            "qwen": {
+              "const": "components/qwen"
+            },
+            "deepseek": {
+              "const": "components/deepseek"
+            }
+          }
+        }
+      }
+    }
+  }
+}

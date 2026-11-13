@@ -44,7 +44,8 @@
               "auxiliary",
               "prism",
               "audio",
-              "fastflowlm"
+              "fastflowlm",
+              "strata"
             ]
           },
           "definition": {
@@ -132,6 +133,30 @@
                 }
               }
             }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "strata"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "format": {
+                  "const": "strata"
+                },
+                "definition": {
+                  "$ref": "#/definitions/strata"
+                }
+              },
+              "not": {
+                "required": [
+                  "omit_revisions"
+                ]
+              }
+            }
           }
         ]
       }
@@ -182,6 +207,50 @@
       },
       "properties": {
         "fastflowlm-models": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "header",
+            "entries"
+          ],
+          "properties": {
+            "header": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "schema_version"
+              ],
+              "properties": {
+                "schema_version": {
+                  "const": 1
+                }
+              }
+            },
+            "entries": {
+              "type": "array",
+              "minItems": 0,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "model",
+                  "variant"
+                ],
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "variant": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9._-]*$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "strata-models": {
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -494,6 +563,442 @@
           "type": "boolean"
         }
       }
+    },
+    "strata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "family",
+        "variant_id",
+        "name",
+        "license",
+        "gated",
+        "context_length",
+        "engine_release",
+        "preparation_abi",
+        "preparation_recipe_id",
+        "sources",
+        "files",
+        "inputs",
+        "compatible_variants",
+        "capabilities",
+        "capability_requirements",
+        "requirements",
+        "qualification"
+      ],
+      "properties": {
+        "family": {
+          "enum": [
+            "qwen38",
+            "qwen36",
+            "deepseek41"
+          ]
+        },
+        "variant_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gated": {
+          "type": "boolean"
+        },
+        "context_length": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "engine_release": {
+          "type": "string",
+          "pattern": "^strata-[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?-r[1-9][0-9]*$"
+        },
+        "preparation_abi": {
+          "const": "strata-v1"
+        },
+        "preparation_recipe_id": {
+          "enum": [
+            "strata-qwen38-v1",
+            "strata-qwen36-v1",
+            "strata-deepseek41-v1"
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "host",
+              "repo",
+              "revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9._-]*$"
+              },
+              "host": {
+                "enum": [
+                  "huggingface",
+                  "github"
+                ]
+              },
+              "repo": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{40}$"
+              }
+            }
+          }
+        },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source",
+              "source_path",
+              "path",
+              "size",
+              "sha256",
+              "role"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9._-]*$"
+              },
+              "source_path": {
+                "type": "string",
+                "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              },
+              "size": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "role": {
+                "enum": [
+                  "weights",
+                  "vision",
+                  "drafter",
+                  "drafter-config",
+                  "draft-vocab",
+                  "expert-profile",
+                  "engram",
+                  "engram-metadata"
+                ]
+              }
+            }
+          }
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "weights",
+            "vision",
+            "tokenizer_from",
+            "chat_template_from",
+            "drafting"
+          ],
+          "properties": {
+            "weights": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              }
+            },
+            "vision": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "drafter": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "drafter_config": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "draft_vocab": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "expert_profile": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "engram": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "engram_metadata": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "tokenizer_from": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "chat_template_from": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "drafter_embedded_in": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "drafting": {
+              "enum": [
+                "dflash2",
+                "mtp-embedded",
+                "dspark"
+              ]
+            },
+            "experts_per_token": {
+              "const": 6
+            }
+          }
+        },
+        "compatible_variants": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]*$"
+          }
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "chat",
+            "tools",
+            "reasoning",
+            "vision",
+            "structured_output"
+          ],
+          "properties": {
+            "chat": {
+              "type": "boolean"
+            },
+            "tools": {
+              "type": "boolean"
+            },
+            "reasoning": {
+              "type": "boolean"
+            },
+            "vision": {
+              "type": "boolean"
+            },
+            "structured_output": {
+              "type": "boolean"
+            }
+          }
+        },
+        "capability_requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "vision",
+            "structured_output",
+            "drafting"
+          ],
+          "properties": {
+            "vision": {
+              "const": [
+                "compatible-picture-reader"
+              ]
+            },
+            "structured_output": {
+              "const": [
+                "full-json-schema-validator"
+              ]
+            },
+            "drafting": {
+              "const": [
+                "verified-family-profile"
+              ]
+            }
+          }
+        },
+        "requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "download_bytes",
+            "memory_accounting",
+            "resource_estimator",
+            "disk_components",
+            "memory_components",
+            "memory_modes",
+            "requires_core_check"
+          ],
+          "properties": {
+            "download_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "memory_accounting": {
+              "const": "separate-ram-vram-or-unified"
+            },
+            "resource_estimator": {
+              "enum": [
+                "strata-qwen38-v1",
+                "strata-qwen36-v1",
+                "strata-deepseek41-v1"
+              ]
+            },
+            "disk_components": {
+              "const": [
+                "sources",
+                "derivatives",
+                "temporary",
+                "previous-installation"
+              ]
+            },
+            "memory_components": {
+              "const": [
+                "ram",
+                "vram",
+                "unified-memory"
+              ]
+            },
+            "memory_modes": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "auto",
+                  "ram",
+                  "ssd"
+                ]
+              }
+            },
+            "requires_core_check": {
+              "const": true
+            }
+          }
+        },
+        "qualification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "evidence"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "upstream-supported",
+                "atomic-qualified"
+              ]
+            },
+            "evidence": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^https://[^\\s]+$"
+              }
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "family": {
+                "const": "qwen38"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "inputs": {
+                "required": [
+                  "drafter",
+                  "drafter_config",
+                  "draft_vocab",
+                  "expert_profile"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "family": {
+                "const": "qwen36"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "inputs": {
+                "required": [
+                  "drafter_embedded_in"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "family": {
+                "const": "deepseek41"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "inputs": {
+                "required": [
+                  "drafter",
+                  "engram",
+                  "engram_metadata",
+                  "expert_profile",
+                  "experts_per_token"
+                ]
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }
