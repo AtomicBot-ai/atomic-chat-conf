@@ -3355,13 +3355,16 @@ remain byte-identical. The engine prerelease does not replace the latest core
 application release. Eye CLI integrates the unreleased core through `bun link`
 before its own release.
 
-## Strata candidate
+## Strata runtime bundles
 
 `backends/strata-manifest.json` uses the strict Draft-07
-`backends/strata-schema.json`. Its `releases` array is intentionally empty:
-**no compatible core version has been assigned and no Strata release is offered**.
-The separately validated `backends/strata-manifest.candidate.json` is input for
-packaging and core development, not an installable runtime manifest.
+`backends/strata-schema.json`. Atomic Chat core 0.24.0 and later can install
+the listed bundles. The initial variants cover Apple Silicon Metal and
+x64 CUDA 13 on Windows and Ubuntu. The Linux entry uses the verified
+Ubuntu 26.04 and glibc 2.43 host floors.
+
+`backends/strata-manifest.candidate.json` is the separately validated input
+for packaging and core development.
 
 Candidate `strata-0.1.59-r5` pins upstream release `v0.2.13`, all 24 selected
 Control/compute assets and 16 host variants. Linux x64 uses corrected Control
@@ -3432,13 +3435,10 @@ export ATOMIC_STRATA_MANIFEST_URL="file://<absolute-conf-path>/backends/strata-m
 export ATOMIC_MODEL_CATALOG_URL="file://<absolute-conf-path>/models/catalog.json"
 ```
 
-These documents can already be read locally. The catalog has Strata definitions,
-but the empty production manifest provides no installable engine. Do not point
-a runtime at the candidate inventory. Core can implement against the schema and
-inspect the local archive; an installable local manifest needs the assigned core
-version and a complete `variant.bundle` descriptor. The production schema accepts
-HTTPS archive URLs; a file URL override selects the **manifest**, not an exception
-to archive-source validation.
+Core uses the published catalog and manifest by default. A local installable
+manifest needs the assigned core version, a complete `variant.bundle`
+descriptor and HTTPS archive URLs. Use the candidate inventory as the input
+for assembling bundles.
 
 Before promotion, assign `minimum_core_version`, finish the host checks for each
 included variant, assemble/inspect the relevant bundles and obtain the required
