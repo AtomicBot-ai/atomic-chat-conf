@@ -1,0 +1,95 @@
+{
+  "status": "candidate",
+  "inspections": [
+    {
+      "name": "strata-control-0.1.59-macos-arm64.tar.gz",
+      "size": 51226275,
+      "sha256": "62e571b58d60d6507e5d24975f380ae0f2c302210e895ad31fc166b59c18d024",
+      "url": "https://github.com/Niko1221/Strata/releases/download/v0.2.13/strata-control-0.1.59-macos-arm64.tar.gz",
+      "unpacked_bytes": 151069985,
+      "regular_files": 4669,
+      "source_revision": "d2f096475817d4666c364c820b0ca830f751cfc5",
+      "version": "0.1.59",
+      "python_packages": [
+        "certifi-2026.10.19.dist-info",
+        "charset_normalizer-3.5.1.dist-info",
+        "idna-3.20.dist-info",
+        "jinja2-3.1.6.dist-info",
+        "linkify_it_py-2.2.0.dist-info",
+        "markdown_it_py-4.2.0.dist-info",
+        "markupsafe-3.0.3.dist-info",
+        "mdit_py_plugins-0.6.1.dist-info",
+        "mdurl-0.1.2.dist-info",
+        "numpy-2.5.3.dist-info",
+        "pillow-13.0.0.dist-info",
+        "pip-26.2.1.dist-info",
+        "platformdirs-4.13.0.dist-info",
+        "psutil-7.2.2.dist-info",
+        "pygments-2.21.0.dist-info",
+        "pyyaml-6.0.3.dist-info",
+        "regex-2026.9.10.dist-info",
+        "requests-2.34.2.dist-info",
+        "rich-15.0.0.dist-info",
+        "textual-8.2.8.dist-info",
+        "tqdm-4.70.1.dist-info",
+        "truststore-0.10.5.dist-info",
+        "typing_extensions-4.16.0.dist-info",
+        "urllib3-2.8.0.dist-info"
+      ],
+      "has_jsonschema": false,
+      "has_gguf_py": false
+    },
+    {
+      "name": "strata-engine-0.1.59-macos-arm64-metal.tar.gz",
+      "size": 5535163,
+      "sha256": "9d326745eaebf24248968c145908aca5616ad8562dbca9c3aa327164724a517d",
+      "url": "https://github.com/Niko1221/Strata/releases/download/v0.2.13/strata-engine-0.1.59-macos-arm64-metal.tar.gz",
+      "unpacked_bytes": 15362828,
+      "regular_files": 46,
+      "component": {
+        "archs": [
+          "apple-gpu"
+        ],
+        "backend": "metal",
+        "build_id": "712fec6b4+metal",
+        "entrypoint": "strata",
+        "id": "strata-engine",
+        "min_driver": {},
+        "name": "strata-engine",
+        "platform": "macos-arm64",
+        "schema_version": 2,
+        "version": "0.1.59"
+      },
+      "verified_component_files": 45
+    },
+    {
+      "name": "strata-dsv41-0.1.59-macos-arm64-metal.tar.gz",
+      "size": 1809511,
+      "sha256": "2fcbd44259db297782b0bdf54065b65a3882a0f52723b12940fdff40b928013d",
+      "url": "https://github.com/Niko1221/Strata/releases/download/v0.2.13/strata-dsv41-0.1.59-macos-arm64-metal.tar.gz",
+      "unpacked_bytes": 4833527,
+      "regular_files": 42,
+      "component": {
+        "archs": [
+          "apple-gpu"
+        ],
+        "backend": "metal",
+        "build_id": "712fec6b4",
+        "entrypoint": "strata-dsv41",
+        "id": "strata-engine",
+        "min_driver": {},
+        "name": "strata-engine",
+        "platform": "macos-arm64",
+        "schema_version": 2,
+        "version": "0.1.59"
+      },
+      "verified_component_files": 41
+    }
+  ],
+  "not_verified": [
+    "runtime launch",
+    "native signing",
+    "model preparation",
+    "inference"
+  ]
+}

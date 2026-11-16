@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-14",
+  "host": {
+    "os": "macOS",
+    "version": "26.6.2",
+    "arch": "arm64"
+  },
+  "bundle": {
+    "archive": "strata-0.1.59-r3-macos-arm64-metal.tar.gz",
+    "bundle_manifest_sha256": "062e5a2cede0da3d2de35211529a8226fb04703829531300424f93e6d7a49144",
+    "python": "control/python/bin/python3",
+    "qualification": "candidate",
+    "release_id": "strata-0.1.59-r3",
+    "schema_version": 1,
+    "sha256": "2dab60da896b06241e4626e05fb7e243c89db914b0d668e343f080c49b60170f",
+    "signing": "macos-python-ad-hoc-development",
+    "size": 59282239,
+    "unpacked_bytes": 174453339,
+    "variant": "macos-arm64-metal"
+  },
+  "overlay": "atomic-external-owner-v1",
+  "observed_checks": {
+    "owner_mode": "dead engine refuses restart; standalone still restarts (fake engine against real bundled Control)",
+    "scope": "no model weights; no compute inference",
+    "command": "ATOMIC_TEST_STRATA_TREE=/tmp/atomic-strata-build/smoke-r3 npx vitest run --project integration test/integration/strata-external-owner.test.ts",
+    "result": "1 passed"
+  },
+  "not_run": [
+    "Windows/Linux/Spark native lifecycle",
+    "real model inference",
+    "distribution signing/notarization"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-14",
+  "host": {
+    "os": "macOS",
+    "version": "26.6.2",
+    "arch": "arm64"
+  },
+  "bundle": {
+    "archive": "strata-0.1.59-r2-macos-arm64-metal.tar.gz",
+    "bundle_manifest_sha256": "ba18883863866c71541dd0d4ca51a01d9dd4b7eacb3067f3963d781d628fd3ec",
+    "python": "control/python/bin/python3",
+    "qualification": "candidate",
+    "release_id": "strata-0.1.59-r2",
+    "schema_version": 1,
+    "sha256": "a1b7205a0cff2f0c01e32ec9d4a9ea944640a2b9f5fee15c4cf9a17408f7123f",
+    "signing": "macos-python-ad-hoc-development",
+    "size": 59281782,
+    "unpacked_bytes": 174452258,
+    "variant": "macos-arm64-metal"
+  },
+  "observed_checks": {
+    "bundled_python": "3.12.15",
+    "imports": [
+      "numpy",
+      "jsonschema",
+      "jsonschema_specifications",
+      "referencing",
+      "rpds",
+      "attrs",
+      "gguf",
+      "serve.structured"
+    ],
+    "json_schema_validation": "passed",
+    "control_version": "Strata 0.2.13; build 0.1.59",
+    "qwen_version": "0.1.59 metal",
+    "deepseek_version": "0.1.59 metal; build 712fec6b4",
+    "codesign_verify": "passed; ad-hoc Python development signature"
+  },
+  "scope": "Package probes without model acquisition, GPU inference or Control lifecycle. Not atomic-qualified.",
+  "not_run": [
+    "Windows/Linux/Spark native probes",
+    "model preparation",
+    "GPU inference",
+    "Control owner lifecycle",
+    "distribution signing/notarization"
+  ]
+}

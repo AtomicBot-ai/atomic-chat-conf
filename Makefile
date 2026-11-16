@@ -166,6 +166,15 @@ prism-withdraw:
 # runtime-descriptor-*.test.mjs files discover every one of them, schema
 # included, so a new engine's descriptor is checked without editing this list.
 validate:
+	node --test .github/scripts/strata-manifest.test.mjs
+	node --test .github/scripts/strata-catalog.test.mjs
+	node --experimental-strip-types --test .github/scripts/strata-catalog-compat.test.mjs
+	node .github/scripts/strata-manifest-check.mjs
+	python3 -m unittest discover -s .github/scripts/strata -p test_package.py
+	python3 -m unittest discover -s .github/scripts/strata -p test_atomic_owner_patch.py
+	python3 -m unittest discover -s .github/scripts/strata -p test_atomic_owner_runtime.py
+	npx --yes ajv-cli@5 validate -s backends/strata-schema.json -d backends/strata-manifest.json --strict=false
+	npx --yes ajv-cli@5 validate -s backends/strata-candidate-schema.json -d backends/strata-manifest.candidate.json --strict=false
 	node --test .github/scripts/fastflowlm-upstream.test.mjs
 	node --test .github/scripts/fastflowlm-manifest.test.mjs
 	node --experimental-strip-types --test .github/scripts/fastflowlm-models.test.mjs

@@ -3354,3 +3354,116 @@ this data: their parsers ignore the new collection and existing legacy exports
 remain byte-identical. The engine prerelease does not replace the latest core
 application release. Eye CLI integrates the unreleased core through `bun link`
 before its own release.
+
+## Strata candidate
+
+`backends/strata-manifest.json` uses the strict Draft-07
+`backends/strata-schema.json`. Its `releases` array is intentionally empty:
+**no compatible core version has been assigned and no Strata release is offered**.
+The separately validated `backends/strata-manifest.candidate.json` is input for
+packaging and core development, not an installable runtime manifest.
+
+Candidate `strata-0.1.59-r5` pins upstream release `v0.2.13`, all 24 selected
+Control/compute assets and 16 host variants. Linux x64 uses corrected Control
+`0.1.59.1`; other hosts use `0.1.59`. Compute is `0.1.59`. Documentation,
+Control and compute have separate full source commits; do not substitute one
+for another. Unknown Linux glibc and AMD driver floors remain explicit
+`pending_host_checks`, not guessed compatibility bounds.
+
+The r5 bundle applies the hash-recorded `atomic-external-owner-v3` Control overlay.
+Atomic-owned launches write a private receipt before creating each process and
+retain its start identity after exit. A dead compute or vision process is
+reported to Atomic without an automatic restart. On macOS, failure to create
+the owner-death watcher ends the compute process. Standalone Strata retains
+upstream behavior. The package probe requires `OWNER_CONTRACT == 3`.
+
+See [r5 owner ledger evidence](.github/fixtures/strata/macos-owner-ledger-evidence.json).
+Bundled CPython
+3.12.15 imports the preparation/structured-output dependencies, JSON Schema
+validation succeeds, and Control, Qwen and DeepSeek version probes exit
+successfully on macOS 26.6.2 arm64. This is **package smoke evidence**, not GPU
+inference, lifecycle or model-preparation qualification. See
+[the package evidence](.github/fixtures/strata/macos-package-evidence.json).
+Windows/Linux/Spark native probes and runtime/model qualification remain open.
+The catalog records 35 `upstream-supported` profiles across three recipe families;
+none is marked `atomic-qualified` in this data. Six profiles retain the original
+`strata-models` collection, and 29 additional CUDA profiles use the optional
+`strata-cuda-models` collection so older Strata readers keep their known inputs.
+
+### Build one candidate
+
+Run with Python 3.11+ on a build host; macOS requires native `codesign`:
+
+```sh
+python3 .github/scripts/strata/pack.py \
+  --variant macos-arm64-metal \
+  --cache /absolute/cache/strata \
+  --out /absolute/output/strata
+```
+
+The manual **Prepare Strata candidate** workflow performs the same operation
+for one selected variant and uploads a CI artifact, without publishing a release.
+Build inputs come from pinned HTTPS sources and are checked against size/SHA-256,
+including cache hits. Allow temporary space for upstream archives, extraction,
+the output and its verification copy. No model weights are acquired.
+
+The archive contains `control/` (CPython, Control and local converters),
+`components/qwen/`, optional `components/deepseek/`, `licenses/` and `bundle.json`.
+The latter records every payload file and source, dependency licenses and signing.
+The build adds pinned `gguf-py` plus `jsonschema`, `jsonschema-specifications`,
+`referencing`, `rpds-py` and `attrs` from
+[the dependency lock](.github/scripts/strata/dependencies.json). It removes
+experimental projection weights bundled by upstream; model acquisition belongs
+to the catalog plan. Neither build nor runtime setup invokes `pip install`.
+
+Upstream's hardened macOS Python rejects the added rpds wheel's Team ID. The
+candidate re-signs only the actual Python executable with the existing library
+validation entitlement and an ad-hoc development signature. Distribution signing
+and notarization remain release work. Deterministic tar metadata and provenance
+are tested; a rebuild refusing different bytes under the same output filename
+requires a new release id, not an overwrite.
+
+### Local core handoff and promotion
+
+Use absolute file URLs:
+
+```sh
+export ATOMIC_STRATA_MANIFEST_URL="file://<absolute-conf-path>/backends/strata-manifest.json"
+export ATOMIC_MODEL_CATALOG_URL="file://<absolute-conf-path>/models/catalog.json"
+```
+
+These documents can already be read locally. The catalog has Strata definitions,
+but the empty production manifest provides no installable engine. Do not point
+a runtime at the candidate inventory. Core can implement against the schema and
+inspect the local archive; an installable local manifest needs the assigned core
+version and a complete `variant.bundle` descriptor. The production schema accepts
+HTTPS archive URLs; a file URL override selects the **manifest**, not an exception
+to archive-source validation.
+
+Before promotion, assign `minimum_core_version`, finish the host checks for each
+included variant, assemble/inspect the relevant bundles and obtain the required
+Atomic runtime evidence. Publish assets only with separate operator authorization.
+Each production variant must describe the **complete repacked bundle** (URL,
+compressed/unpacked size, SHA-256, `bundle.json` hash, Python and component roots).
+Its component records retain upstream provenance; they are not independent
+installation targets. Never install raw upstream Control in place of this bundle.
+
+Any change to published bytes, component selection or compatibility metadata
+requires a new `release_id`. Changing preparation outputs also requires the
+appropriate preparation ABI/recipe update. Keep old releases immutable. Record
+`upstream-supported` for upstream claims and `atomic-qualified` only for actual
+Atomic execution evidence. Model descriptors and resource accounting are explained
+in [the Strata catalog contract](models/README.md#strata-contract).
+
+Focused checks (the aggregate `make validate` needs separate operator approval):
+
+```sh
+node --test .github/scripts/strata-manifest.test.mjs
+node --test .github/scripts/strata-catalog.test.mjs
+node --experimental-strip-types --test .github/scripts/strata-catalog-compat.test.mjs
+node .github/scripts/strata-manifest-check.mjs
+python3 -m unittest discover -s .github/scripts/strata -p test_package.py
+```
+
+For offline schema tests, set `AJV_CLI` to an installed
+`ajv-cli@5/dist/index.js`; otherwise the tests use `npx --yes ajv-cli@5`.

@@ -97,3 +97,46 @@ cache before intentionally refreshing moving Hub branches. A failure aborts cata
 Deploy the matching core before using the new upstream entries. No model weights are fetched
 by this maintenance script. Standalone embeddings, decision/transcription models and models
 for other NPU platforms are outside the current chat adapter.
+
+## Strata contract
+
+The optional `strata-models` collection references six `kind/format: strata`
+entries. The additional `strata-cuda-models` collection references 29
+`kind: strata-cuda`, `format: strata` profiles, including three NVFP4 packs.
+Older Strata readers retain the original collection without interpreting new
+profile shapes. Both collections live only in `catalog.json`; no standalone
+Strata model export is generated. The
+released core 0.21.2 reader ignores this unknown kind/collection, and the new
+conf reader returns an empty Strata collection when it is absent. A pinned
+snapshot protects every existing export and the pre-Strata catalog records.
+
+The initial recipes are Qwen3.8 IQ3_XXS with DFlash2, Qwen3.6 UD-Q4_K_XL with
+embedded MTP, and DeepSeek V4.1 2.00 bpw with DSpark and six active experts.
+Sources use immutable repository revisions. `source_path` locates the upstream
+file; `path` is the safe relative installation path. Every file has an exact size,
+SHA-256 and role. The plan includes shards, vision, draft/config/vocabulary,
+expert profiles and DeepSeek Engram metadata as required. Tokenizer and chat
+template come from the first pinned GGUF, rather than floating separate files.
+Evidence comes from immutable Hub LFS metadata and hashes of small source files;
+weights have not been downloaded or run by this change.
+
+`engine_release`, `preparation_abi` and `preparation_recipe_id` must agree with
+the core adapter and selected engine. Recipe ids select audited local core code,
+never arbitrary commands from catalog data. `compatible_variants` is an allowlist:
+Qwen3.6 excludes Metal/SYCL/Spark; DeepSeek excludes SYCL/CUDA12 and restricts AMD
+to the specified device families. Availability of a binary does not qualify a GPU.
+
+`requirements.download_bytes` is the exact sum of all source files. Disk accounting
+also includes derivatives, temporary work and the previous installation. RAM and
+VRAM are separate on discrete GPUs; unified memory is counted once. The pinned
+`resource_estimator` recipe in core calculates actual RAM/VRAM/disk bounds using
+the selected settings and hardware; `requires_core_check` prohibits treating
+download size as an install or load eligibility check. No guessed memory minima
+are provided. Qwen3.6 does not offer the SSD memory mode.
+
+Capabilities describe the recipe's upstream support and prerequisites (including
+the full JSON validator, verified draft/profile inputs and vision reader), not
+successful Atomic acceptance. All 35 profiles are marked `upstream-supported`.
+Promotion to `atomic-qualified` requires evidence for the exact bundle, model
+and backend. Assign a real core version and qualify the runtime before offering
+these candidate definitions as installable models.
