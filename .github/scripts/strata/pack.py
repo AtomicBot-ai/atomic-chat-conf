@@ -13,6 +13,7 @@ import tarfile
 import tempfile
 import urllib.request
 import zipfile
+import atomic_owner_patch
 from pathlib import Path, PurePosixPath
 
 HERE = Path(__file__).resolve().parent
@@ -62,7 +63,7 @@ def fetch(pin, cache):
     return target
 
 
-def extract(archive, destination):
+def extract(archive, destination, *, omit_terminfo=False):
     """Extract into a new directory. Validate the whole namespace before writing."""
     destination.mkdir(parents=True, exist_ok=False)
     if zipfile.is_zipfile(archive):
@@ -88,6 +89,10 @@ def extract(archive, destination):
         return
     with tarfile.open(archive) as t:
         members = t.getmembers()
+        if omit_terminfo:
+            # Standalone Linux Python ships a case-sensitive ncurses database. Control is noninteractive.
+            terminfo = PurePosixPath('python/share/terminfo')
+            members = [m for m in members if not PurePosixPath(m.name).is_relative_to(terminfo)]
         names = [safe_path(m.name.rstrip('/')) for m in members]
         if len({n.casefold() for n in names}) != len(names):
             raise ValueError('Duplicate archive path')
@@ -190,9 +195,10 @@ def build(variant_id, cache, out, candidate_path=CANDIDATE):
             if role in roles: raise ValueError('Duplicate component role')
             roles.append(role)
             dest = root / 'control' if role == 'control' else root / 'components' / role
-            extract(fetch(pin, cache), dest)
+            extract(fetch(pin, cache), dest, omit_terminfo=role == 'control' and variant['platform'].startswith('linux-'))
             sources.append({k: pin[k] for k in ('name', 'url', 'size', 'sha256')})
         if 'control' not in roles or 'qwen' not in roles: raise ValueError('Incomplete bundle')
+        patches = [atomic_owner_patch.apply(root / 'control')]
         # Upstream includes experimental projection weights. They belong to model acquisition, not the runtime.
         excluded = []
         for p in (root / 'control').rglob('*'):
@@ -233,7 +239,7 @@ def build(variant_id, cache, out, candidate_path=CANDIDATE):
             subprocess.run(['codesign', '--force', '--sign', '-', '--options', 'runtime', '--timestamp=none', '--entitlements', str(REPO / '.github/entitlements.plist'), str(binary)], check=True)
             subprocess.run(['codesign', '--verify', '--strict', str(binary)], check=True)
             signing = 'macos-python-ad-hoc-development'
-        provenance = {'schema_version': 1, 'release_id': candidate['release_id'], 'variant': variant_id, 'platform': variant['platform'], 'adapter_contract_version': 1, 'preparation_abi': candidate['preparation_abi'], 'sources': sources, 'dependencies': lock, 'excluded_model_files': excluded, 'python': python_path, 'roles': roles, 'signing': signing, 'qualification': 'candidate', 'files': inventory(root)}
+        provenance = {'schema_version': 1, 'release_id': candidate['release_id'], 'variant': variant_id, 'platform': variant['platform'], 'adapter_contract_version': 1, 'preparation_abi': candidate['preparation_abi'], 'sources': sources, 'patches': patches, 'dependencies': lock, 'excluded_model_files': excluded, 'python': python_path, 'roles': roles, 'signing': signing, 'qualification': 'candidate', 'files': inventory(root)}
         (root / 'bundle.json').write_bytes(json_bytes(provenance))
         name = f'{candidate["release_id"]}-{variant_id}.tar.gz'
         archive = Path(tmp) / name; archive_tree(root, archive)

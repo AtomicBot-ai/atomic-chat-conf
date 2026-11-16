@@ -15,8 +15,9 @@ const snapshot = read('.github/fixtures/strata/legacy-snapshot.json')
 const current = () => read('models/catalog.json')
 const withoutStrata = () => {
   const data = current()
-  for (const [id, model] of Object.entries(data.models)) if (model.kind === 'strata') delete data.models[id]
+  for (const [id, model] of Object.entries(data.models)) if (['strata', 'strata-cuda'].includes(model.kind)) delete data.models[id]
   delete data.collections['strata-models']
+  delete data.collections['strata-cuda-models']
   return data
 }
 
@@ -44,12 +45,21 @@ test('strata-catalog-compat: exact released core 0.21.2 reader accepts Strata an
 test('strata-catalog-compat: new reader accepts the old catalog without a Strata collection', () => {
   const data = validateCatalog(withoutStrata())
   assert.deepEqual(projectStrata(data), { schema_version: 1, models: [] })
-  assert.equal(projectStrata(validateCatalog(current())).models.length, 3)
+  assert.equal(projectStrata(validateCatalog(current())).models.length, 35)
 })
 
 test('strata-catalog-compat: documented file URLs read the real empty release manifest and candidate catalog', () => {
   const manifest = read(pathToFileURL(resolve('backends/strata-manifest.json')))
   assert.deepEqual(manifest.releases, [])
   const data = validateCatalog(read(pathToFileURL(resolve('models/catalog.json'))))
-  assert.equal(projectStrata(data).models.length, 3)
+  assert.equal(projectStrata(data).models.length, 35)
+})
+
+test('strata-catalog-compat: older Strata readers retain their six definitions', () => {
+  const data = current()
+  for (const ref of data.collections['strata-models'].entries) {
+    assert.equal(data.models[ref.model].kind, 'strata')
+  }
+  const projected = projectStrata({ ...data, collections: { 'strata-models': data.collections['strata-models'] } })
+  assert.equal(projected.models.length, 6)
 })

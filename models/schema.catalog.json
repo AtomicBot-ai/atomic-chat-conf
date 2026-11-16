@@ -45,7 +45,8 @@
               "prism",
               "audio",
               "fastflowlm",
-              "strata"
+              "strata",
+              "strata-cuda"
             ]
           },
           "definition": {
@@ -138,7 +139,7 @@
             "if": {
               "properties": {
                 "kind": {
-                  "const": "strata"
+                  "enum": ["strata", "strata-cuda"]
                 }
               }
             },
@@ -249,6 +250,9 @@
               }
             }
           }
+        },
+        "strata-cuda-models": {
+          "$ref": "#/properties/collections/properties/strata-models"
         },
         "strata-models": {
           "type": "object",
@@ -709,7 +713,10 @@
                   "draft-vocab",
                   "expert-profile",
                   "engram",
-                  "engram-metadata"
+                  "engram-metadata",
+                  "pack",
+                  "ple",
+                  "embedding"
                 ]
               }
             }
@@ -775,11 +782,25 @@
               "type": "string",
               "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
             },
+            "ple": {
+              "type": "string"
+            },
+            "embedding": {
+              "type": "string"
+            },
+            "pack_files": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
             "drafting": {
               "enum": [
                 "dflash2",
                 "mtp-embedded",
-                "dspark"
+                "dspark",
+                "none"
               ]
             },
             "experts_per_token": {
@@ -942,6 +963,13 @@
             "properties": {
               "family": {
                 "const": "qwen38"
+              },
+              "inputs": {
+                "properties": {
+                  "drafting": {
+                    "const": "dflash2"
+                  }
+                }
               }
             }
           },
@@ -981,6 +1009,13 @@
             "properties": {
               "family": {
                 "const": "deepseek41"
+              },
+              "inputs": {
+                "properties": {
+                  "drafting": {
+                    "const": "dspark"
+                  }
+                }
               }
             }
           },

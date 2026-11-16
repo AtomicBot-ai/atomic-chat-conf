@@ -69,6 +69,16 @@ class StrataPackageTests(unittest.TestCase):
             m = tarfile.TarInfo('dir/file'); m.size = 1; t.addfile(m, io.BytesIO(b'x'))
         with self.assertRaises(ValueError): pack.extract(archive, self.root / 'bad-link')
 
+    def test_linux_control_omits_unused_case_colliding_terminfo_only(self):
+        archive = self.root / 'control.tar'
+        with tarfile.open(archive, 'w') as t:
+            for name in ['python/share/terminfo/E/Eterm', 'python/share/terminfo/e/eterm', 'python/bin/python3']:
+                entry = tarfile.TarInfo(name); entry.size = 1; t.addfile(entry, io.BytesIO(b'x'))
+        unpacked = self.root / 'control'
+        pack.extract(archive, unpacked, omit_terminfo=True)
+        self.assertEqual((unpacked / 'python/bin/python3').read_bytes(), b'x')
+        self.assertFalse((unpacked / 'python/share/terminfo').exists())
+
     def test_cached_archive_is_verified_before_reuse(self):
         cache = self.root / 'cache'; cache.mkdir()
         pin = {'sha256': 'a' * 64, 'size': 3, 'url': 'https://example.invalid/test'}

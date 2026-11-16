@@ -3363,21 +3363,32 @@ before its own release.
 The separately validated `backends/strata-manifest.candidate.json` is input for
 packaging and core development, not an installable runtime manifest.
 
-Candidate `strata-0.1.59-r2` pins upstream release `v0.2.13`, all 24 selected
+Candidate `strata-0.1.59-r5` pins upstream release `v0.2.13`, all 24 selected
 Control/compute assets and 16 host variants. Linux x64 uses corrected Control
 `0.1.59.1`; other hosts use `0.1.59`. Compute is `0.1.59`. Documentation,
 Control and compute have separate full source commits; do not substitute one
 for another. Unknown Linux glibc and AMD driver floors remain explicit
 `pending_host_checks`, not guessed compatibility bounds.
 
-The macOS arm64 candidate has been repacked and inspected. Bundled CPython
+The r5 bundle applies the hash-recorded `atomic-external-owner-v3` Control overlay.
+Atomic-owned launches write a private receipt before creating each process and
+retain its start identity after exit. A dead compute or vision process is
+reported to Atomic without an automatic restart. On macOS, failure to create
+the owner-death watcher ends the compute process. Standalone Strata retains
+upstream behavior. The package probe requires `OWNER_CONTRACT == 3`.
+
+See [r5 owner ledger evidence](.github/fixtures/strata/macos-owner-ledger-evidence.json).
+Bundled CPython
 3.12.15 imports the preparation/structured-output dependencies, JSON Schema
 validation succeeds, and Control, Qwen and DeepSeek version probes exit
 successfully on macOS 26.6.2 arm64. This is **package smoke evidence**, not GPU
 inference, lifecycle or model-preparation qualification. See
 [the package evidence](.github/fixtures/strata/macos-package-evidence.json).
 Windows/Linux/Spark native probes and runtime/model qualification remain open.
-The catalog records three `upstream-supported` recipes; none is `atomic-qualified`.
+The catalog records 35 `upstream-supported` profiles across three recipe families;
+none is marked `atomic-qualified` in this data. Six profiles retain the original
+`strata-models` collection, and 29 additional CUDA profiles use the optional
+`strata-cuda-models` collection so older Strata readers keep their known inputs.
 
 ### Build one candidate
 

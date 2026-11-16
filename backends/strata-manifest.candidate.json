@@ -697,7 +697,7 @@
       ]
     }
   ],
-  "release_id": "strata-0.1.59-r2",
+  "release_id": "strata-0.1.59-r5",
   "engine_version": "0.1.59",
   "minimum_core_version": null,
   "adapter_contract_version": 1,
@@ -1270,20 +1270,20 @@
   },
   "packaged_candidates": [
     {
-      "archive": "strata-0.1.59-r2-macos-arm64-metal.tar.gz",
-      "bundle_manifest_sha256": "ba18883863866c71541dd0d4ca51a01d9dd4b7eacb3067f3963d781d628fd3ec",
+      "archive": "strata-0.1.59-r5-macos-arm64-metal.tar.gz",
+      "bundle_manifest_sha256": "cac044c21573dcb8744f5de1d1bdf8d3c10780d68f762b5181f137273d48370b",
       "python": "control/python/bin/python3",
       "qualification": "candidate",
-      "release_id": "strata-0.1.59-r2",
+      "release_id": "strata-0.1.59-r5",
       "schema_version": 1,
-      "sha256": "a1b7205a0cff2f0c01e32ec9d4a9ea944640a2b9f5fee15c4cf9a17408f7123f",
+      "sha256": "c08ac6dc5db20058c23478b205ed954c58c6192d8d3990cdff6293adba197591",
       "signing": "macos-python-ad-hoc-development",
-      "size": 59281782,
-      "unpacked_bytes": 174452258,
+      "size": 59283156,
+      "unpacked_bytes": 174457509,
       "variant": "macos-arm64-metal",
       "checks": [
         "bundled-python-imports",
-        "json-schema-validation",
+        "control-owner-contract",
         "control-version",
         "qwen-version",
         "deepseek-version"

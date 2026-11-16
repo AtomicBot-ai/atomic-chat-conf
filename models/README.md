@@ -100,8 +100,12 @@ for other NPU platforms are outside the current chat adapter.
 
 ## Strata contract
 
-The optional `strata-models` collection references `kind/format: strata` entries
-only in `catalog.json`; no standalone Strata model export is generated. The
+The optional `strata-models` collection references six `kind/format: strata`
+entries. The additional `strata-cuda-models` collection references 29
+`kind: strata-cuda`, `format: strata` profiles, including three NVFP4 packs.
+Older Strata readers retain the original collection without interpreting new
+profile shapes. Both collections live only in `catalog.json`; no standalone
+Strata model export is generated. The
 released core 0.21.2 reader ignores this unknown kind/collection, and the new
 conf reader returns an empty Strata collection when it is absent. A pinned
 snapshot protects every existing export and the pre-Strata catalog records.
@@ -132,7 +136,7 @@ are provided. Qwen3.6 does not offer the SSD memory mode.
 
 Capabilities describe the recipe's upstream support and prerequisites (including
 the full JSON validator, verified draft/profile inputs and vision reader), not
-successful Atomic acceptance. All three entries are `upstream-supported`.
+successful Atomic acceptance. All 35 profiles are marked `upstream-supported`.
 Promotion to `atomic-qualified` requires evidence for the exact bundle, model
 and backend. Assign a real core version and qualify the runtime before offering
 these candidate definitions as installable models.

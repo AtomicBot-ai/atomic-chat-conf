@@ -72,8 +72,20 @@ test('strata-catalog: Qwen3.6/Metal and DeepSeek/SYCL are rejected before acquis
 test('strata-catalog: wrong recipe/build, absent collection and invalid collection references', () => {
   const model = sample('qwen38'); model.definition.engine_release = 'strata-0.1.58-r1'
   assert.throws(() => validateStrataModel(model, candidate), /model\/build/)
-  const old = catalog(); delete old.collections['strata-models']
+  const old = catalog(); delete old.collections['strata-models']; delete old.collections['strata-cuda-models']
   assert.deepEqual(projectStrata(old), { schema_version: 1, models: [] })
   const bad = catalog(); bad.collections['strata-models'].entries[0].variant = 'unknown'
   assert.throws(() => projectStrata(bad), /collection reference/)
+})
+
+test('strata-catalog: CUDA includes the full upstream menu and all three NVFP4 options', () => {
+  const models = projectStrata(catalog(), candidate).models
+  for (const kind of ['linux', 'windows']) {
+    const visible = version => models.filter(d => d.compatible_variants.includes(`${kind}-x64-cuda${version}`))
+    assert.equal(visible(13).length, 35)
+    assert.equal(visible(12).length, 28)
+    assert.equal(visible(13).filter(d => d.family === 'deepseek41').length, 7)
+    assert.equal(visible(13).filter(d => d.variant_id.startsWith('nvfp4-')).length, 3)
+  }
+  assert.equal(models.filter(d => d.compatible_variants.includes('macos-arm64-metal')).length, 4)
 })
