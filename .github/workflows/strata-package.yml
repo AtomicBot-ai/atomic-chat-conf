@@ -26,23 +26,52 @@ on:
           - windows-x64-rdna3-deepseek
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   package:
+    if: inputs.variant == 'macos-arm64-metal' || inputs.variant == 'linux-x64-cuda13' || inputs.variant == 'windows-x64-cuda13'
     runs-on: ${{ startsWith(inputs.variant, 'macos-') && 'macos-latest' || startsWith(inputs.variant, 'windows-') && 'windows-latest' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Assemble one pinned candidate
+      - name: Import macOS release signing identity
+        if: inputs.variant == 'macos-arm64-metal'
+        env:
+          CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          cert="$RUNNER_TEMP/strata-signing.p12"
+          keychain="$RUNNER_TEMP/strata-signing.keychain-db"
+          password=$(openssl rand -base64 24)
+          printf '%s' "$CERTIFICATE" | base64 --decode -o "$cert"
+          security create-keychain -p "$password" "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security import "$cert" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security list-keychains -d user -s "$keychain"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$password" "$keychain"
+          identity=$(security find-identity -v -p codesigning "$keychain" | awk '/Developer ID Application/ {print $2; exit}')
+          test -n "$identity"
+          printf 'STRATA_CODESIGN_IDENTITY=%s\n' "$identity" >> "$GITHUB_ENV"
+      - name: Assemble one pinned release variant
+        id: package
         shell: bash
         env:
           STRATA_VARIANT: ${{ inputs.variant }}
-        run: python .github/scripts/strata/pack.py --variant "$STRATA_VARIANT" --cache "$RUNNER_TEMP/strata-cache" --out "$RUNNER_TEMP/strata-out"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: strata-${{ inputs.variant }}-candidate
-          path: ${{ runner.temp }}/strata-out/*
-          if-no-files-found: error
+        run: |
+          set -euo pipefail
+          case "$STRATA_VARIANT" in
+            macos-arm64-metal) version=(--release-id strata-0.1.59-r7) ;;
+            windows-x64-cuda13) version=(--release-id strata-0.1.59-r6) ;;
+            linux-x64-cuda13) version=() ;;
+            *) exit 2 ;;
+          esac
+          python .github/scripts/strata/pack.py --variant "$STRATA_VARIANT" "${version[@]}" --cache "$RUNNER_TEMP/strata-cache" --out "$RUNNER_TEMP/strata-out"
+      - name: Upload the archive and receipt to the backend draft
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload strata-0.1.59-runtime-preview "$RUNNER_TEMP"/strata-out/*.tar.gz "$RUNNER_TEMP"/strata-out/*.json

@@ -63,7 +63,7 @@ def fetch(pin, cache):
     return target
 
 
-def extract(archive, destination, *, omit_terminfo=False):
+def extract(archive, destination, *, omit_terminfo=False, gguf_only=False):
     """Extract into a new directory. Validate the whole namespace before writing."""
     destination.mkdir(parents=True, exist_ok=False)
     if zipfile.is_zipfile(archive):
@@ -71,6 +71,9 @@ def extract(archive, destination, *, omit_terminfo=False):
             records = []
             for m in z.infolist():
                 name = safe_path(m.filename.rstrip('/'))
+                relative = PurePosixPath(name).parts[1:]
+                if gguf_only and (not relative or relative[0] not in ('LICENSE', 'gguf-py')):
+                    continue
                 mode = m.external_attr >> 16
                 if mode & 0o170000 == 0o120000:
                     raise ValueError('ZIP symlinks are not supported')
@@ -178,12 +181,14 @@ def check_payload(root, roles, platform):
     return 'control/' + python
 
 
-def build(variant_id, cache, out, candidate_path=CANDIDATE):
+def build(variant_id, cache, out, candidate_path=CANDIDATE, *, release_id=None, codesign_identity=None):
     candidate = json.loads(candidate_path.read_text())
     if candidate['dependency_lock']['sha256'] != digest(LOCK):
         raise ValueError('Candidate dependency lock digest differs')
     lock = json.loads(LOCK.read_text())
     variant = next(v for v in candidate['variants'] if v['id'] == variant_id)
+    if release_id is not None:
+        candidate['release_id'] = release_id
     assets = {a['name']: a for a in candidate['assets']}
     out.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=out) as tmp:
@@ -218,7 +223,7 @@ def build(variant_id, cache, out, candidate_path=CANDIDATE):
                 if (site / p.name).exists(): raise ValueError(f'Python dependency already exists: {p.name}')
                 shutil.move(p, site / p.name)
         gguf = lock['gguf_source']
-        unpack = Path(tmp) / 'llama-source'; extract(fetch(gguf, cache), unpack)
+        unpack = Path(tmp) / 'llama-source'; extract(fetch(gguf, cache), unpack, gguf_only=True)
         source_root = next(unpack.iterdir())
         gguf_dest = root / 'control/third_party/llama.cpp/gguf-py'
         gguf_dest.parent.mkdir(parents=True)
@@ -236,9 +241,15 @@ def build(variant_id, cache, out, candidate_path=CANDIDATE):
             # Upstream Python's hardened runtime rejects the added rpds wheel's Team ID.
             # This is a local candidate signature, never a distribution/notarization claim.
             binary = (root / python_path).resolve()
-            subprocess.run(['codesign', '--force', '--sign', '-', '--options', 'runtime', '--timestamp=none', '--entitlements', str(REPO / '.github/entitlements.plist'), str(binary)], check=True)
+            timestamp = '--timestamp' if codesign_identity else '--timestamp=none'
+            subprocess.run(['codesign', '--force', '--sign', codesign_identity or '-', '--options', 'runtime', timestamp, '--entitlements', str(REPO / '.github/entitlements.plist'), str(binary)], check=True)
             subprocess.run(['codesign', '--verify', '--strict', str(binary)], check=True)
-            signing = 'macos-python-ad-hoc-development'
+            signing = 'macos-python-developer-id' if codesign_identity else 'macos-python-ad-hoc-development'
+        if variant['platform'] == 'windows-x64' and release_id:
+            # The current core archive validator rejects '+' in path segments.
+            for path in (root / 'control/python/tcl/tcl8.6/tzdata').rglob('GMT+*'):
+                if path.is_file():
+                    path.unlink()
         provenance = {'schema_version': 1, 'release_id': candidate['release_id'], 'variant': variant_id, 'platform': variant['platform'], 'adapter_contract_version': 1, 'preparation_abi': candidate['preparation_abi'], 'sources': sources, 'patches': patches, 'dependencies': lock, 'excluded_model_files': excluded, 'python': python_path, 'roles': roles, 'signing': signing, 'qualification': 'candidate', 'files': inventory(root)}
         (root / 'bundle.json').write_bytes(json_bytes(provenance))
         name = f'{candidate["release_id"]}-{variant_id}.tar.gz'
@@ -257,5 +268,7 @@ if __name__ == '__main__':
     parser.add_argument('--variant', required=True)
     parser.add_argument('--cache', required=True, type=Path)
     parser.add_argument('--out', required=True, type=Path)
+    parser.add_argument('--release-id', choices=('strata-0.1.59-r6', 'strata-0.1.59-r7'))
     args = parser.parse_args()
-    build(args.variant, args.cache, args.out)
+    build(args.variant, args.cache, args.out, release_id=args.release_id,
+          codesign_identity=os.environ.get('STRATA_CODESIGN_IDENTITY'))
