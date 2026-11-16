@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto'
 import { parseAtomicModelCatalog, projectAtomicModelCollection } from '../fixtures/fastflowlm/legacy-model-catalog.ts'
 import { validateCatalog, projectCollection } from './model-catalog.mjs'
 import { projectStrata } from './strata-catalog.mjs'
+import { checkStrataManifest } from './strata-manifest-check.mjs'
 import { canonicalJSON } from './runtime-descriptor-immutability.mjs'
 
 const read = path => JSON.parse(readFileSync(path, 'utf8'))
@@ -48,9 +49,10 @@ test('strata-catalog-compat: new reader accepts the old catalog without a Strata
   assert.equal(projectStrata(validateCatalog(current())).models.length, 35)
 })
 
-test('strata-catalog-compat: documented file URLs read the real empty release manifest and candidate catalog', () => {
+test('strata-catalog-compat: documented file URLs read the production manifest and catalog', () => {
   const manifest = read(pathToFileURL(resolve('backends/strata-manifest.json')))
-  assert.deepEqual(manifest.releases, [])
+  assert.ok(manifest.releases.length > 0)
+  assert.deepEqual(checkStrataManifest(manifest), [])
   const data = validateCatalog(read(pathToFileURL(resolve('models/catalog.json'))))
   assert.equal(projectStrata(data).models.length, 35)
 })
