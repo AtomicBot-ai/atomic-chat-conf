@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.mobile.json",
   "schema_version": 1,
-  "updated_at": "2026-11-02T01:01:07Z",
+  "updated_at": "2026-11-17T20:40:03Z",
   "models": [
     {
       "id": "LiquidAI/LFM2.5-VL-3B-GGUF/LFM2.5-VL-3B-Q4_0.gguf",
@@ -450,14 +450,14 @@
       "isOnboarding": false
     },
     {
-      "id": "mlx-community/Qwen3-0.6B-4bit",
-      "name": "Qwen 3 (0.6B) · MLX",
-      "description": "Local text model running on the Apple GPU. Physical iPhone or iPad with iOS 26+. Compact 4-bit weights for everyday chat.",
-      "size": 351383618,
+      "id": "mlx-community/Qwen3.5-2B-4bit",
+      "name": "Qwen 3.5 (2B) · MLX",
+      "description": "A compact text model for everyday chat on the Apple GPU. 4-bit MLX weights. Physical iPhone or iPad with iOS 26+.",
+      "size": 1749079691,
       "iconUrl": "qwen",
       "engine": "mlx",
       "mmprojRemoteId": null,
-      "supportsThinking": false,
+      "supportsThinking": true,
       "badges": [
         {
           "label": "MLX",
@@ -466,6 +466,10 @@
         {
           "label": "4-bit",
           "tone": "gray"
+        },
+        {
+          "label": "thinking",
+          "tone": "purple"
         }
       ],
       "categories": [
@@ -478,14 +482,14 @@
       "isOnboarding": false
     },
     {
-      "id": "mlx-community/Qwen3-1.7B-4bit",
-      "name": "Qwen 3 (1.7B) · MLX",
-      "description": "Local text model running on the Apple GPU. Physical iPhone or iPad with iOS 26+. Compact 4-bit weights for everyday chat.",
-      "size": 984013244,
+      "id": "mlx-community/Qwen3.5-4B-4bit",
+      "name": "Qwen 3.5 (4B) · MLX",
+      "description": "A larger text model for the Apple GPU. 4-bit MLX weights; requires more free memory than the smaller variants. Physical iPhone or iPad with iOS 26+.",
+      "size": 3061129077,
       "iconUrl": "qwen",
       "engine": "mlx",
       "mmprojRemoteId": null,
-      "supportsThinking": false,
+      "supportsThinking": true,
       "badges": [
         {
           "label": "MLX",
@@ -494,38 +498,73 @@
         {
           "label": "4-bit",
           "tone": "gray"
-        }
-      ],
-      "categories": [
-        "general",
-        "compact"
-      ],
-      "platforms": [
-        "ios"
-      ],
-      "isOnboarding": false
-    },
-    {
-      "id": "mlx-community/Qwen3-4B-4bit",
-      "name": "Qwen 3 (4B) · MLX",
-      "description": "Local text model running on the Apple GPU. Physical iPhone or iPad with iOS 26+. Requires more free memory than the smaller variants.",
-      "size": 2278969756,
-      "iconUrl": "qwen",
-      "engine": "mlx",
-      "mmprojRemoteId": null,
-      "supportsThinking": false,
-      "badges": [
-        {
-          "label": "MLX",
-          "tone": "purple"
         },
         {
-          "label": "4-bit",
-          "tone": "gray"
+          "label": "thinking",
+          "tone": "purple"
         }
       ],
       "categories": [
         "general"
+      ],
+      "platforms": [
+        "ios"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "mlx-community/gemma-4-e2b-it-4bit",
+      "name": "Gemma 4 E2B · MLX",
+      "description": "Google Gemma 4 for text chat on the Apple GPU. 4-bit MLX weights; requires more free memory than compact models. Physical iPhone or iPad with iOS 26+.",
+      "size": 3583086498,
+      "iconUrl": "google",
+      "engine": "mlx",
+      "mmprojRemoteId": null,
+      "supportsThinking": true,
+      "badges": [
+        {
+          "label": "MLX",
+          "tone": "purple"
+        },
+        {
+          "label": "4-bit",
+          "tone": "gray"
+        },
+        {
+          "label": "thinking",
+          "tone": "purple"
+        }
+      ],
+      "categories": [
+        "general"
+      ],
+      "platforms": [
+        "ios"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "mlx-community/Qwen3.5-0.8B-4bit",
+      "name": "Qwen 3.5 (0.8B) · MLX",
+      "description": "A lightweight text model for quick, simple conversations on the Apple GPU. 4-bit MLX weights. Physical iPhone or iPad with iOS 26+.",
+      "size": 652027143,
+      "iconUrl": "qwen",
+      "engine": "mlx",
+      "mmprojRemoteId": null,
+      "supportsThinking": false,
+      "badges": [
+        {
+          "label": "MLX",
+          "tone": "purple"
+        },
+        {
+          "label": "4-bit",
+          "tone": "gray"
+        }
+      ],
+      "categories": [
+        "general",
+        "compact"
       ],
       "platforms": [
         "ios"
