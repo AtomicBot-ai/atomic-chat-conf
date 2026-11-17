@@ -1,0 +1,169 @@
+{
+  "kind": "fastflowlm",
+  "format": "fastflowlm",
+  "definition": {
+    "model_id": "lfm2.5-1.2b-thinking",
+    "variant_id": "lfm2.5-1.2b-thinking-npu2",
+    "name": "LFM2.5-1.2B-Thinking (FastFlowLM NPU2 candidate)",
+    "checkpoint": "lfm2.5-tk:1.2b",
+    "minimum_flm_version": "flm-1.0.11-r1",
+    "local_only_protocol": 1,
+    "npu_generation": "xdna2",
+    "context_length": 32768,
+    "license": "LicenseRef-LFM-Open-1.0 AND LicenseRef-FastFlowLM-NPU-Binary",
+    "gated": false,
+    "capabilities": {
+      "chat": true,
+      "tools": false,
+      "reasoning": false,
+      "structured_output": false
+    },
+    "sources": [
+      {
+        "id": "flm",
+        "repo": "FastFlowLM/LFM2.5-1.2B-Thinking-NPU2",
+        "revision": "2c6b0a07d5c05b9996a5588ae207a68ded6fa25c"
+      },
+      {
+        "id": "flm-kernels",
+        "host": "github",
+        "repo": "ROCm/FastFlowLM",
+        "revision": "f37cdd29edc777cf3db1e385da8e7bfadc57d0b3"
+      },
+      {
+        "id": "license",
+        "repo": "LiquidAI/LFM2.5-1.2B-Thinking",
+        "revision": "fa4681e33c27d2861d1eacc9d29ccb68840344a0"
+      }
+    ],
+    "files": [
+      {
+        "source": "license",
+        "source_path": "LICENSE",
+        "path": "LICENSE",
+        "size": 10596,
+        "sha256": "5188f2b355da20647257a3156db5834c794e5fb5e6d8dc4d4cdbb3180e75b85b"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "LICENSE_BINARY.txt",
+        "path": "LICENSE_BINARY.txt",
+        "size": 978,
+        "sha256": "40f10a537b3a783a00531b2e6889b3456b3182e2dbbc3d16bfaab9cb83b87abc"
+      },
+      {
+        "source": "flm",
+        "source_path": "README.md",
+        "path": "README.md",
+        "size": 17312,
+        "sha256": "580103e696e8e5b02f7fe2787cba129827918635d3e3379b7cd6ebc3743687ed"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/LFM2.5-1.2B-Thinking-NPU2/attn.xclbin",
+        "path": "attn.xclbin",
+        "size": 373564,
+        "sha256": "6716177bbafa32195517ca1f8ee65b5ee8ea1b5e95c7a9bc4bbe5c15e246e082"
+      },
+      {
+        "source": "flm",
+        "source_path": "chat_template.jinja",
+        "path": "chat_template.jinja",
+        "size": 1792,
+        "sha256": "2120efc57a710a80a5a38a05b9dfed1fbb840a0ff900de613e82bdf1468f3029"
+      },
+      {
+        "source": "flm",
+        "source_path": "config.json",
+        "path": "config.json",
+        "size": 1130,
+        "sha256": "d39393ea2785ad39e24399a4eaaed88705dffde83665e43784333f73608f7991"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/LFM2.5-1.2B-Thinking-NPU2/conv.xclbin",
+        "path": "conv.xclbin",
+        "size": 118476,
+        "sha256": "88dbb8bb33a14b836707a8023be23e249a0c42ec879c0a48ede61336e708b371"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/LFM2.5-1.2B-Thinking-NPU2/dequant.xclbin",
+        "path": "dequant.xclbin",
+        "size": 112524,
+        "sha256": "122f128af9bdad35ad72fe5a77639b8bfad24501e9b2a65fb82203f2baf538f9"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/LFM2.5-1.2B-Thinking-NPU2/layer.xclbin",
+        "path": "layer.xclbin",
+        "size": 418428,
+        "sha256": "91ffab252f5eef439849cef98ea2fa1843f862f1fc7af5d00dfb2e2092c3ed9b"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/LFM2.5-1.2B-Thinking-NPU2/mm.xclbin",
+        "path": "mm.xclbin",
+        "size": 512220,
+        "sha256": "4afc2a6f2459c0ddcf7de61193a6e83e53a951a0f6c33521456d569bab2c7142"
+      },
+      {
+        "source": "flm",
+        "source_path": "model.q4nx",
+        "path": "model.q4nx",
+        "size": 1000093016,
+        "sha256": "b9c4bacba8ed7251acc0dced95b2f145b7fe20bf837e3ac69ebb8851687ee2db"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer.json",
+        "path": "tokenizer.json",
+        "size": 4733389,
+        "sha256": "df1d8d5ec5d091b460562ffd545e4a5e91d17d4a0db7ebe733be34ed374377bd"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer_config.json",
+        "path": "tokenizer_config.json",
+        "size": 92282,
+        "sha256": "d9dae89317bba34e05aa8fff771f87ebbe604bb176450dd9f9ee8abe2971ec45"
+      }
+    ],
+    "components": {
+      "weights": [
+        "model.q4nx"
+      ],
+      "tokenizer": [
+        "tokenizer.json",
+        "tokenizer_config.json"
+      ],
+      "config": [
+        "config.json"
+      ],
+      "chat_template": [
+        "chat_template.jinja"
+      ],
+      "kernels": [
+        "attn.xclbin",
+        "conv.xclbin",
+        "dequant.xclbin",
+        "layer.xclbin",
+        "mm.xclbin"
+      ],
+      "metadata": [
+        "LICENSE",
+        "LICENSE_BINARY.txt",
+        "README.md"
+      ]
+    },
+    "qualification": {
+      "status": "candidate",
+      "evidence": []
+    }
+  },
+  "variants": {
+    "lfm2.5-1.2b-thinking-npu2": {
+      "selection": "all-required-files"
+    }
+  }
+}

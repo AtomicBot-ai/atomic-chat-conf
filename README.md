@@ -61,6 +61,7 @@ backends/
   audiocpp-manifest.staging.json # audio.cpp candidate slot: test builds, then audiocpp-approve.yml
   audiocpp-schema.json     # JSON Schema (Draft-07) for the audio.cpp manifest
   mlx-manifest.json        # The pinned mlx-server build (read by core and the desktop Makefile)
+  mlx-manifest.staging.json # The MLX candidate slot (mirror-mlx.yml, mlx-approve.yml)
   mlx-schema.json          # JSON Schema (Draft-07) for the MLX manifest
   foundry-local-manifest.json # microsoft/foundry-local releases (read by core)
   foundry-local-schema.json   # JSON Schema (Draft-07) for the Foundry Local manifest
@@ -93,7 +94,7 @@ app/
   workflows/sdcpp-approve.yml   # Moves a checked sd.cpp build from staging to the live manifest
   workflows/mirror-audiocpp.yml # Mirrors + signs an audio.cpp build from the Atomic fork into the staging manifest
   workflows/audiocpp-approve.yml # Moves a checked audio.cpp build from staging to the live manifest
-  actions/windows-code-sign/    # Authenticode signing via DigiCert KeyLocker
+  actions/windows-code-sign/    # Authenticode signing with the Azure Key Vault HSM key (AzureSignTool, OIDC)
   scripts/mirror.mjs            # Asset whitelist + manifest generation
   scripts/upstream-releases.mjs # Release list upkeep: add, approve, promote, withdraw, prune, check
   scripts/prism-manifest.mjs    # PrismML release list: latest, add, gate, approve, withdraw, check
@@ -270,6 +271,8 @@ provider or new model never requires a bump.
 
 ## Recommended models
 
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
+
 [`models/recommended.json`](models/recommended.json) drives the **Recommended**
 section in two places of the Atomic Chat client:
 
@@ -358,18 +361,16 @@ arbitrary context lengths. Refresh the evidence when rotating these choices.
 
 ### How to add or update a recommendation
 
-1. Open [`models/recommended.json`](models/recommended.json) on GitHub.
-2. Click the pencil icon ("Edit").
-3. Append (or modify) an entry following the shape above.
-4. Bump `updated_at` to today (`YYYY-MM-DDTHH:MM:SSZ`).
-5. Commit to a new branch and open a Pull Request.
-6. Wait for CI ("Validate registry") to pass — it runs the JSON Schema
-   plus a duplicate-entry check against `models/recommended.json`.
-7. Request a review and merge.
+1. Edit the model/variant in `models/catalog.json` and reference its ID in the `recommended` collection.
+2. Bump the canonical catalog's `updated_at` and regenerate compatibility exports with `node .github/scripts/export-model-catalog.mjs`.
+3. Run `make validate`, review the canonical diff and generated exports, then open a Pull Request.
+4. Request a review and merge after CI passes. Do not independently edit the deprecated `models/recommended.json` export.
 
 All running Atomic Chat clients pick up the change within an hour.
 
 ## Staff picks
+
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
 
 [`models/staff-picks.json`](models/staff-picks.json) drives the **Staff picks**
 list that the Hub screen (`/hub`) shows by default, before the user types a
@@ -427,6 +428,8 @@ bump `updated_at`, open a PR, wait for the "Validate registry" workflow.
 
 ## Decision models
 
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
+
 `models/decision.json` lists the decision models of the Hub's Decision
 category: models that answer typed questions (`choice`, `score`, `noul`) about
 a state in one forward pass, served on `/v1/systemone`. The app downloads every
@@ -467,11 +470,29 @@ then the `icon` value here.
 
 ## Audio models
 
-`models/audio.json` lists the local speech, music and sound-effect models for audio.cpp, validated by
-`models/schema.audio.json` and `.github/scripts/audio-catalog-check.mjs`. Clients read it from `main`
-(1 h TTL) and send each model's `family`, `task` and options in the load request; the core has no
+The local speech, music and sound-effect models for audio.cpp are the `kind: "audio"` entries of
+[`models/catalog.json`](models/catalog.json), listed by its `audio` collection. Edit them there only:
+`models/audio.json` is their generated export (see [model catalog ownership](models/README.md)). A
+client projects the `audio` collection, with the core's `projectAtomicModelCollection` or from the
+export, and sends each model's `family`, `task` and options in the load request; the core has no
 catalog of its own. Files are pinned by `revision`, `bytes` and `sha256`, and client downloads go to
 `<data>/audio/models/<filename>`.
+
+An entry is keyed `audio:<id>`, has `format: "gguf"`, `engines: ["audio-cpp"]`, and the variants
+`default` (`all-required-files`) plus one per quant whose `selection` is the quant's `id`.
+`icon` is the developer's logo key (`qwen`, `openmoss`, `acestep`, `stability`; a client
+without the key shows a generic mark) and `description` is one line for a model picker, at most 80
+characters. `.github/scripts/audio-catalog-check.mjs` checks these and what follows; `models/schema.audio.json`
+checks the export. To add a model or move one to a newer commit of its repository:
+
+```sh
+node .github/scripts/refresh-model-catalog.mjs audio:<id> audio-cpp/audio.cpp-gguf <full commit>
+node .github/scripts/export-model-catalog.mjs
+make validate
+```
+
+The refresh reads `bytes` and `sha256` of every quant from that commit; a new entry needs its quants'
+`path` and `filename` first.
 
 `controls`, `defaults` and `ranges` say which form fields a client shows before the model is loaded.
 `attribution` is text a client must show with the model: Stable Audio's license asks for
@@ -482,6 +503,8 @@ Our audio.cpp builds leave out eSpeak-ng, which is GPL, so the check refuses mod
 it, such as Kokoro and Piper.
 
 ## Embedding models
+
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
 
 `models/embedding.json` lists the embedding models of the Hub's Embedding
 category: models that turn an input into a vector, served on the Local API
@@ -619,9 +642,12 @@ is what a tag we have not mirrored has to do.
   own, already signed by NVIDIA, and mirroring them would triple the size of
   every release for no gain).
 - Windows (x64 and arm64), Linux (x64 and arm64) and `macos-arm64` assets are
-  listed. Linux arm64 is CPU, Vulkan and CUDA 13; the Snapdragon build is not
+  listed. Windows arm64 is CPU, OpenCL (Adreno), Vulkan and CUDA 13; Linux
+  arm64 is CPU, Vulkan and CUDA 13; Linux x64 is CPU, Vulkan, ROCm and CUDA
+  (every toolkit upstream ships, 12.x and 13.x). ROCm is matched by version
+  pattern on both platforms. The Snapdragon, SYCL and OpenVINO builds are not
   mirrored. The Linux CUDA companion carries the tag in its name
-  (`cudart-llama-<tag>-bin-ubuntu-cuda-<toolkit>-arm64.tar.gz`). macOS used to be
+  (`cudart-llama-<tag>-bin-ubuntu-cuda-<toolkit>-<arch>.tar.gz`). macOS used to be
   bundled-only and was deliberately omitted; it now resolves from this
   manifest like the other platforms, so an engine update reaches macOS users
   without an Atomic Chat release. The client still ships a bundled macOS build
@@ -708,7 +734,7 @@ make verify-release TAG=b10405  # check the published macOS asset's signature
 
 [`.github/workflows/mirror-upstream.yml`](.github/workflows/mirror-upstream.yml)
 downloads the whitelisted assets from ggml-org, signs the Windows binaries
-with DigiCert KeyLocker and the macOS binaries with our Developer ID
+with our DigiCert code signing key in Azure Key Vault and the macOS binaries with our Developer ID
 (hardened runtime, secure timestamp), repacks each archive with its original
 layout, publishes them under the upstream tag, then lists the tag in the
 release list as a candidate, with a `sha256` per archive, and commits it to
@@ -724,9 +750,14 @@ archive, and clients already hold the old hashes. Older mirrored releases are
 pruned (`RETAIN=3` by default), except the ones the release list still offers
 and the one `backends/manifest.json` names.
 
-Required secrets: `SM_API_KEY`, `SM_CLIENT_CERT_FILE_B64`,
-`SM_CLIENT_CERT_PASSWORD` (Windows), `APPLE_CERTIFICATE`,
-`APPLE_CERTIFICATE_PASSWORD` (macOS). The temporary keychain the macOS job
+Windows signing needs no secret: the `sign-windows` jobs run in the
+`codesign` environment, sign in to Azure through GitHub OIDC (the Entra app's
+federated credential is bound to that environment) and read `AZURE_CLIENT_ID`,
+`AZURE_TENANT_ID`, `AZURE_KEY_VAULT` and `AZURE_CODESIGN_CERT` from its
+variables. The key is a non-exportable RSA-HSM key in Key Vault Premium; the
+app holds Key Vault Crypto User and Key Vault Certificate User on that vault
+only. Required secrets: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`
+(macOS). The temporary keychain the macOS job
 creates gets a password generated on the runner, so that one is not a secret.
 
 ### How to update the backends manifest
@@ -861,7 +892,7 @@ upstream llama.cpp does not load). Schema:
 - PrismML ships its macOS binaries ad-hoc-signed and its Windows binaries
   unsigned, so they are mirrored and signed like upstream llama.cpp and
   sd.cpp: [`mirror-prism.yml`](.github/workflows/mirror-prism.yml) signs the
-  Windows binaries (DigiCert KeyLocker, after dropping every tool but
+  Windows binaries (Azure Key Vault key, after dropping every tool but
   `llama-server`) and the macOS ones (Developer ID, hardened runtime),
   publishes the desktop archives as a release here under the PrismML tag and
   lists them with their own `sha256`. Linux archives and the cudart companions
@@ -1154,26 +1185,35 @@ manifests name.
 ## MLX server manifest
 
 [`backends/mlx-manifest.json`](backends/mlx-manifest.json) pins the one
-`mlx-server` build Atomic Chat runs MLX models with on Apple Silicon: a
-release of the `AtomicBot-ai/mlx-vlm` fork. Schema:
+`mlx-server` build Atomic Chat runs MLX models with on Apple Silicon. Builds
+come from the `AtomicBot-ai/mlx-vlm` fork, which builds a
+[Neywa-Labs/mlx-vlm](https://github.com/Neywa-Labs/mlx-vlm) release tag with
+its patch series, signs the binary with the Developer ID and notarizes it.
+[`mirror-mlx.yml`](.github/workflows/mirror-mlx.yml) copies such a build into
+a release here; the manifest points at that copy. Schema:
 [`backends/mlx-schema.json`](backends/mlx-schema.json).
 
 ```json
 {
   "$schema": "./mlx-schema.json",
-  "upstream_repo": "AtomicBot-ai/mlx-vlm",
-  "tag_name": "mlxvlm-macos-arm64-07ba5a1",
-  "published_at": "2026-08-28T10:38:38Z",
+  "upstream_repo": "AtomicBot-ai/atomic-chat-conf",
+  "tag_name": "mlxvlm-macos-arm64-a1b2c3d",
+  "upstream_tag": "v0.7.12",
+  "published_at": "2026-11-12T10:00:00Z",
   "assets": [
     {
       "backend": "macos-arm64",
       "name": "mlxvlm-mlx-server-macos-arm64.tar.gz",
-      "sha256": "cce16896300c340da22e34ce007b2da081d2f9b8d156d8dd61bf7fc3700f9d88",
-      "size": 210514030
+      "sha256": "…",
+      "size": 287000000
     }
   ]
 }
 ```
+
+[`backends/mlx-manifest.staging.json`](backends/mlx-manifest.staging.json) is
+the candidate slot, in the same form: `mirror-mlx.yml` writes it, core's
+`engine-candidate` checks it, `mlx-approve.yml` copies it into the live one.
 
 ### Who reads it
 
@@ -1187,49 +1227,77 @@ release of the `AtomicBot-ai/mlx-vlm` fork. Schema:
   writes `{tag, published_at}` next to the binary so core can compare the
   bundled build with downloaded ones. `MLX_MANIFEST=<file>` points it at a
   local copy.
+- **The hatchet pipeline** compares new Neywa-Labs/mlx-vlm releases with
+  `upstream_tag`.
 
 Because core reads `main` directly, **merging a newer `published_at` offers
 that build as an update to every running client** within about an hour.
 
 ### Fields
 
-- `tag_name` — the fork's release tag, `mlxvlm-macos-arm64-<commit>`. The
-  commit hash says nothing about order.
+- `upstream_repo` — the repository whose release holds the archive: this one
+  for a mirrored build, `AtomicBot-ai/mlx-vlm` for the builds before
+  `mirror-mlx.yml`. The download URL is
+  `https://github.com/<upstream_repo>/releases/download/<tag_name>/<name>`.
+- `tag_name` — `mlxvlm-macos-arm64-<commit>`, the fork commit the build was
+  made at. Released cores accept no other form. The commit hash says nothing
+  about order.
+- `upstream_tag` (optional) — the Neywa-Labs/mlx-vlm release the build is
+  based on. Clients ignore it.
 - `published_at` — the release's `publishedAt` on GitHub. This is the version
   order: clients treat a build as an update only when it was published
   strictly later than the active one, so rolling the manifest back to an older
-  release never downgrades anyone.
+  release never downgrades anyone. A bad build is fixed by a newer one.
 - `assets` — exactly one archive, `backend: "macos-arm64"`. `sha256` and
-  `size` are mandatory: the archive is downloaded straight from the fork's
-  GitHub release, not mirrored here, so the pinned hash is the only check on
-  what gets executed. `sha256` is the asset's GitHub `digest` without the
-  `sha256:` prefix.
+  `size` are mandatory: the pinned hash is the only check on what gets
+  executed. `sha256` is the asset's GitHub `digest` without the `sha256:`
+  prefix.
 
 ### The referenced release is never deleted or re-uploaded
 
-The `AtomicBot-ai/mlx-vlm` release that `backends/mlx-manifest.json` on `main`
-points at **must not be deleted, and its asset must not be re-uploaded**.
-Deleting it breaks every MLX install and every desktop build (404); re-uploading
-the archive changes its hash, so every install and build fails the `sha256`
-check. To ship a different build, publish a new release and repoint the
-manifest. Once `main` points elsewhere, the old release may go.
+The release that `backends/mlx-manifest.json` on `main` points at **must not
+be deleted, and its asset must not be re-uploaded**. Deleting it breaks every
+MLX install and every desktop build (404); re-uploading the archive changes
+its hash, so every install and build fails the `sha256` check. To ship a
+different build, publish a new release and repoint the manifest. Once `main`
+points elsewhere, the old release may go. `mirror-mlx.yml` refuses to mirror
+the tag the live manifest names, and prunes only mirrored MLX releases no
+manifest names.
 
-### How to update the MLX manifest
+### Updating MLX
 
-Take the new release from the fork and print the manifest fields:
+The hatchet pipeline does this for every new Neywa-Labs/mlx-vlm release; by
+hand it is the same three steps:
 
-```bash
-gh release view mlxvlm-macos-arm64-07ba5a1 -R AtomicBot-ai/mlx-vlm --json tagName,publishedAt,assets --jq '{tag_name: .tagName, published_at: .publishedAt, assets: [.assets[] | {backend: "macos-arm64", name, sha256: (.digest | ltrimstr("sha256:")), size}]}'
-```
+1. **Mirror the fork's build** of the tag. `atomic_rev` is the first seven
+   characters of the fork commit the build ran at (in the fork release's
+   notes):
 
-Copy `tag_name`, `published_at` and `assets` into the manifest (keep
-`$schema` and `upstream_repo`), run `make validate`, open a PR, and merge once
-CI is green.
+   ```bash
+   gh workflow run mirror-mlx.yml -R AtomicBot-ai/atomic-chat-conf -f tag=v0.7.12 -f atomic_rev=a1b2c3d
+   ```
+
+   It checks the Developer ID signature and the notarization on macOS, copies
+   the archive into the release `mlxvlm-macos-arm64-<atomic_rev>` here and
+   writes the staging manifest.
+2. **Check it on a core release**: core's `engine-candidate.yml` with
+   `engine=mlx`, `repo=AtomicBot-ai/atomic-chat-conf`,
+   `tag=mlxvlm-macos-arm64-<atomic_rev>`. Its `results.json` must say `pass`;
+   `conf.sha` in it is the commit of this repository it read.
+3. **Approve** with that commit:
+
+   ```bash
+   gh workflow run mlx-approve.yml -R AtomicBot-ai/atomic-chat-conf -f tag=mlxvlm-macos-arm64-a1b2c3d -f conf_sha=<conf.sha>
+   ```
+
+   It checks the staging manifest of that commit against the release, refuses
+   a tag no passing `engine-candidate` run backs, and pushes it to
+   `backends/mlx-manifest.json`.
 
 ## Foundry Local runtime manifest
 
 [`backends/foundry-local-manifest.json`](backends/foundry-local-manifest.json)
-lists the `microsoft/foundry-local` releases Atomic Chat core installs as the
+lists the Foundry Local releases Atomic Chat core installs as the
 `foundry-local` engine build: the native Foundry Local library and ONNX
 Runtime GenAI that run the `foundry-local` provider's models. Schema:
 [`backends/foundry-local-schema.json`](backends/foundry-local-schema.json);
@@ -1258,8 +1326,11 @@ integrity checks:
 
 Core reads it from `main` with an hour's cache and a copy on disk, and installs
 a release only when the client asks (`POST /atomic/v1/engine-builds/foundry-local/install`).
-The archive is downloaded straight from the upstream GitHub release,
-`github.com/<upstream_repo>/releases/download/<tag>/<name>`, and checked
+Without `distribution`, the archive URL is
+`https://github.com/<upstream_repo>/releases/download/<tag>/<name>`.
+With `distribution: "atomic-conf"`, it is
+`https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download/foundry-local-<tag>/<name>`.
+Every download is checked
 against `size` and `sha256` before it is unpacked. `ATOMIC_FOUNDRY_LOCAL_MANIFEST_URL`
 (`https://` or `file://`) points core at another copy during development.
 
@@ -1276,11 +1347,13 @@ against `size` and `sha256` before it is unpacked. `ATOMIC_FOUNDRY_LOCAL_MANIFES
     `sdk_v2/cpp/include/foundry_local/foundry_local_c.h` at that tag. **Core
     skips a release whose `c_api_version` its host does not support**: a C API
     bump changes the structures the host passes to the library.
+  - `distribution` — optional, the only accepted value is `atomic-conf`.
+    Omit it for the original Microsoft archives.
   - `assets` — one archive per platform, all five required: `win-x64`,
     `win-arm64`, `macos-arm64`, `linux-x64`, `linux-arm64`. Core selects by
-    `platform`, never by parsing `name`. `size` and `sha256` come from the
-    GitHub asset `digest`; the pinned hash is the only check on what core
-    loads into its own process.
+    `platform`, never by parsing `name`. `size` and `sha256` identify the
+    published archive. Repacked assets are also downloaded from their final
+    URLs and compared with the verified local archives before listing.
 
 Besides the schema, CI rejects a duplicate `tag`, a duplicate `platform` or
 asset name within a release, a release missing one of the five platforms, and
@@ -1302,9 +1375,91 @@ gh api "repos/microsoft/foundry-local/contents/sdk_v2/cpp/include/foundry_local/
 
 Map each asset to its `platform` (`osx-arm64` is `macos-arm64`), set
 `min_core_version` to the first core release that supports this release,
-insert the entry at the top of `releases`, run `make validate`, and open a PR.
+insert the entry at the top of `releases`, validate the Foundry schema and
+integrity checks below, and open a PR.
+
+### Preparing the 2.4.0 candidate
+
+The five selected native archives and the retained original Windows x64 ZIP are published in
+[foundry-local-v2.4.0](https://github.com/AtomicBot-ai/atomic-chat-conf/releases/tag/foundry-local-v2.4.0).
+[The candidate](backends/foundry-local-manifest.candidate.json) contains both
+2.4.0 (C API 3) and the original 2.1.0 (C API 2). Windows x64 selects the
+NPU-compatible `foundry-local-win-x64-openvino-1-8-1.zip`, whose public bytes,
+size (93,972,839) and SHA-256
+(`23ce1fea75d64254e99042c3e99e1fc2bb0dd5befff07d4a013857920c67b2a1`)
+were verified after publication. The five original release assets are unchanged. The candidate requires core 0.22.4, the release that includes managed CUDA
+preparation and Windows DLL isolation. Promote it after that core release is
+published and app/server qualification in tasks 3.3 and 4.3 is complete.
+Older cores continue to select the original 2.1.0.
+
+Build with Python 3.11 or later. Only the release maintainer needs Python,
+network access to NuGet and authenticated `gh` for publication.
+[packages.json](.github/scripts/foundry-local/packages.json) pins the three Microsoft NuGet packages and Intel OpenVINO 1.8.1
+(Windows x64 only), including their versions and catalog SHA-512 hashes. The packer validates all
+inputs before packaging native files for each RID, preserves native bytes,
+includes each package's licenses and notices, and verifies every output
+member, runtime JSON hash, executable mode and ORT symlink.
+macOS ORT aliases resolve to the same versioned dylib. Windows archives
+include the supplied WinML DLLs and import libraries. The NPU-compatible Windows
+x64 archive is named `foundry-local-win-x64-openvino-1-8-1.zip`; it adds the pinned
+Intel EP and its native dependencies under `lib/openvino/`. The Intel package
+uses an MIT license expression instead of a root LICENSE file: retain its
+original nuspec, README and third-party notices. Core 2.4 hosts explicitly
+register this EP on their shared ORT environment instead of the system WinML
+OpenVINO 1.8 EP, whose experimental API calls fail on ORT 1.31. Both native DLL
+signatures and all other platforms' original payloads are preserved.
+
+The original `foundry-local-win-x64.zip` remains in the release unchanged. The
+publisher verifies it against the original three Microsoft packages and adds
+the new archive under its own name. A candidate must point Windows x64 at the
+new name only after the new public download is verified. Existing development
+installs of the original 2.4.0 archive must be unloaded and explicitly removed
+before installing the corrected candidate: the immutable build check correctly
+refuses to replace a recorded digest silently. This does not remove models.
+
+```bash
+python3 .github/scripts/foundry-local/pack.py /tmp/foundry-nuget /tmp/foundry-assets
+python3 .github/scripts/foundry-local/publish.py /tmp/foundry-nuget /tmp/foundry-assets backends/foundry-local-manifest.candidate.json --min-core-version 0.22.0 --target change/upgrade-foundry-local-2-4
+npx --yes ajv-cli@5 validate -s backends/foundry-local-schema.json -d 'backends/foundry-local-manifest*.json' --strict=false
+node .github/scripts/foundry-local-manifest-check.mjs backends/foundry-local-manifest.json backends/foundry-local-manifest.candidate.json
+```
+
+Archive timestamps and ownership are normalized for repeat builds. An existing
+release asset must match the verified local archive before any missing asset
+is uploaded. Publication never overwrites an asset. A rerun resumes an
+interrupted draft or verifies the existing public release. The candidate is
+written only after all five selected public downloads match local bytes, GitHub sizes
+and SHA-256 digests. Preserve the original Python/zlib environment when
+reproducing compressed bytes (this release used Python 3.11.11 and zlib 1.2.12). A different compressor producing a different
+archive is rejected by the publication check.
+
+For a Windows-only packaging change, use `pack.py <cache> <out> --rid win-x64`.
+The focused checks are `python3 .github/scripts/foundry-local/test_pack.py` and
+`python3 .github/scripts/foundry-local/test_publish.py`, followed by
+`node --test .github/scripts/foundry-local-manifest-check.test.mjs`.
+
+Use the absolute path of the candidate in the core process environment.
+
+```bash
+export ATOMIC_FOUNDRY_LOCAL_MANIFEST_URL="file://$PWD/backends/foundry-local-manifest.candidate.json"
+```
+
+Set this variable before starting core. Implement the distribution URL and
+C API 3 support in core against this candidate. Native loading, accelerator
+preparation and model generation are qualified in the core/app/server tasks.
+
+### Withdrawing 2.4.0
+
+Remove its entry from the production manifest to stop new offers as caches
+refresh. Keep release assets immutable. An installed runtime stays selected
+until an explicit local action. To return a host to its retained 2.1.0,
+unload the 2.4.0 sessions, delete only the 2.4.0 build through
+`DELETE /atomic/v1/engine-builds/foundry-local/v2.4.0/<platform>`,
+then confirm selection of 2.1.0 and a response from the existing model.
 
 ## Foundry Local model list
+
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
 
 [`models/foundry-local-models.json`](models/foundry-local-models.json) tells
 the app where Foundry Local models come from and which of them Atomic Chat has
@@ -1504,6 +1659,8 @@ run `make validate`, and open a PR with the `shasum -a 256` output in its
 description.
 
 ## LiteRT-LM model list
+
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
 
 [`models/litert-lm-models.json`](models/litert-lm-models.json) tells the app
 and `atc` which LiteRT-LM models Atomic Chat has checked and where to find the
@@ -1725,6 +1882,8 @@ the entry at the top of `releases`, run `make validate`, and open a PR with
 the `shasum -a 256` output in its description.
 
 ## GenieX model list
+
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
 
 [`models/geniex-models.json`](models/geniex-models.json) tells the app and
 `atc` which GenieX models Atomic Chat has checked and how to fill the list
@@ -2946,12 +3105,14 @@ every push and pull request. It performs the following checks:
   the schema and those rules on broken copies, and
   `.github/scripts/audiocpp-approve.test.mjs` checks the approval against a
   fixture release (`.github/fixtures/audiocpp/`).
-- `ajv` validates `backends/mlx-manifest.json` against
-  `backends/mlx-schema.json`, and `node --test` over
-  `.github/scripts/mlx-manifest.test.mjs` checks the tag pattern, exactly one
-  `macos-arm64` asset with `sha256` and `size`, and an RFC 3339
-  `published_at` (ajv ignores `format` here), plus that broken copies fail
-  the schema.
+- `ajv` validates `backends/mlx-manifest.json` and
+  `backends/mlx-manifest.staging.json` against `backends/mlx-schema.json`, and
+  `node --test` over `.github/scripts/mlx-manifest.test.mjs` checks the tag
+  pattern, the `upstream_tag` form, exactly one `macos-arm64` asset with
+  `sha256` and `size`, and an RFC 3339 `published_at` (ajv ignores `format`
+  here) on both, plus that broken copies fail the schema.
+  `.github/scripts/mlx-approve.test.mjs` checks the approval against a fixture
+  release (`.github/fixtures/mlx/`).
 - `ajv` validates `backends/foundry-local-manifest.json` against
   `backends/foundry-local-schema.json`, and
   `.github/scripts/foundry-local-manifest-check.mjs` checks unique tags,
@@ -3063,6 +3224,7 @@ npx ajv-cli@5 validate -s backends/sdcpp-schema.json -d backends/sdcpp-manifest.
 npx ajv-cli@5 validate -s backends/audiocpp-schema.json -d backends/audiocpp-manifest.staging.json --strict=false
 node .github/scripts/audiocpp-manifest-check.mjs
 npx ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.json --strict=false
+npx ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.staging.json --strict=false
 npx ajv-cli@5 validate -s backends/foundry-local-schema.json -d backends/foundry-local-manifest.json --strict=false
 node .github/scripts/foundry-local-manifest-check.mjs
 npx ajv-cli@5 validate -s models/schema.foundry-local-models.json -d models/foundry-local-models.json --strict=false
@@ -3093,7 +3255,10 @@ npx ajv-cli@5 validate -s app/schema.json -d app/latest.json --strict=false
 
 See the project's primary license in the main Atomic Chat repository.
 
+
 ## Diffusion model revisions
+
+> **DEPRECATED as an editable desktop catalog.** This section describes a generated compatibility export for older consumers. Edit `models/catalog.json` and regenerate; do not edit the export independently. See [model catalog ownership](models/README.md).
 
 `models/diffusion.json` accepts an optional full 40-character Hugging Face
 commit SHA in `transformer.revision` and in each side file's `revision` (VAE,
@@ -3110,3 +3275,195 @@ Its Q3_K_M, Q4_K_M, Q5_K_M and Q6_K byte counts and LFS SHA-256 values were
 refreshed from that revision's Hub metadata; Q8_0 is unchanged. The catalog
 metadata was checked; image generation with the replacement files has not
 been validated as part of this correction.
+
+
+## Unified model catalog
+
+`models/catalog.json` is the only editable source for desktop model definitions, recommendation references and auxiliary HF sources. `models/schema.catalog.json` and `.github/scripts/model-catalog.mjs` validate structure, references and full repository commits. Each collection references a model rather than copying its source. `omit_revisions` records which newly pinned fields a historical export must omit; it does not remove pins from new clients.
+
+The existing desktop JSON files are **deprecated generated compatibility exports**; their supported consumers keep the same payloads and URLs. The complete list and retirement policy are in [models/README.md](models/README.md). Run `node .github/scripts/export-model-catalog.mjs` after editing the catalog. CI and `make validate` reject exports that disagree with it. Mobile catalogs and immutable runtime descriptors remain separate contracts. Keep the old exports until support for their released consumers is explicitly ended.
+
+To update one source deliberately, run `node .github/scripts/refresh-model-catalog.mjs <model-id> <owner/repo> <full-commit>`, regenerate exports and review their changes. The helper obtains file metadata from that exact HF commit. It never substitutes main. The exporter and its tests require no network. Initial migration preserves all old export values and pins historical image files to their matching commits.
+
+Client baselines are generated copies of the same document, not additional catalogs to edit:
+
+```sh
+node .github/scripts/export-model-catalog.mjs --baseline ../Atomic-Chat/core/src/browser/modelCatalogBaseline.json --baseline ../eye-cli/src/workspace-service/models/model-catalog-baseline.json --baseline ../atomic-chat-core/src/client/model-catalog-baseline.json
+```
+
+Add `--check` to validate those copies offline. Publish compatible conf data, release core, then update the clients' exact core pins and lockfiles before releasing either client.
+
+
+## FastFlowLM builds and host environment
+
+`backends/fastflowlm-manifest.json` describes managed native FLM builds, not
+models. `fastflowlm-schema.json` rejects unknown fields, missing hashes,
+unsupported platforms and any `local_only_protocol` other than `1`. Empty
+`releases` means no installable build. A release contains an immutable
+`version: flm-<major>.<minor>.<patch>-r<N>`, full `upstream_commit`, matching
+`atomic_revision`, `min_core_version`, `published_at`, provenance and exactly
+one `win-x64-npu` and one `linux-x64-npu` archive. Provenance pins the core commit,
+patch hash, dependency-lock hash and a size/hash-checked provenance document.
+Archive and provenance URLs must use the same build tag in core's GitHub
+releases. Order is descending **numeric upstream semver, then numeric Atomic
+revision**, not timestamps or lexical order. Changing bytes requires a new
+build ID; withdrawing an entry is allowed.
+
+`runtimes/environments/fastflowlm-{windows,linux}.json` are separate data-only
+contracts. The existing container environment documents are unchanged. Empty
+`recipes` means no automatic setup is offered. Each qualified recipe carries
+its own `min_core_version`; the empty bootstrap makes no core-version promise.
+Documents have immutable `manifest_id: fastflowlm-<os>-r<N>`; a changed recipe
+also needs a new recipe `revision`. Platform entries identify Windows 11 x64
+or a specific Ubuntu 24.04/26.04 x64 kernel. Hardware IDs, package sources,
+versions, hashes, signing identity, live evidence and the qualified FLM build
+are explicit. Linux source suites must match the platform; system XRT requires
+its NPU plugin. Permission/memlock effects are scoped by core to the runtime
+account, not arbitrary commands in conf.
+
+Windows driver sources are limited to AMD downloads and Microsoft's driver
+catalog CDN; a recipe distinguishes `amd-installer` from `windows-update-cab`.
+The host executor must implement and qualify that fixed package kind, verify
+signatures and device matching, and never execute commands supplied by a
+manifest. A CAB candidate does not establish a tested automatic-install recipe.
+
+`make validate` and CI run the same FLM schema/negative-fixture, integrity,
+immutability, model-file-plan and consumer-compatibility gates. Set
+`FASTFLOWLM_BASE_REF` to the reviewed base ref when checking published content;
+CI uses the PR target or pre-push tip, local validation defaults to `origin/main`.
+Model definitions remain exclusively in `models/catalog.json` (see
+[the model contract](models/README.md#fastflowlm-contract)).
+
+The first production build is `flm-1.0.11-r2`, requiring core **0.22.0** or newer.
+Its Windows and Linux archives and provenance are immutable assets of the
+[engine release](https://github.com/AtomicBot-ai/atomic-chat-core/releases/tag/flm-1.0.11-r2).
+The production model collection contains only the tested Qwen3 0.6B XDNA2 plan.
+[Acceptance evidence](https://github.com/AtomicBot-ai/atomic-chat-core/releases/download/flm-1.0.11-r2/flm-1.0.11-r2-acceptance.json)
+distinguishes the exact CI archive run on Windows from the earlier native Arch run.
+
+Qualification covers offline chat with an existing driver on Windows 11 and
+manual driver setup on Arch. Clean Windows driver installation and Ubuntu
+24.04/26.04 setup were excluded by the operator; service-account setup is not
+qualified. Both environment manifests therefore retain **empty `recipes`**.
+The nine additional chat candidates stay in staging. This scope follows the
+2026-11-06 amendment to OpenSpec `add-fastflowlm-runtime`.
+
+Publication on main can reach clients on their next refresh, within the existing
+one-hour cache window. Released cores before 0.22.0 do not gain FLM support from
+this data: their parsers ignore the new collection and existing legacy exports
+remain byte-identical. The engine prerelease does not replace the latest core
+application release. Eye CLI integrates the unreleased core through `bun link`
+before its own release.
+
+## Strata runtime bundles
+
+`backends/strata-manifest.json` uses the strict Draft-07
+`backends/strata-schema.json`. Atomic Chat core 0.24.0 and later can install
+the listed bundles. The initial variants cover Apple Silicon Metal and
+x64 CUDA 13 on Windows and Ubuntu. The Linux entry uses the verified
+Ubuntu 26.04 and glibc 2.43 host floors.
+
+`backends/strata-manifest.candidate.json` is the separately validated input
+for packaging and core development.
+
+Candidate `strata-0.1.59-r5` pins upstream release `v0.2.13`, all 24 selected
+Control/compute assets and 16 host variants. Linux x64 uses corrected Control
+`0.1.59.1`; other hosts use `0.1.59`. Compute is `0.1.59`. Documentation,
+Control and compute have separate full source commits; do not substitute one
+for another. Unknown Linux glibc and AMD driver floors remain explicit
+`pending_host_checks`, not guessed compatibility bounds.
+
+The r5 bundle applies the hash-recorded `atomic-external-owner-v3` Control overlay.
+Atomic-owned launches write a private receipt before creating each process and
+retain its start identity after exit. A dead compute or vision process is
+reported to Atomic without an automatic restart. On macOS, failure to create
+the owner-death watcher ends the compute process. Standalone Strata retains
+upstream behavior. The package probe requires `OWNER_CONTRACT == 3`.
+
+See [r5 owner ledger evidence](.github/fixtures/strata/macos-owner-ledger-evidence.json).
+Bundled CPython
+3.12.15 imports the preparation/structured-output dependencies, JSON Schema
+validation succeeds, and Control, Qwen and DeepSeek version probes exit
+successfully on macOS 26.6.2 arm64. This is **package smoke evidence**, not GPU
+inference, lifecycle or model-preparation qualification. See
+[the package evidence](.github/fixtures/strata/macos-package-evidence.json).
+Windows/Linux/Spark native probes and runtime/model qualification remain open.
+The catalog records 35 `upstream-supported` profiles across three recipe families;
+none is marked `atomic-qualified` in this data. Six profiles retain the original
+`strata-models` collection, and 29 additional CUDA profiles use the optional
+`strata-cuda-models` collection so older Strata readers keep their known inputs.
+
+### Build one candidate
+
+Run with Python 3.11+ on a build host; macOS requires native `codesign`:
+
+```sh
+python3 .github/scripts/strata/pack.py \
+  --variant macos-arm64-metal \
+  --cache /absolute/cache/strata \
+  --out /absolute/output/strata
+```
+
+The manual **Prepare Strata candidate** workflow performs the same operation
+for one selected variant and uploads a CI artifact, without publishing a release.
+Build inputs come from pinned HTTPS sources and are checked against size/SHA-256,
+including cache hits. Allow temporary space for upstream archives, extraction,
+the output and its verification copy. No model weights are acquired.
+
+The archive contains `control/` (CPython, Control and local converters),
+`components/qwen/`, optional `components/deepseek/`, `licenses/` and `bundle.json`.
+The latter records every payload file and source, dependency licenses and signing.
+The build adds pinned `gguf-py` plus `jsonschema`, `jsonschema-specifications`,
+`referencing`, `rpds-py` and `attrs` from
+[the dependency lock](.github/scripts/strata/dependencies.json). It removes
+experimental projection weights bundled by upstream; model acquisition belongs
+to the catalog plan. Neither build nor runtime setup invokes `pip install`.
+
+Upstream's hardened macOS Python rejects the added rpds wheel's Team ID. The
+candidate re-signs only the actual Python executable with the existing library
+validation entitlement and an ad-hoc development signature. Distribution signing
+and notarization remain release work. Deterministic tar metadata and provenance
+are tested; a rebuild refusing different bytes under the same output filename
+requires a new release id, not an overwrite.
+
+### Local core handoff and promotion
+
+Use absolute file URLs:
+
+```sh
+export ATOMIC_STRATA_MANIFEST_URL="file://<absolute-conf-path>/backends/strata-manifest.json"
+export ATOMIC_MODEL_CATALOG_URL="file://<absolute-conf-path>/models/catalog.json"
+```
+
+Core uses the published catalog and manifest by default. A local installable
+manifest needs the assigned core version, a complete `variant.bundle`
+descriptor and HTTPS archive URLs. Use the candidate inventory as the input
+for assembling bundles.
+
+Before promotion, assign `minimum_core_version`, finish the host checks for each
+included variant, assemble/inspect the relevant bundles and obtain the required
+Atomic runtime evidence. Publish assets only with separate operator authorization.
+Each production variant must describe the **complete repacked bundle** (URL,
+compressed/unpacked size, SHA-256, `bundle.json` hash, Python and component roots).
+Its component records retain upstream provenance; they are not independent
+installation targets. Never install raw upstream Control in place of this bundle.
+
+Any change to published bytes, component selection or compatibility metadata
+requires a new `release_id`. Changing preparation outputs also requires the
+appropriate preparation ABI/recipe update. Keep old releases immutable. Record
+`upstream-supported` for upstream claims and `atomic-qualified` only for actual
+Atomic execution evidence. Model descriptors and resource accounting are explained
+in [the Strata catalog contract](models/README.md#strata-contract).
+
+Focused checks (the aggregate `make validate` needs separate operator approval):
+
+```sh
+node --test .github/scripts/strata-manifest.test.mjs
+node --test .github/scripts/strata-catalog.test.mjs
+node --experimental-strip-types --test .github/scripts/strata-catalog-compat.test.mjs
+node .github/scripts/strata-manifest-check.mjs
+python3 -m unittest discover -s .github/scripts/strata -p test_package.py
+```
+
+For offline schema tests, set `AJV_CLI` to an installed
+`ajv-cli@5/dist/index.js`; otherwise the tests use `npx --yes ajv-cli@5`.

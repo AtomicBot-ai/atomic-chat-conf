@@ -1,0 +1,456 @@
+{
+  "$schema": "./strata-schema.json",
+  "schema_version": 1,
+  "releases": [
+    {
+      "release_id": "strata-0.1.59-r5",
+      "engine_version": "0.1.59",
+      "minimum_core_version": "0.24.0",
+      "adapter_contract_version": 1,
+      "preparation_abi": "strata-v1",
+      "control_versions": [
+        "0.1.59.1"
+      ],
+      "components": [
+        {
+          "url": "https://github.com/Niko1221/Strata/releases/download/v0.2.13/strata-control-0.1.59.1-linux-x86_64.tar.gz",
+          "sha256": "73fb612848cf00fa1072623029b35405bbbb63e3f4c688fe6f38c78e3fc022ac",
+          "size": 100087576,
+          "unpacked_bytes": 336744864,
+          "id": "control",
+          "kind": "control",
+          "version": "0.1.59.1",
+          "platform": "linux-x64",
+          "archive": "tar.gz",
+          "notices": [
+            {
+              "name": "Strata",
+              "license": "MIT",
+              "url": "https://raw.githubusercontent.com/Niko1221/Strata/d2f096475817d4666c364c820b0ca830f751cfc5/LICENSE",
+              "sha256": "949b9b0aada7476006469e58ee4ffb0e0f68c2d9137e90a356757b61a09d37f0"
+            }
+          ],
+          "executable_paths": [
+            "python/bin/python3"
+          ],
+          "source_revision": "628f74955a56fcba092495b800dd02af75373a0f",
+          "python_version": "3.12.15",
+          "python_modules": [
+            "gguf",
+            "jsonschema",
+            "referencing",
+            "rpds",
+            "attrs",
+            "jsonschema_specifications"
+          ],
+          "structured_output": true
+        },
+        {
+          "url": "https://github.com/Niko1221/Strata/releases/download/v0.2.13/strata-engine-0.1.59-linux-x86_64-cuda-cuda13.tar.gz",
+          "sha256": "42ab04fa3201e41bef5fac28c05f5c35c909419ec937d879b505bf1516742610",
+          "size": 723498702,
+          "unpacked_bytes": 1191450046,
+          "id": "qwen",
+          "kind": "qwen",
+          "version": "0.1.59",
+          "platform": "linux-x64",
+          "archive": "tar.gz",
+          "notices": [
+            {
+              "name": "Strata",
+              "license": "MIT",
+              "url": "https://raw.githubusercontent.com/Niko1221/Strata/d2f096475817d4666c364c820b0ca830f751cfc5/LICENSE",
+              "sha256": "949b9b0aada7476006469e58ee4ffb0e0f68c2d9137e90a356757b61a09d37f0"
+            }
+          ],
+          "backend": "cuda13",
+          "source_revision": "712fec6b4297c9cfd32ab43daaa2979a9aa01edf",
+          "executable_paths": [
+            "strata",
+            "strata-vision"
+          ]
+        },
+        {
+          "url": "https://github.com/Niko1221/Strata/releases/download/v0.2.13/strata-dsv41-0.1.59-linux-x86_64-cuda-cuda13.tar.gz",
+          "sha256": "4440a62b6aaf51d740f8c37fcc0e7b28cf79ba37aaa199a214b98067c5bf36ad",
+          "size": 445221867,
+          "unpacked_bytes": 697611854,
+          "id": "deepseek",
+          "kind": "deepseek",
+          "version": "0.1.59",
+          "platform": "linux-x64",
+          "archive": "tar.gz",
+          "notices": [
+            {
+              "name": "Strata",
+              "license": "MIT",
+              "url": "https://raw.githubusercontent.com/Niko1221/Strata/d2f096475817d4666c364c820b0ca830f751cfc5/LICENSE",
+              "sha256": "949b9b0aada7476006469e58ee4ffb0e0f68c2d9137e90a356757b61a09d37f0"
+            }
+          ],
+          "backend": "cuda13",
+          "source_revision": "712fec6b4297c9cfd32ab43daaa2979a9aa01edf",
+          "executable_paths": [
+            "strata-dsv41"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "linux-x64-cuda13",
+          "platform": "linux-x64",
+          "backend": "cuda13",
+          "host": {
+            "os": "linux",
+            "arch": "x64",
+            "cpu_features": [
+              "avx2"
+            ],
+            "gpu_vendor": "nvidia",
+            "gpu_architectures": [
+              "sm_75",
+              "sm_86",
+              "sm_89",
+              "sm_120"
+            ],
+            "minimum_driver": "580.65",
+            "minimum_os_version": "26.04",
+            "minimum_glibc": "2.43",
+            "distribution": "ubuntu"
+          },
+          "components": [
+            "control",
+            "qwen",
+            "deepseek"
+          ],
+          "families": [
+            "qwen38",
+            "qwen36",
+            "deepseek41"
+          ],
+          "qualification": {
+            "status": "upstream-supported",
+            "urls": [
+              "https://github.com/Niko1221/Strata/blob/13eedf552417a6a791a7d13c6597e24300ee3a09/docs/CAPABILITIES.md"
+            ]
+          },
+          "family_gpu_architectures": {
+            "deepseek41": [
+              "sm_86",
+              "sm_89",
+              "sm_120"
+            ]
+          },
+          "bundle": {
+            "url": "https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download/strata-0.1.59-runtime-preview/strata-0.1.59-r5-linux-x64-cuda13.tar.gz",
+            "size": 1274110282,
+            "unpacked_bytes": 2226848417,
+            "sha256": "0a79665e6f80b3264f544a28f07d7738fb741e3aace4f8f8ed6f6bec75fa9a16",
+            "archive": "tar.gz",
+            "bundle_manifest_sha256": "2ba32a3c98751a4956f104d1429126162dd55bac0aaa927d33785c832fe4490c",
+            "python": "control/python/bin/python3",
+            "component_roots": {
+              "control": "control",
+              "qwen": "components/qwen",
+              "deepseek": "components/deepseek"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "release_id": "strata-0.1.59-r6",
+      "engine_version": "0.1.59",
+      "minimum_core_version": "0.24.0",
+      "adapter_contract_version": 1,
+      "preparation_abi": "strata-v1",
+      "control_versions": [
+        "0.1.59"
+      ],
+      "components": [
+        {
+          "id": "control",
+          "kind": "control",
+          "version": "0.1.59",
+          "platform": "windows-x64",
+          "url": "https://github.com/Niko1221/Strata/releases/download/v0.2.13/strata-control-0.1.59-windows-x86_64.zip",
+          "sha256": "c81f6800094942a5e750c7d93f348062bc16484f946ea83b0c0d2f8c91c44e87",
+          "size": 73567347,
+          "unpacked_bytes": 230964959,
+          "source_revision": "d2f096475817d4666c364c820b0ca830f751cfc5",
+          "executable_paths": [
+            "python/python.exe"
+          ],
+          "notices": [
+            {
+              "name": "Strata",
+              "license": "MIT",
+              "url": "https://raw.githubusercontent.com/Niko1221/Strata/d2f096475817d4666c364c820b0ca830f751cfc5/LICENSE",
+              "sha256": "949b9b0aada7476006469e58ee4ffb0e0f68c2d9137e90a356757b61a09d37f0"
+            }
+          ],
+          "archive": "zip",
+          "python_version": "3.12.15",
+          "structured_output": true,
+          "python_modules": [
+            "gguf",
+            "jsonschema",
+            "referencing",
+            "rpds",
+            "attrs",
+            "jsonschema_specifications"
+          ]
+        },
+        {
+          "id": "qwen",
+          "kind": "qwen",
+          "version": "0.1.59",
+          "platform": "windows-x64",
+          "url": "https://github.com/Niko1221/Strata/releases/download/v0.2.13/strata-engine-0.1.59-windows-x86_64-cuda-cuda13.tar.gz",
+          "sha256": "3f071a7ccbbf3dcdefed8bff777896d8dd0b580417a078154a7d2c2402ec4158",
+          "size": 630783433,
+          "unpacked_bytes": 978450912,
+          "source_revision": "712fec6b4297c9cfd32ab43daaa2979a9aa01edf",
+          "executable_paths": [
+            "strata.exe",
+            "strata-vision.exe"
+          ],
+          "notices": [
+            {
+              "name": "Strata",
+              "license": "MIT",
+              "url": "https://raw.githubusercontent.com/Niko1221/Strata/d2f096475817d4666c364c820b0ca830f751cfc5/LICENSE",
+              "sha256": "949b9b0aada7476006469e58ee4ffb0e0f68c2d9137e90a356757b61a09d37f0"
+            }
+          ],
+          "archive": "tar.gz",
+          "backend": "cuda13"
+        },
+        {
+          "id": "deepseek",
+          "kind": "deepseek",
+          "version": "0.1.59",
+          "platform": "windows-x64",
+          "url": "https://github.com/Niko1221/Strata/releases/download/v0.2.13/strata-dsv41-0.1.59-windows-x86_64-cuda-cuda13.tar.gz",
+          "sha256": "1ae0f2d7c820e5b5b3c02cdafc86dbdddb6d7a66aa4bde70309a3e78aa714d2c",
+          "size": 422621585,
+          "unpacked_bytes": 626782213,
+          "source_revision": "712fec6b4297c9cfd32ab43daaa2979a9aa01edf",
+          "executable_paths": [
+            "strata-dsv41.exe"
+          ],
+          "notices": [
+            {
+              "name": "Strata",
+              "license": "MIT",
+              "url": "https://raw.githubusercontent.com/Niko1221/Strata/d2f096475817d4666c364c820b0ca830f751cfc5/LICENSE",
+              "sha256": "949b9b0aada7476006469e58ee4ffb0e0f68c2d9137e90a356757b61a09d37f0"
+            }
+          ],
+          "archive": "tar.gz",
+          "backend": "cuda13"
+        }
+      ],
+      "variants": [
+        {
+          "id": "windows-x64-cuda13",
+          "platform": "windows-x64",
+          "backend": "cuda13",
+          "host": {
+            "os": "windows",
+            "arch": "x64",
+            "cpu_features": [
+              "avx2"
+            ],
+            "gpu_vendor": "nvidia",
+            "gpu_architectures": [
+              "sm_75",
+              "sm_86",
+              "sm_89",
+              "sm_120"
+            ],
+            "minimum_driver": "580.65",
+            "minimum_os_version": "10"
+          },
+          "components": [
+            "control",
+            "qwen",
+            "deepseek"
+          ],
+          "families": [
+            "qwen38",
+            "qwen36",
+            "deepseek41"
+          ],
+          "qualification": {
+            "status": "upstream-supported",
+            "urls": [
+              "https://github.com/Niko1221/Strata/blob/13eedf552417a6a791a7d13c6597e24300ee3a09/docs/CAPABILITIES.md"
+            ]
+          },
+          "family_gpu_architectures": {
+            "deepseek41": [
+              "sm_86",
+              "sm_89",
+              "sm_120"
+            ]
+          },
+          "bundle": {
+            "url": "https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download/strata-0.1.59-runtime-preview/strata-0.1.59-r6-windows-x64-cuda13.tar.gz",
+            "size": 1128777239,
+            "unpacked_bytes": 1839272166,
+            "sha256": "2b20aead5a9b0a7065cd40c0c64ac3c00d046616bae454ba5dd80bcd672881a1",
+            "archive": "tar.gz",
+            "bundle_manifest_sha256": "72dc8070e278622a9f8376aa5dbd07a72923d01097987a4edf9d75595135466f",
+            "python": "control/python/python.exe",
+            "component_roots": {
+              "control": "control",
+              "qwen": "components/qwen",
+              "deepseek": "components/deepseek"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "release_id": "strata-0.1.59-r7",
+      "engine_version": "0.1.59",
+      "minimum_core_version": "0.24.0",
+      "adapter_contract_version": 1,
+      "preparation_abi": "strata-v1",
+      "control_versions": [
+        "0.1.59"
+      ],
+      "components": [
+        {
+          "id": "control",
+          "kind": "control",
+          "version": "0.1.59",
+          "platform": "macos-arm64",
+          "url": "https://github.com/Niko1221/Strata/releases/download/v0.2.13/strata-control-0.1.59-macos-arm64.tar.gz",
+          "sha256": "62e571b58d60d6507e5d24975f380ae0f2c302210e895ad31fc166b59c18d024",
+          "size": 51226275,
+          "unpacked_bytes": 151069985,
+          "archive": "tar.gz",
+          "source_revision": "d2f096475817d4666c364c820b0ca830f751cfc5",
+          "executable_paths": [
+            "python/bin/python3"
+          ],
+          "notices": [
+            {
+              "name": "Strata",
+              "license": "MIT",
+              "url": "https://raw.githubusercontent.com/Niko1221/Strata/d2f096475817d4666c364c820b0ca830f751cfc5/LICENSE",
+              "sha256": "949b9b0aada7476006469e58ee4ffb0e0f68c2d9137e90a356757b61a09d37f0"
+            }
+          ],
+          "python_version": "3.12.15",
+          "python_modules": [
+            "gguf",
+            "jsonschema",
+            "referencing",
+            "rpds",
+            "attrs",
+            "jsonschema_specifications"
+          ],
+          "structured_output": true
+        },
+        {
+          "id": "qwen",
+          "kind": "qwen",
+          "version": "0.1.59",
+          "platform": "macos-arm64",
+          "url": "https://github.com/Niko1221/Strata/releases/download/v0.2.13/strata-engine-0.1.59-macos-arm64-metal.tar.gz",
+          "sha256": "9d326745eaebf24248968c145908aca5616ad8562dbca9c3aa327164724a517d",
+          "size": 5535163,
+          "unpacked_bytes": 15362828,
+          "archive": "tar.gz",
+          "source_revision": "712fec6b4297c9cfd32ab43daaa2979a9aa01edf",
+          "executable_paths": [
+            "strata",
+            "strata-vision"
+          ],
+          "notices": [
+            {
+              "name": "Strata",
+              "license": "MIT",
+              "url": "https://raw.githubusercontent.com/Niko1221/Strata/d2f096475817d4666c364c820b0ca830f751cfc5/LICENSE",
+              "sha256": "949b9b0aada7476006469e58ee4ffb0e0f68c2d9137e90a356757b61a09d37f0"
+            }
+          ],
+          "backend": "metal"
+        },
+        {
+          "id": "deepseek",
+          "kind": "deepseek",
+          "version": "0.1.59",
+          "platform": "macos-arm64",
+          "url": "https://github.com/Niko1221/Strata/releases/download/v0.2.13/strata-dsv41-0.1.59-macos-arm64-metal.tar.gz",
+          "sha256": "2fcbd44259db297782b0bdf54065b65a3882a0f52723b12940fdff40b928013d",
+          "size": 1809511,
+          "unpacked_bytes": 4833527,
+          "archive": "tar.gz",
+          "source_revision": "712fec6b4297c9cfd32ab43daaa2979a9aa01edf",
+          "executable_paths": [
+            "strata-dsv41"
+          ],
+          "notices": [
+            {
+              "name": "Strata",
+              "license": "MIT",
+              "url": "https://raw.githubusercontent.com/Niko1221/Strata/d2f096475817d4666c364c820b0ca830f751cfc5/LICENSE",
+              "sha256": "949b9b0aada7476006469e58ee4ffb0e0f68c2d9137e90a356757b61a09d37f0"
+            }
+          ],
+          "backend": "metal"
+        }
+      ],
+      "variants": [
+        {
+          "id": "macos-arm64-metal",
+          "platform": "macos-arm64",
+          "backend": "metal",
+          "host": {
+            "os": "macos",
+            "arch": "arm64",
+            "cpu_features": [],
+            "gpu_vendor": "apple",
+            "gpu_architectures": [
+              "apple-gpu"
+            ],
+            "minimum_os_version": "15.0"
+          },
+          "components": [
+            "control",
+            "qwen",
+            "deepseek"
+          ],
+          "families": [
+            "qwen38",
+            "deepseek41"
+          ],
+          "qualification": {
+            "status": "upstream-supported",
+            "urls": [
+              "https://github.com/Niko1221/Strata/blob/13eedf552417a6a791a7d13c6597e24300ee3a09/docs/CAPABILITIES.md"
+            ]
+          },
+          "bundle": {
+            "url": "https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download/strata-0.1.59-runtime-preview/strata-0.1.59-r7-macos-arm64-metal.tar.gz",
+            "size": 59282875,
+            "unpacked_bytes": 174457631,
+            "sha256": "6fcf8909989333b866e3e5e61956ca0809676ae5419e438eb08463b2c81162fa",
+            "archive": "tar.gz",
+            "bundle_manifest_sha256": "9f5c6803546077f208ddaf4138e0c414cab69ce85b351038d2e08cefd6a492db",
+            "python": "control/python/bin/python3",
+            "component_roots": {
+              "control": "control",
+              "qwen": "components/qwen",
+              "deepseek": "components/deepseek"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

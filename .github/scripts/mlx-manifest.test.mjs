@@ -6,11 +6,13 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { after, test } from 'node:test'
 
-// Gate for backends/mlx-manifest.json. Core installs mlx-server from it and
-// the desktop Makefile bundles the same build, both straight from the
-// AtomicBot-ai/mlx-vlm release: nothing is mirrored here, so the pinned
-// sha256/size are the only check on what gets executed, and published_at is
-// the only version order (the tag's commit hash has none).
+// Gate for backends/mlx-manifest.json and its candidate slot,
+// backends/mlx-manifest.staging.json. Core installs mlx-server from the live one
+// and the desktop Makefile bundles the same build, both straight from the
+// release upstream_repo names (this repository's mirror, or the AtomicBot-ai/mlx-vlm
+// fork for builds before mirror-mlx.yml), so the pinned sha256/size are the
+// only check on what gets executed, and published_at is the only version
+// order (the tag's commit hash has none).
 //
 // Two halves, both run by `make validate` and CI:
 // - the schema itself, run through ajv exactly as `make validate` runs it,
@@ -21,12 +23,14 @@ import { after, test } from 'node:test'
 //   and silently make the build unorderable for core.
 
 const REPO_ROOT = fileURLToPath(new URL('../..', import.meta.url))
-const MANIFEST_PATH = join(REPO_ROOT, 'backends/mlx-manifest.json')
+const MANIFESTS = ['backends/mlx-manifest.json', 'backends/mlx-manifest.staging.json']
 const SCHEMA = 'backends/mlx-schema.json'
-const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'))
+const read = (path) => JSON.parse(readFileSync(join(REPO_ROOT, path), 'utf8'))
+const manifest = read(MANIFESTS[0])
 const clone = (value) => JSON.parse(JSON.stringify(value))
 
 const TAG_RE = /^mlxvlm-macos-arm64-[0-9a-f]{7,40}$/
+const UPSTREAM_TAG_RE = /^v\d+\.\d+\.\d+$/
 // RFC 3339 date-time, the form GitHub reports publishedAt in.
 const DATE_TIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
 
@@ -34,6 +38,9 @@ function checkMlxManifest(m) {
   const errors = []
   if (typeof m.tag_name !== 'string' || !TAG_RE.test(m.tag_name)) {
     errors.push(`tag_name must look like mlxvlm-macos-arm64-<commit>, got ${JSON.stringify(m.tag_name)}`)
+  }
+  if (m.upstream_tag !== undefined && (typeof m.upstream_tag !== 'string' || !UPSTREAM_TAG_RE.test(m.upstream_tag))) {
+    errors.push(`upstream_tag must look like v0.7.12, got ${JSON.stringify(m.upstream_tag)}`)
   }
   if (typeof m.published_at !== 'string' || !DATE_TIME_RE.test(m.published_at) ||
       Number.isNaN(Date.parse(m.published_at))) {
@@ -85,15 +92,23 @@ const BROKEN = {
   'two-assets': (m) => { m.assets.push(clone(m.assets[0])) },
   'wrong-backend': (m) => { m.assets[0].backend = 'macos-x64' },
   'no-published-at': (m) => { delete m.published_at },
+  'bad-upstream-tag': (m) => { m.upstream_tag = '0.7.12' },
 }
 
-test('the real manifest passes the schema', () => {
-  const result = ajv('backends/mlx-manifest.json')
-  assert.equal(result.status, 0, result.stderr)
-})
+for (const path of MANIFESTS) {
+  test(`${path} passes the schema`, () => {
+    const result = ajv(path)
+    assert.equal(result.status, 0, result.stderr)
+  })
 
-test('the real manifest passes the integrity checks', () => {
-  assert.deepEqual(checkMlxManifest(manifest), [])
+  test(`${path} passes the integrity checks`, () => {
+    assert.deepEqual(checkMlxManifest(read(path)), [])
+  })
+}
+
+test('upstream_tag is optional: builds before the pipeline may lack it', () => {
+  const { upstream_tag: _, ...bare } = clone(manifest)
+  assert.deepEqual(checkMlxManifest(bare), [])
 })
 
 for (const [name, mutate] of Object.entries(BROKEN)) {

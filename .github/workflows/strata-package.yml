@@ -1,0 +1,48 @@
+name: Prepare Strata candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: One candidate host variant (no model downloads or release publication)
+        required: true
+        type: choice
+        options:
+          - macos-arm64-metal
+          - linux-x64-cuda12
+          - linux-x64-cuda13
+          - linux-x64-halo
+          - linux-x64-rx6000
+          - linux-x64-rx7900
+          - linux-x64-rx9070
+          - linux-x64-rx9070-deepseek
+          - linux-x64-sycl
+          - linux-arm64-spark-cuda13
+          - windows-x64-cuda12
+          - windows-x64-cuda13
+          - windows-x64-rdna2
+          - windows-x64-rdna3
+          - windows-x64-rx9070
+          - windows-x64-rdna3-deepseek
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ${{ startsWith(inputs.variant, 'macos-') && 'macos-latest' || startsWith(inputs.variant, 'windows-') && 'windows-latest' || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assemble one pinned candidate
+        shell: bash
+        env:
+          STRATA_VARIANT: ${{ inputs.variant }}
+        run: python .github/scripts/strata/pack.py --variant "$STRATA_VARIANT" --cache "$RUNNER_TEMP/strata-cache" --out "$RUNNER_TEMP/strata-out"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: strata-${{ inputs.variant }}-candidate
+          path: ${{ runner.temp }}/strata-out/*
+          if-no-files-found: error

@@ -1,0 +1,8 @@
+{
+  "$schema": "./fastflowlm-linux.schema.json",
+  "schema_version": 1,
+  "engine": "fastflowlm",
+  "platform": "linux",
+  "manifest_id": "fastflowlm-linux-r1",
+  "recipes": []
+}

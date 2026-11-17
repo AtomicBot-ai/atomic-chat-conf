@@ -20,6 +20,8 @@
 //       the tag and passed
 //   gate --engine audio-cpp --tag v0.9.3-a1b2c3d4 [--force]
 //       the same for a signed audio.cpp build (audiocpp-approve.yml)
+//   gate --engine mlx --tag mlxvlm-macos-arm64-a1b2c3d [--force]
+//       the same for a mirrored mlx-server build (mlx-approve.yml)
 //
 // Runs are found by title, `engine-candidate <engine> <tag> [cid:<id>] core@<ref>`.
 // The workflow fails unless results.json says pass, so a successful run is a
@@ -31,6 +33,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { TAG_RE as AUDIOCPP_TAG_RE } from './audiocpp-approve.mjs'
+import { TAG_RE as MLX_TAG_RE } from './mlx-approve.mjs'
 import { TAG_RE as SDCPP_TAG_RE } from './sdcpp-approve.mjs'
 import { MIRROR_REPO, TAG_RE } from './upstream-releases.mjs'
 
@@ -41,13 +44,14 @@ const RUN_FIELDS = 'databaseId,displayTitle,status,conclusion,createdAt,url'
 const STATUSES = ['pass', 'fail', 'incomplete']
 
 // What `gate` asks for, per engine. For llama.cpp a successful run that names
-// the tag is enough. The sd.cpp and audio.cpp approvals write the live
+// the tag is enough. The sd.cpp, audio.cpp and MLX approvals write the live
 // manifest themselves, so their gate also reads the run's results.json: a run
 // on the fork's build, or on another engine, must not count.
 export const GATES = {
   'llamacpp-upstream': { tagRe: TAG_RE, example: 'b11463', readsResults: false },
   'sd-cpp': { tagRe: SDCPP_TAG_RE, example: 'master-883-137f740-a36f1b1a', readsResults: true },
   'audio-cpp': { tagRe: AUDIOCPP_TAG_RE, example: 'v0.9.3-a1b2c3d4', readsResults: true },
+  mlx: { tagRe: MLX_TAG_RE, example: 'mlxvlm-macos-arm64-a1b2c3d', readsResults: true },
 }
 
 /** The candidate_id of a check of this repository's mirror of a tag. */
@@ -223,7 +227,7 @@ async function main(argv) {
   const tag = argValue(argv, '--tag')
   const engine = argValue(argv, '--engine') ?? 'llamacpp-upstream'
   if (command !== 'verify' && command !== 'gate') {
-    process.stderr.write('Usage: upstream-verify.mjs verify|gate [--engine sd-cpp|audio-cpp] --tag b11463 [--force] (see the header)\n')
+    process.stderr.write('Usage: upstream-verify.mjs verify|gate [--engine sd-cpp|audio-cpp|mlx] --tag b11463 [--force] (see the header)\n')
     return 2
   }
   const spec = Object.hasOwn(GATES, engine) ? GATES[engine] : undefined

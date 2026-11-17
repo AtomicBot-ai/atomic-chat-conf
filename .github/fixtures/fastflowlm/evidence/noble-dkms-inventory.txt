@@ -1,0 +1,70 @@
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./lib/
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./lib/firmware/
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./lib/firmware/updates/
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./lib/firmware/updates/amdnpu/
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./lib/firmware/updates/amdnpu/1502_00/
+-rw-r--r--  0 root   root   246656 Mar 11  2026 ./lib/firmware/updates/amdnpu/1502_00/npu.sbin.1.5.2.380
+-rw-r--r--  0 root   root   248592 Mar 11  2026 ./lib/firmware/updates/amdnpu/1502_00/npu.sbin.1.5.5.391
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./lib/firmware/updates/amdnpu/17f0_10/
+-rw-r--r--  0 root   root   376768 Mar 11  2026 ./lib/firmware/updates/amdnpu/17f0_10/npu.sbin.1.0.0.63
+-rw-r--r--  0 root   root   429680 Mar 11  2026 ./lib/firmware/updates/amdnpu/17f0_10/npu.sbin.1.1.2.64
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./lib/firmware/updates/amdnpu/17f0_11/
+-rw-r--r--  0 root   root   376768 Mar 11  2026 ./lib/firmware/updates/amdnpu/17f0_11/npu.sbin.1.0.0.166
+-rw-r--r--  0 root   root   429680 Mar 11  2026 ./lib/firmware/updates/amdnpu/17f0_11/npu.sbin.1.1.2.65
+-rw-r--r--  0 root   root     1186 Mar 11  2026 ./lib/firmware/updates/amdnpu/LICENSE.amdnpu
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./usr/
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./usr/share/
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./usr/share/doc/
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./usr/share/doc/amdxdna-dkms/
+-rw-r--r--  0 root   root      491 Mar 28  2026 ./usr/share/doc/amdxdna-dkms/changelog.Debian.gz
+-rw-r--r--  0 root   root     1276 Mar 11  2026 ./usr/share/doc/amdxdna-dkms/copyright
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./usr/src/
+drwxr-xr-x  0 root   root        0 Mar 28  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/
+-rw-r--r--  0 root   root      632 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/Makefile
+-rw-r--r--  0 root   root    26603 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/aie2_ctx.c
+-rw-r--r--  0 root   root    11343 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/aie2_error.c
+-rw-r--r--  0 root   root    30278 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/aie2_message.c
+-rw-r--r--  0 root   root     9529 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/aie2_msg_priv.h
+-rw-r--r--  0 root   root    31065 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/aie2_pci.c
+-rw-r--r--  0 root   root    10821 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/aie2_pci.h
+-rw-r--r--  0 root   root     2546 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/aie2_pm.c
+-rw-r--r--  0 root   root     3834 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/aie2_psp.c
+-rw-r--r--  0 root   root     3830 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/aie2_smu.c
+-rw-r--r--  0 root   root     8267 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/aie2_solver.c
+-rw-r--r--  0 root   root     4122 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/aie2_solver.h
+-rw-r--r--  0 root   root     2064 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_compat.h
+-rw-r--r--  0 root   root    14840 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_ctx.c
+-rw-r--r--  0 root   root     5401 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_ctx.h
+-rw-r--r--  0 root   root     1948 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_error.h
+-rw-r--r--  0 root   root    23560 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_gem.c
+-rw-r--r--  0 root   root     2546 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_gem.h
+-rw-r--r--  0 root   root    14471 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_mailbox.c
+-rw-r--r--  0 root   root     3561 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_mailbox.h
+-rw-r--r--  0 root   root     1384 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_mailbox_helper.c
+-rw-r--r--  0 root   root     1165 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_mailbox_helper.h
+-rw-r--r--  0 root   root     9871 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_pci_drv.c
+-rw-r--r--  0 root   root     4310 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_pci_drv.h
+-rw-r--r--  0 root   root     1683 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_pm.c
+-rw-r--r--  0 root   root      698 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_pm.h
+-rw-r--r--  0 root   root     1667 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_sysfs.c
+-rw-r--r--  0 root   root     5696 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_ubuf.c
+-rw-r--r--  0 root   root      437 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/amdxdna_ubuf.h
+-rw-r--r--  0 root   root      406 Mar 28  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/dkms.conf
+drwxr-xr-x  0 root   root        0 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/include/
+drwxr-xr-x  0 root   root        0 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/include/uapi/
+drwxr-xr-x  0 root   root        0 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/include/uapi/drm/
+-rw-r--r--  0 root   root    18873 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/include/uapi/drm/amdxdna_accel.h
+-rw-r--r--  0 root   root     4133 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/npu1_regs.c
+-rw-r--r--  0 root   root     5670 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/npu4_regs.c
+-rw-r--r--  0 root   root     4465 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/npu5_regs.c
+-rw-r--r--  0 root   root     4473 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/npu6_regs.c
+drwxr-xr-x  0 root   root        0 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/trace/
+drwxr-xr-x  0 root   root        0 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/trace/events/
+-rw-r--r--  0 root   root     2782 Mar 11  2026 ./usr/src/amdxdna-7.0.0-rc1+git20260310.6b13cb8f4/trace/events/amdxdna.h
+lrwxrwxrwx  0 root   root        0 Mar 28  2026 ./lib/firmware/updates/amdnpu/1502_00/npu.sbin -> npu.sbin.1.5.2.380
+lrwxrwxrwx  0 root   root        0 Mar 28  2026 ./lib/firmware/updates/amdnpu/1502_00/npu_7.sbin -> npu.sbin.1.5.5.391
+lrwxrwxrwx  0 root   root        0 Mar 28  2026 ./lib/firmware/updates/amdnpu/17f0_10/npu.sbin -> npu.sbin.1.0.0.63
+lrwxrwxrwx  0 root   root        0 Mar 28  2026 ./lib/firmware/updates/amdnpu/17f0_10/npu_7.sbin -> npu.sbin.1.1.2.64
+lrwxrwxrwx  0 root   root        0 Mar 28  2026 ./lib/firmware/updates/amdnpu/17f0_11/npu.sbin -> npu.sbin.1.0.0.166
+lrwxrwxrwx  0 root   root        0 Mar 28  2026 ./lib/firmware/updates/amdnpu/17f0_11/npu_7.sbin -> npu.sbin.1.1.2.65

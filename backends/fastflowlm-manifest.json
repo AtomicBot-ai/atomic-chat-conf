@@ -1,0 +1,38 @@
+{
+  "$schema": "./fastflowlm-schema.json",
+  "schema_version": 1,
+  "releases": [
+    {
+      "version": "flm-1.0.11-r2",
+      "upstream_commit": "f37cdd29edc777cf3db1e385da8e7bfadc57d0b3",
+      "atomic_revision": 2,
+      "local_only_protocol": 1,
+      "min_core_version": "0.22.0",
+      "published_at": "2026-11-06T09:01:58Z",
+      "provenance": {
+        "core_commit": "90f27e14b5efd38c200cc8ed1f4eea6bde3d765c",
+        "patch_sha256": "5f696d2a508b3209eee418bc3bbe7528864e95dad2d89cd8619de6446f040541",
+        "dependencies_sha256": "793c53e7c689b16914072977f8674991f3134b52b42964132f294f9f142fb42f",
+        "document": {
+          "url": "https://github.com/AtomicBot-ai/atomic-chat-core/releases/download/flm-1.0.11-r2/flm-1.0.11-r2-provenance.json",
+          "size": 5933,
+          "sha256": "5edf3943cb747986fead817ef760caeb49cb4a2b5ee14a623b3870067b10f4e9"
+        }
+      },
+      "assets": [
+        {
+          "platform": "win-x64-npu",
+          "size": 25946503,
+          "sha256": "0e84a12cba0c1da0726290b4b692a605b7d02233fb54068d943bc40455b00e0f",
+          "url": "https://github.com/AtomicBot-ai/atomic-chat-core/releases/download/flm-1.0.11-r2/flm-1.0.11-r2-win-x64-npu.zip"
+        },
+        {
+          "platform": "linux-x64-npu",
+          "size": 48088995,
+          "sha256": "4cd05927b9500b4990fd483f82290167c886c44dcbebea7707cc8276c5d5ecce",
+          "url": "https://github.com/AtomicBot-ai/atomic-chat-core/releases/download/flm-1.0.11-r2/flm-1.0.11-r2-linux-x64-npu.tar.gz"
+        }
+      ]
+    }
+  ]
+}

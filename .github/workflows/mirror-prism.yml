@@ -246,6 +246,12 @@ jobs:
     needs: select
     if: needs.select.outputs.windows != '[]'
     runs-on: windows-latest
+    # Signs through Azure Key Vault: the app's OIDC federated credential is
+    # bound to this environment, which also holds the AZURE_* variables.
+    environment: codesign
+    permissions:
+      contents: read
+      id-token: write
     strategy:
       # One job per archive: the CUDA and HIP archives are hundreds of
       # megabytes each and signing them in sequence would blow the job timeout.
@@ -272,7 +278,7 @@ jobs:
           Remove-Item "$env:NAME"
 
       # The core only ever runs llama-server, and every signed file costs a
-      # KeyLocker signature, so drop the other tools before signing: each extra
+      # Key Vault signing call and run time, so drop the other tools before signing: each extra
       # .exe and its -impl.dll. Shared DLLs stay. Same as mirror-upstream.yml.
       - name: Drop tools the app never runs
         shell: pwsh
@@ -294,9 +300,10 @@ jobs:
         uses: ./.github/actions/windows-code-sign
         with:
           path: extract
-          sm-api-key: ${{ secrets.SM_API_KEY }}
-          sm-client-cert-b64: ${{ secrets.SM_CLIENT_CERT_FILE_B64 }}
-          sm-client-cert-password: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          key-vault: ${{ vars.AZURE_KEY_VAULT }}
+          certificate: ${{ vars.AZURE_CODESIGN_CERT }}
 
       - name: Repack
         shell: pwsh

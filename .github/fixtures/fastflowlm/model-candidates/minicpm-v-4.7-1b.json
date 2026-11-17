@@ -1,0 +1,210 @@
+{
+  "kind": "fastflowlm",
+  "format": "fastflowlm",
+  "definition": {
+    "model_id": "minicpm-v-4.7-1b",
+    "variant_id": "minicpm-v-4.7-1b-npu2",
+    "name": "MiniCPM-V-4.7-1B (FastFlowLM NPU2 candidate)",
+    "checkpoint": "minicpm-v-4.7:1b",
+    "minimum_flm_version": "flm-1.0.11-r1",
+    "local_only_protocol": 1,
+    "npu_generation": "xdna2",
+    "context_length": 32768,
+    "license": "Apache-2.0 AND LicenseRef-FastFlowLM-NPU-Binary",
+    "gated": false,
+    "capabilities": {
+      "chat": true,
+      "tools": false,
+      "reasoning": false,
+      "structured_output": false
+    },
+    "sources": [
+      {
+        "id": "flm",
+        "repo": "FastFlowLM/MiniCPM-V-4.7-1B-NPU2",
+        "revision": "78c9f5923dd12515eaed69cc9e85ac97faf2c3c7"
+      },
+      {
+        "id": "flm-kernels",
+        "host": "github",
+        "repo": "ROCm/FastFlowLM",
+        "revision": "f37cdd29edc777cf3db1e385da8e7bfadc57d0b3"
+      },
+      {
+        "id": "license",
+        "host": "github",
+        "repo": "spdx/license-list-data",
+        "revision": "31846481de7ea17d92f2f46fad76abe58b2e9bb0"
+      }
+    ],
+    "files": [
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/MiniCPM-V-4.7-1B-NPU2/GateDeltaNet_prefill.xclbin",
+        "path": "GateDeltaNet_prefill.xclbin",
+        "size": 228636,
+        "sha256": "7babe91b3c3d8a5649c87e0399d188f43ada2ff0ff0a90c0094675ff149558b8"
+      },
+      {
+        "source": "license",
+        "source_path": "text/Apache-2.0.txt",
+        "path": "LICENSE",
+        "size": 10280,
+        "sha256": "074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "LICENSE_BINARY.txt",
+        "path": "LICENSE_BINARY.txt",
+        "size": 978,
+        "sha256": "40f10a537b3a783a00531b2e6889b3456b3182e2dbbc3d16bfaab9cb83b87abc"
+      },
+      {
+        "source": "flm",
+        "source_path": "README.md",
+        "path": "README.md",
+        "size": 17538,
+        "sha256": "e9f741f0302aad23a2456109d827ed6f94ea4f0ade0acb05df7e059603918bfb"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/MiniCPM-V-4.7-1B-NPU2/attn.xclbin",
+        "path": "attn.xclbin",
+        "size": 315900,
+        "sha256": "d2f96978e0627c9b61f11642755da7fe731803c952ea60acb8a1c4cdca881778"
+      },
+      {
+        "source": "flm",
+        "source_path": "chat_template.jinja",
+        "path": "chat_template.jinja",
+        "size": 7250,
+        "sha256": "c4531cacbf2a0ab65170433d7a4f371d11b7599cf96c04b192e6372432636c70"
+      },
+      {
+        "source": "flm",
+        "source_path": "config.json",
+        "path": "config.json",
+        "size": 2880,
+        "sha256": "0250675dd4f2efd309087ee57fddd2aef20303fee6dca22765aedeaa06413628"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/MiniCPM-V-4.7-1B-NPU2/conv.xclbin",
+        "path": "conv.xclbin",
+        "size": 386380,
+        "sha256": "67ba4fe7740ab828c139dd4988a117873dbb8430925de709833894d805f3766c"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/MiniCPM-V-4.7-1B-NPU2/layer.xclbin",
+        "path": "layer.xclbin",
+        "size": 348731,
+        "sha256": "8895def82ec8853b4a4eac80908521da4312ac8462127c03bfd15da352936647"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/MiniCPM-V-4.7-1B-NPU2/lm_head.xclbin",
+        "path": "lm_head.xclbin",
+        "size": 280268,
+        "sha256": "bd35280ce6b471d4afa5dcee0d6220377f751f675897e0c8dfe016bcea00d994"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/MiniCPM-V-4.7-1B-NPU2/mm.xclbin",
+        "path": "mm.xclbin",
+        "size": 194364,
+        "sha256": "f09ce18ed0176ccd669d36a56dcb6e94122a6c6054c22b3649473d5bee2e8086"
+      },
+      {
+        "source": "flm",
+        "source_path": "model.q4nx",
+        "path": "model.q4nx",
+        "size": 1068839584,
+        "sha256": "45d35fc84c21de51bdaab7990a84e52ec68b6b0200ab6b4a37d095a4b7830882"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer.json",
+        "path": "tokenizer.json",
+        "size": 19992481,
+        "sha256": "33861e37bb955af1e3f3061182b820f347eba2b9c2c1011c82794bf0d6e77b54"
+      },
+      {
+        "source": "flm",
+        "source_path": "tokenizer_config.json",
+        "path": "tokenizer_config.json",
+        "size": 9022,
+        "sha256": "bd3eddcfe93c7719ccce09db04cfadab03ff60e3af53a34e6535c18ac1d070ce"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/MiniCPM-V-4.7-1B-NPU2/vision_attn.xclbin",
+        "path": "vision_attn.xclbin",
+        "size": 460524,
+        "sha256": "7e49dae4f1e08576fbfeed81c7d86f5e731a620fd8ea8040b149505ec4d32d8a"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/MiniCPM-V-4.7-1B-NPU2/vision_mm_a.xclbin",
+        "path": "vision_mm_a.xclbin",
+        "size": 486316,
+        "sha256": "a13d8a7aa880f7b1b38300e1bd181f026ab022091213a138dae5c29940026dfc"
+      },
+      {
+        "source": "flm-kernels",
+        "source_path": "src/xclbins/MiniCPM-V-4.7-1B-NPU2/vision_mm_b.xclbin",
+        "path": "vision_mm_b.xclbin",
+        "size": 505772,
+        "sha256": "f9601f04299b284ad19425ab9fd23a2cceeecb94841a8807c6a37f196ed76cb8"
+      },
+      {
+        "source": "flm",
+        "source_path": "vision_weight.q4nx",
+        "path": "vision_weight.q4nx",
+        "size": 1135147712,
+        "sha256": "3e1f4168ea50db218659de01787d7aca355fa5769e01c1af6bc454e6169f37bf"
+      }
+    ],
+    "components": {
+      "weights": [
+        "model.q4nx",
+        "vision_weight.q4nx"
+      ],
+      "tokenizer": [
+        "tokenizer.json",
+        "tokenizer_config.json"
+      ],
+      "config": [
+        "config.json"
+      ],
+      "chat_template": [
+        "chat_template.jinja"
+      ],
+      "kernels": [
+        "GateDeltaNet_prefill.xclbin",
+        "attn.xclbin",
+        "conv.xclbin",
+        "layer.xclbin",
+        "lm_head.xclbin",
+        "mm.xclbin",
+        "vision_attn.xclbin",
+        "vision_mm_a.xclbin",
+        "vision_mm_b.xclbin"
+      ],
+      "metadata": [
+        "LICENSE",
+        "LICENSE_BINARY.txt",
+        "README.md"
+      ]
+    },
+    "qualification": {
+      "status": "candidate",
+      "evidence": []
+    }
+  },
+  "variants": {
+    "minicpm-v-4.7-1b-npu2": {
+      "selection": "all-required-files"
+    }
+  }
+}

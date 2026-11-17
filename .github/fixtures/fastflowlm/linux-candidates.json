@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "qualification": "candidate",
+  "environments": [
+    {
+      "os": "linux",
+      "distribution": "ubuntu",
+      "version": "24.04",
+      "arch": "x64",
+      "qualification": "candidate",
+      "sources": [
+        {
+          "id": "lemonade",
+          "url": "https://ppa.launchpadcontent.net/lemonade-team/stable/ubuntu/",
+          "suite": "noble",
+          "component": "main",
+          "signing_fingerprint": "881CF4B40B0BFA288D6776E83BF36CFA0BD50AEC"
+        }
+      ],
+      "packages": [
+        {
+          "name": "amdxdna-dkms",
+          "version": "7.0.0-rc1+git20260310.6b13cb8f4-noble1",
+          "architecture": "amd64",
+          "source": "lemonade",
+          "path": "pool/main/a/amdxdna-dkms/amdxdna-dkms_7.0.0-rc1+git20260310.6b13cb8f4-noble1_amd64.deb",
+          "size": 315696,
+          "sha256": "ea9f07d227d91878f3c660dc82b6abe4e4454b0c25d4ffd383920e6bed083893",
+          "depends": "dkms (>= 2.1.0.0)",
+          "download_verified": true
+        },
+        {
+          "name": "libxrt-npu2",
+          "version": "1:2.25.0-4~noble1",
+          "architecture": "amd64",
+          "source": "lemonade",
+          "path": "pool/main/x/xrt/libxrt-npu2_2.25.0-4~noble1_amd64.deb",
+          "size": 1313674,
+          "sha256": "dfe9fa9eb41800164392ea3c8dcdba8feca91e0d2264a8f1ad83a7087e03d8cb",
+          "depends": "libc6 (>= 2.38), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 13.1), libuuid1 (>= 2.16), libxrt2 (>= 1:2.25.0)",
+          "download_verified": true
+        },
+        {
+          "name": "libxrt-utils",
+          "version": "1:2.25.0-4~noble1",
+          "architecture": "amd64",
+          "source": "lemonade",
+          "path": "pool/main/x/xrt/libxrt-utils_2.25.0-4~noble1_amd64.deb",
+          "size": 1296970,
+          "sha256": "4685bc31fa450e71cdf693afd6ffd3fef68a9891f06cf8afdb7695124a4fd846",
+          "depends": "libboost-filesystem1.83.0 (>= 1.83.0), libboost-program-options1.83.0 (>= 1.83.0), libc6 (>= 2.38), libgcc-s1 (>= 3.3.1), libssl3t64 (>= 3.0.0), libstdc++6 (>= 13.1), libuuid1 (>= 2.16), libxrt2 (>= 1:2.25.0), python3",
+          "download_verified": true
+        },
+        {
+          "name": "libxrt-utils-npu",
+          "version": "1:2.25.0-4~noble1",
+          "architecture": "amd64",
+          "source": "lemonade",
+          "path": "pool/main/x/xrt/libxrt-utils-npu_2.25.0-4~noble1_amd64.deb",
+          "size": 898488,
+          "sha256": "b1d1f3261bcd0091961836c0b55bbf2c09f0b6f2270afecaf5d28f26b4ba7a3c",
+          "depends": "libc6 (>= 2.38), libgcc-s1 (>= 3.4), libstdc++6 (>= 13.1), libxrt2 (>= 1:2.25.0), libxrt-utils, libxrt-npu2 (= 1:2.25.0-4~noble1)",
+          "download_verified": true
+        },
+        {
+          "name": "libxrt2",
+          "version": "1:2.25.0-4~noble1",
+          "architecture": "amd64",
+          "source": "lemonade",
+          "path": "pool/main/x/xrt/libxrt2_2.25.0-4~noble1_amd64.deb",
+          "size": 1803370,
+          "sha256": "62e568509034c9bf89b4fbff7bea71ab555e6b5b4e87f25cf8aec93066218e8a",
+          "depends": "libc6 (>= 2.38), libgcc-s1 (>= 3.4), libstdc++6 (>= 13.1), libuuid1 (>= 2.16)",
+          "download_verified": true
+        }
+      ],
+      "firmware": {
+        "package": "amdxdna-dkms",
+        "files": [
+          "lib/firmware/updates/amdnpu/17f0_10/npu.sbin.1.1.2.64",
+          "lib/firmware/updates/amdnpu/17f0_11/npu.sbin.1.1.2.65"
+        ]
+      },
+      "remaining_checks": [
+        "running-kernel matching headers and DKMS build",
+        "Secure Boot signing/enrollment",
+        "firmware selection and device revision",
+        "FLM bundle XRT ABI versus system XRT",
+        "runtime account permissions and memlock",
+        "offline inference and cancellation on NPU"
+      ]
+    },
+    {
+      "os": "linux",
+      "distribution": "ubuntu",
+      "version": "26.04",
+      "arch": "x64",
+      "qualification": "candidate",
+      "sources": [
+        {
+          "id": "lemonade",
+          "url": "https://ppa.launchpadcontent.net/lemonade-team/stable/ubuntu/",
+          "suite": "resolute",
+          "component": "main",
+          "signing_fingerprint": "881CF4B40B0BFA288D6776E83BF36CFA0BD50AEC"
+        }
+      ],
+      "packages": [
+        {
+          "name": "amdxdna-dkms",
+          "version": "7.0.0-rc1+git20260310.6b13cb8f4-resolute1",
+          "architecture": "amd64",
+          "source": "lemonade",
+          "path": "pool/main/a/amdxdna-dkms/amdxdna-dkms_7.0.0-rc1+git20260310.6b13cb8f4-resolute1_amd64.deb",
+          "size": 315378,
+          "sha256": "53b8c345bb00c8253a2e13a120bff16fcd7346bc669cf65813dfac7613325a25",
+          "depends": "dkms (>= 2.1.0.0)",
+          "download_verified": true
+        },
+        {
+          "name": "libxrt-npu2",
+          "version": "1:2.25.0-4~resolute1",
+          "architecture": "amd64",
+          "source": "lemonade",
+          "path": "pool/main/x/xrt/libxrt-npu2_2.25.0-4~resolute1_amd64.deb",
+          "size": 1338930,
+          "sha256": "cda84819ffc60ca6d10ee4c78f5cf91fe87a897f67bab039faf772262c47e047",
+          "depends": "libc6 (>= 2.38), libgcc-s1 (>= 3.3.1), libstdc++6 (>= 14), libuuid1 (>= 2.16), libxrt2 (>= 1:2.25.0)",
+          "download_verified": true
+        },
+        {
+          "name": "libxrt-utils",
+          "version": "1:2.25.0-4~resolute1",
+          "architecture": "amd64",
+          "source": "lemonade",
+          "path": "pool/main/x/xrt/libxrt-utils_2.25.0-4~resolute1_amd64.deb",
+          "size": 1370254,
+          "sha256": "b4d2535e829de4c044ad8159e52ca48b09ffdaae74ca7cb21064d2ad69068c53",
+          "depends": "libboost-filesystem1.90.0 (>= 1.90.0), libboost-program-options1.90.0 (>= 1.90.0), libc6 (>= 2.38), libgcc-s1 (>= 3.3.1), libssl3t64 (>= 3.0.0), libstdc++6 (>= 14), libuuid1 (>= 2.16), libxrt2 (>= 1:2.25.0), python3",
+          "download_verified": true
+        },
+        {
+          "name": "libxrt-utils-npu",
+          "version": "1:2.25.0-4~resolute1",
+          "architecture": "amd64",
+          "source": "lemonade",
+          "path": "pool/main/x/xrt/libxrt-utils-npu_2.25.0-4~resolute1_amd64.deb",
+          "size": 938462,
+          "sha256": "b8c561b0e0e9cd7aadce90a58e19cb8c994aa58bd5927bc63602e38937c5a5d1",
+          "depends": "libc6 (>= 2.38), libgcc-s1 (>= 3.4), libstdc++6 (>= 14), libxrt2 (>= 1:2.25.0), libxrt-utils, libxrt-npu2 (= 1:2.25.0-4~resolute1)",
+          "download_verified": true
+        },
+        {
+          "name": "libxrt2",
+          "version": "1:2.25.0-4~resolute1",
+          "architecture": "amd64",
+          "source": "lemonade",
+          "path": "pool/main/x/xrt/libxrt2_2.25.0-4~resolute1_amd64.deb",
+          "size": 1855742,
+          "sha256": "f8b50042fec24e2775e88bc25df89fe552d8154b0865972542eb25dcfdfed075",
+          "depends": "libc6 (>= 2.38), libgcc-s1 (>= 3.4), libstdc++6 (>= 14), libuuid1 (>= 2.16)",
+          "download_verified": true
+        }
+      ],
+      "firmware": {
+        "package": "amdxdna-dkms",
+        "files": [
+          "lib/firmware/updates/amdnpu/17f0_10/npu.sbin.1.1.2.64",
+          "lib/firmware/updates/amdnpu/17f0_11/npu.sbin.1.1.2.65"
+        ]
+      },
+      "remaining_checks": [
+        "running-kernel matching headers and DKMS build",
+        "Secure Boot signing/enrollment",
+        "firmware selection and device revision",
+        "FLM bundle XRT ABI versus system XRT",
+        "runtime account permissions and memlock",
+        "offline inference and cancellation on NPU"
+      ]
+    }
+  ]
+}

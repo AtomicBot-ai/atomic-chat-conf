@@ -1,7 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Atomic Chat embedding model catalog",
-  "description": "Embedding models the app offers on the Local API Server. Every model runs on stock llama.cpp (`llamacpp-upstream`, `llama-server --embedding`), from one GGUF plus an optional multimodal projector. Each model is pinned to one commit; the app downloads every listed file into <data>/embedding/models/<id>/<path>, checking bytes and sha256, and hands it to the core, which starts the embedding server and serves it on /v1/embeddings. Every size is the exact byte count from the Hugging Face API.",
+  "title": "Atomic Chat embedding model catalog (deprecated export)",
+  "description": "DEPRECATED compatibility export: models/embedding.json is generated from models/catalog.json for released clients. Edit catalog.json and regenerate; keep this export until its consumers are explicitly unsupported. Legacy contract: Embedding models the app offers on the Local API Server. Every model runs on stock llama.cpp (`llamacpp-upstream`, `llama-server --embedding`), from one GGUF plus an optional multimodal projector. Each model is pinned to one commit; the app downloads every listed file into <data>/embedding/models/<id>/<path>, checking bytes and sha256, and hands it to the core, which starts the embedding server and serves it on /v1/embeddings. Every size is the exact byte count from the Hugging Face API.",
+  "deprecated": true,
   "type": "object",
   "required": ["schema_version", "updated_at", "models"],
   "additionalProperties": false,

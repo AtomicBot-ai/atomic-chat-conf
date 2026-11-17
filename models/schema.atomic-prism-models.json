@@ -1,7 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Atomic Chat PrismML model compatibility rules",
-  "description": "Which Bonsai GGUF files need the atomic-prism provider, which also run on stock llama.cpp, and which are legacy layouts no current engine runs. The core reads this to decide the engine for a file before download (by repository and file name) and after download (by sha256 and the GGUF header). `tensor_types` and `metadata_capabilities` turn header evidence into capabilities, so a new Prism packing can be recognised without a client release. The core embeds a baseline copy and keeps working when this file is unreachable.",
+  "title": "Atomic Chat PrismML model compatibility rules (deprecated export)",
+  "description": "DEPRECATED compatibility export: models/atomic-prism-models.json is generated from models/catalog.json for released clients. Edit catalog.json and regenerate; keep this export until its consumers are explicitly unsupported. Legacy contract: Which Bonsai GGUF files need the atomic-prism provider, which also run on stock llama.cpp, and which are legacy layouts no current engine runs. The core reads this to decide the engine for a file before download (by repository and file name) and after download (by sha256 and the GGUF header). `tensor_types` and `metadata_capabilities` turn header evidence into capabilities, so a new Prism packing can be recognised without a client release. The core embeds a baseline copy and keeps working when this file is unreachable.",
+  "deprecated": true,
   "type": "object",
   "required": ["schema_version", "updated_at", "rules_version", "tensor_types", "metadata_capabilities", "upstream_capabilities", "families"],
   "additionalProperties": false,

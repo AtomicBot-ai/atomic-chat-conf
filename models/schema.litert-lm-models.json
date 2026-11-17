@@ -1,7 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Atomic Chat LiteRT-LM model list",
-  "description": "Models of the `litert-lm` provider, plus where the app and `atc` find the rest. A client downloads a variant's file itself from https://huggingface.co/<repo>/resolve/<revision>/<path> into <data>/litert-lm/models/<variant id>/, checks size and sha256, asks the core to check the file and writes model.yml last. Models of the `huggingface` organisations tagged `filter` are shown after the curated ones, with variants built from their `.litertlm` file names and offered only for the backends `huggingface.backends` allows on the host platform; a curated model with the same repo wins. A client hides a variant whose backend, NPU target or platform it does not know, and a model left with no variants, so new kinds are added next to the old ones.",
+  "title": "Atomic Chat LiteRT-LM model list (deprecated export)",
+  "description": "DEPRECATED compatibility export: models/litert-lm-models.json is generated from models/catalog.json for released clients. Edit catalog.json and regenerate; keep this export until its consumers are explicitly unsupported. Legacy contract: Models of the `litert-lm` provider, plus where the app and `atc` find the rest. A client downloads a variant's file itself from https://huggingface.co/<repo>/resolve/<revision>/<path> into <data>/litert-lm/models/<variant id>/, checks size and sha256, asks the core to check the file and writes model.yml last. Models of the `huggingface` organisations tagged `filter` are shown after the curated ones, with variants built from their `.litertlm` file names and offered only for the backends `huggingface.backends` allows on the host platform; a curated model with the same repo wins. A client hides a variant whose backend, NPU target or platform it does not know, and a model left with no variants, so new kinds are added next to the old ones.",
+  "deprecated": true,
   "type": "object",
   "required": ["schema_version", "updated_at", "huggingface", "models"],
   "additionalProperties": false,

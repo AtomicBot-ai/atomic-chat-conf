@@ -1,0 +1,172 @@
+{
+  "_id": "687ebfb41efae4a62c0cfce8",
+  "id": "FastFlowLM/Qwen3-0.6B-NPU2",
+  "private": false,
+  "pipeline_tag": "text-generation",
+  "library_name": "transformers",
+  "tags": [
+    "transformers",
+    "qwen3",
+    "text-generation",
+    "qwen",
+    "unsloth",
+    "conversational",
+    "en",
+    "base_model:Qwen/Qwen3-0.6B",
+    "base_model:finetune:Qwen/Qwen3-0.6B",
+    "license:apache-2.0",
+    "endpoints_compatible",
+    "region:us"
+  ],
+  "downloads": 1135,
+  "likes": 0,
+  "modelId": "FastFlowLM/Qwen3-0.6B-NPU2",
+  "author": "FastFlowLM",
+  "sha": "b584799232c962f693e0e5be99606fc4eca6811e",
+  "lastModified": "2026-08-04T22:20:58.000Z",
+  "gated": false,
+  "disabled": false,
+  "widgetData": [
+    {
+      "text": "Hi, what can you help me with?"
+    },
+    {
+      "text": "What is 84 * 3 / 2?"
+    },
+    {
+      "text": "Tell me an interesting fact about the universe!"
+    },
+    {
+      "text": "Explain quantum computing in simple terms."
+    }
+  ],
+  "model-index": null,
+  "config": {
+    "architectures": [
+      "Qwen3ForCausalLM"
+    ],
+    "model_type": "qwen3",
+    "tokenizer_config": {
+      "bos_token": null,
+      "eos_token": "<|im_end|>",
+      "unk_token": null,
+      "pad_token": "<|endoftext|>",
+      "chat_template": "{%- if tools %}\n    {{- '<|im_start|>system\\n' }}\n    {%- if messages[0].role == 'system' %}\n        {{- messages[0].content + '\\n\\n' }}\n {%- if 'user_system_prompt' is defined -%} {{- user_system_prompt + '\\n\\n'}} {%- endif -%} {%- elif 'user_system_prompt' is defined -%} {{- user_system_prompt + '\\n\\n' }} {%- endif %}\n    {{- \"# Tools\\n\\nYou may call one or more functions to assist with the user query.\\n\\nYou are provided with function signatures within <tools></tools> XML tags:\\n<tools>\" }}\n    {%- for tool in tools %}\n        {{- \"\\n\" }}\n        {{- tool | tojson }}\n    {%- endfor %}\n    {{- \"\\n</tools>\\n\\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\\n<tool_call>\\n{\\\"name\\\": <function-name>, \\\"arguments\\\": <args-json-object>}\\n</tool_call><|im_end|>\\n\" }}\n{%- else %}\n    {%- if messages[0].role == 'system' %}\n        {{- '<|im_start|>system\\n' + messages[0].content + '<|im_end|>\\n' }}\n   {%- elif 'user_system_prompt' is defined -%} {{- '<|im_start|>system\\n' + user_system_prompt + '<|im_end|>\\n' }}  {%- endif %}\n{%- endif %}\n{%- set ns = namespace(multi_step_tool=true, last_query_index=messages|length - 1) %}\n{%- for message in messages[::-1] %}\n    {%- set index = (messages|length - 1) - loop.index0 %}\n    {%- if ns.multi_step_tool and message.role == \"user\" and message.content is string and not(message.content.startswith('<tool_response>') and message.content.endswith('</tool_response>')) %}\n        {%- set ns.multi_step_tool = false %}\n        {%- set ns.last_query_index = index %}\n    {%- endif %}\n{%- endfor %}\n{%- for message in messages %}\n    {%- if message.content is string %}\n        {%- set content = message.content %}\n    {%- else %}\n        {%- set content = '' %}\n    {%- endif %}\n    {%- if (message.role == \"user\") or (message.role == \"system\" and not loop.first) %}\n        {{- '<|im_start|>' + message.role + '\\n' + content + '<|im_end|>' + '\\n' }}\n    {%- elif message.role == \"assistant\" %}\n        {%- set reasoning_content = '' %}\n        {%- if message.reasoning_content is string %}\n            {%- set reasoning_content = message.reasoning_content %}\n        {%- else %}\n            {%- if '</think>' in content %}\n                {%- set reasoning_content = content.split('</think>')[0].rstrip('\\n').split('<think>')[-1].lstrip('\\n') %}\n                {%- set content = content.split('</think>')[-1].lstrip('\\n') %}\n            {%- endif %}\n        {%- endif %}\n        {%- if loop.index0 > ns.last_query_index %}\n            {%- if loop.last or (not loop.last and reasoning_content) %}\n                {{- '<|im_start|>' + message.role + '\\n<think>\\n' + reasoning_content.strip('\\n') + '\\n</think>\\n\\n' + content.lstrip('\\n') }}\n            {%- else %}\n                {{- '<|im_start|>' + message.role + '\\n' + content }}\n            {%- endif %}\n        {%- else %}\n            {{- '<|im_start|>' + message.role + '\\n' + content }}\n        {%- endif %}\n        {%- if message.tool_calls %}\n            {%- for tool_call in message.tool_calls %}\n                {%- if (loop.first and content) or (not loop.first) %}\n                    {{- '\\n' }}\n                {%- endif %}\n                {%- if tool_call.function %}\n                    {%- set tool_call = tool_call.function %}\n                {%- endif %}\n                {{- '<tool_call>\\n{\"name\": \"' }}\n                {{- tool_call.name }}\n                {{- '\", \"arguments\": ' }}\n                {%- if tool_call.arguments is string %}\n                    {{- tool_call.arguments }}\n                {%- else %}\n                    {{- tool_call.arguments | tojson }}\n                {%- endif %}\n                {{- '}\\n</tool_call>' }}\n            {%- endfor %}\n        {%- endif %}\n        {{- '<|im_end|>\\n' }}\n    {%- elif message.role == \"tool\" %}\n        {%- if loop.first or (messages[loop.index0 - 1].role != \"tool\") %}\n            {{- '<|im_start|>user' }}\n        {%- endif %}\n        {{- '\\n<tool_response>\\n' }}\n        {{- content }}\n        {{- '\\n</tool_response>' }}\n        {%- if loop.last or (messages[loop.index0 + 1].role != \"tool\") %}\n            {{- '<|im_end|>\\n' }}\n        {%- endif %}\n    {%- endif %}\n{%- endfor %}\n{%- if add_generation_prompt %}\n    {{- '<|im_start|>assistant\\n' }}\n    {%- if enable_thinking is defined and enable_thinking is false %}\n        {{- '<think>\\n\\n</think>\\n\\n' }}\n    {%- endif %}\n{%- endif %}"
+    }
+  },
+  "cardData": {
+    "base_model": "Qwen/Qwen3-0.6B",
+    "language": [
+      "en"
+    ],
+    "library_name": "transformers",
+    "license_link": "https://huggingface.co/Qwen/Qwen3-0.6B/blob/main/LICENSE",
+    "license": "apache-2.0",
+    "tags": [
+      "qwen3",
+      "qwen",
+      "unsloth",
+      "transformers"
+    ]
+  },
+  "transformersInfo": {
+    "auto_model": "AutoModelForCausalLM",
+    "pipeline_tag": "text-generation",
+    "processor": "AutoTokenizer"
+  },
+  "siblings": [
+    {
+      "rfilename": ".gitattributes",
+      "blobId": "3ae5690b8855e0efa129d17221335f5919dcb220",
+      "size": 343
+    },
+    {
+      "rfilename": "README.md",
+      "blobId": "15be693db03f9c00cbec000f95cb153510cd6d00",
+      "size": 13197
+    },
+    {
+      "rfilename": "attn.xclbin",
+      "blobId": "2762a902c859f77ba92bdb68e7a0f6f4a29f55d5",
+      "size": 355915,
+      "lfs": {
+        "sha256": "7fef95ff22e540bf4c98c7013efcfc7a8cae5d1a2e5d9e02cab63ae6156ff620",
+        "size": 355915,
+        "pointerSize": 131
+      }
+    },
+    {
+      "rfilename": "config.json",
+      "blobId": "59f8fd3b0b3266917f24c0888efbdfba32a8ceb7",
+      "size": 869
+    },
+    {
+      "rfilename": "dequant.xclbin",
+      "blobId": "ce7d32cad0510d7bb597c2faac22998f1185f37e",
+      "size": 115179,
+      "lfs": {
+        "sha256": "a1be8893482f4d6f3634621e9f1c52355ce082cb768300ead02a54b05026b74c",
+        "size": 115179,
+        "pointerSize": 131
+      }
+    },
+    {
+      "rfilename": "layer.xclbin",
+      "blobId": "0475b9b0d10297a9918a4a7d83e0dd7210703ce4",
+      "size": 307451,
+      "lfs": {
+        "sha256": "288ae1338438aed8afef17c09f2c3f02eed90239cd818ced015d11d37a22b6f2",
+        "size": 307451,
+        "pointerSize": 131
+      }
+    },
+    {
+      "rfilename": "lm_head.xclbin",
+      "blobId": "d608127a3095b3418fec981b3ee7a03bc58a480f",
+      "size": 153355,
+      "lfs": {
+        "sha256": "4b6fbf300da031265251984dccde59044a83d4c6cfa73c4175cf5f58c2165501",
+        "size": 153355,
+        "pointerSize": 131
+      }
+    },
+    {
+      "rfilename": "mm.xclbin",
+      "blobId": "287787289b9f59e69cff134e3fe085b52d3a4d4f",
+      "size": 347675,
+      "lfs": {
+        "sha256": "b1e88cd899e3fbef3b402ecaf2ab644f21cca2ee85dafe6e2521d89222c5a644",
+        "size": 347675,
+        "pointerSize": 131
+      }
+    },
+    {
+      "rfilename": "model.q4nx",
+      "blobId": "2720a7c4bb11ad585db103c0c3f7e28b2f546ec0",
+      "size": 683820832,
+      "lfs": {
+        "sha256": "db8dec4dff653817218ff920c5d25d28d1805512906485e654f03980053fa667",
+        "size": 683820832,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "tokenizer.json",
+      "blobId": "cd71f61a15a522601badb3dc960d800d9cb3766c",
+      "size": 11422654,
+      "lfs": {
+        "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+        "size": 11422654,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "tokenizer_config.json",
+      "blobId": "c5e960f8f86088760f876dca70aba8e97bbe89f6",
+      "size": 10055
+    }
+  ],
+  "spaces": [],
+  "createdAt": "2025-07-21T22:31:16.000Z",
+  "usedStorage": 2066290330
+}

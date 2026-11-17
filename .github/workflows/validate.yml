@@ -24,10 +24,42 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # The pinned pre-FLM consumer parser is TypeScript; test its exact
+          # source with Node's type stripping instead of a rewritten copy.
+          node-version: "22"
 
       - name: Install ajv-cli
         run: npm install -g ajv-cli@5
+
+      - name: Check FastFlowLM contracts and immutable published data
+        env:
+          FASTFLOWLM_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: |
+          node --test .github/scripts/fastflowlm-manifest.test.mjs
+          node --experimental-strip-types --test .github/scripts/fastflowlm-models.test.mjs
+          node --test .github/scripts/fastflowlm-candidates.test.mjs
+          node --test .github/scripts/fastflowlm-production.test.mjs
+          node .github/scripts/fastflowlm-manifest-check.mjs
+
+      - name: Check the unified model catalog and compatible exports
+        run: |
+          node --test .github/scripts/model-catalog.test.mjs
+          node .github/scripts/export-model-catalog.mjs --check
+          npx --yes ajv-cli@5 validate -s models/schema.catalog.json -d models/catalog.json --strict=false
+
+      - name: Check Strata candidate contracts, packaging and legacy compatibility
+        env:
+          STRATA_BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: |
+          node --test .github/scripts/strata-manifest.test.mjs
+          node --test .github/scripts/strata-catalog.test.mjs
+          node --experimental-strip-types --test .github/scripts/strata-catalog-compat.test.mjs
+          node .github/scripts/strata-manifest-check.mjs
+          python3 -m unittest discover -s .github/scripts/strata -p test_package.py
+          python3 -m unittest discover -s .github/scripts/strata -p test_atomic_owner_patch.py
+          python3 -m unittest discover -s .github/scripts/strata -p test_atomic_owner_runtime.py
+          ajv validate -s backends/strata-schema.json -d backends/strata-manifest.json --strict=false
+          ajv validate -s backends/strata-candidate-schema.json -d backends/strata-manifest.candidate.json --strict=false
 
       - name: Validate providers registry against schema
         run: |
@@ -506,8 +538,8 @@ jobs:
 
       # Includes the rule older cores depend on: backends/manifest.json names an
       # approved release of the list that every core runs, with the same bytes.
-      # upstream-verify.test.mjs covers the approval gates (llama.cpp, sd.cpp and
-      # audio.cpp).
+      # upstream-verify.test.mjs covers the approval gates (llama.cpp, sd.cpp,
+      # audio.cpp and MLX).
       - name: Check upstream llama.cpp release list integrity
         run: |
           node --test .github/scripts/upstream-releases.test.mjs
@@ -564,25 +596,28 @@ jobs:
           node --test .github/scripts/audiocpp-manifest-check.test.mjs
           node --test .github/scripts/audiocpp-approve.test.mjs
 
-      - name: Validate MLX server manifest against schema
+      # Same pair for MLX (mirror-mlx.yml, mlx-approve.yml): the staging
+      # manifest is the candidate slot and obeys the same rules.
+      - name: Validate MLX server manifests against schema
         run: |
-          ajv validate \
-            -s backends/mlx-schema.json \
-            -d backends/mlx-manifest.json \
-            --strict=false
+          for m in backends/mlx-manifest.json backends/mlx-manifest.staging.json; do
+            ajv validate -s backends/mlx-schema.json -d "$m" --strict=false
+          done
 
       - name: Check MLX server manifest integrity
-        run: node --test .github/scripts/mlx-manifest.test.mjs
+        run: |
+          node --test .github/scripts/mlx-manifest.test.mjs
+          node --test .github/scripts/mlx-approve.test.mjs
 
       - name: Validate Foundry Local runtime manifest against schema
         run: |
           ajv validate \
             -s backends/foundry-local-schema.json \
-            -d backends/foundry-local-manifest.json \
+            -d 'backends/foundry-local-manifest*.json' \
             --strict=false
 
       - name: Check Foundry Local runtime manifest integrity
-        run: node .github/scripts/foundry-local-manifest-check.mjs
+        run: node .github/scripts/foundry-local-manifest-check.mjs backends/foundry-local-manifest.json backends/foundry-local-manifest.candidate.json
 
       - name: Validate Foundry Local model list against schema
         run: |

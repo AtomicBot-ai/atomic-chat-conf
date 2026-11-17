@@ -1,0 +1,27 @@
+{
+  "package": {
+    "archive": "strata-0.1.59-r5-macos-arm64-metal.tar.gz",
+    "bundle_manifest_sha256": "cac044c21573dcb8744f5de1d1bdf8d3c10780d68f762b5181f137273d48370b",
+    "python": "control/python/bin/python3",
+    "qualification": "candidate",
+    "release_id": "strata-0.1.59-r5",
+    "schema_version": 1,
+    "sha256": "c08ac6dc5db20058c23478b205ed954c58c6192d8d3990cdff6293adba197591",
+    "signing": "macos-python-ad-hoc-development",
+    "size": 59283156,
+    "unpacked_bytes": 174457509,
+    "variant": "macos-arm64-metal"
+  },
+  "platform": "macOS arm64",
+  "passed": [
+    "packaged Python and native version probe",
+    "r4 owner-contract rejection",
+    "compute exits when watcher creation fails",
+    "private ledger rejects termination by a foreign profile"
+  ],
+  "pending": [
+    "Windows/Linux/Spark native lifecycle",
+    "live inference",
+    "distribution signing"
+  ]
+}

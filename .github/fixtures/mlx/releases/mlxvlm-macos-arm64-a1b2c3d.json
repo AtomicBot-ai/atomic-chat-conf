@@ -1,0 +1,17 @@
+{
+  "tag_name": "mlxvlm-macos-arm64-a1b2c3d",
+  "name": "mlx-server mlxvlm-macos-arm64-a1b2c3d (v0.7.12, Atomic)",
+  "published_at": "2026-11-12T10:00:00Z",
+  "assets": [
+    {
+      "name": "mlxvlm-mlx-server-macos-arm64.tar.gz",
+      "size": 287000000,
+      "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    {
+      "name": "requirements.lock.txt",
+      "size": 2048,
+      "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    }
+  ]
+}

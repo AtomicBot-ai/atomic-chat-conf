@@ -44,8 +44,8 @@ help:
 	@echo ""
 	@echo "Variables: RETAIN=$(RETAIN) (releases kept), REPO=$(REPO)"
 
-# Signing has to happen on native runners: signtool and the DigiCert KeyLocker
-# KSP exist only on Windows, codesign only on macOS. One local command cannot
+# Signing has to happen on native runners: AzureSignTool and signtool (the
+# Key Vault signing path) run only on Windows, codesign only on macOS. One local command cannot
 # cover both platforms, so this is a thin wrapper around the workflow.
 mirror:
 	@test -n "$(TAG)" || { echo "Usage: make mirror TAG=b10405"; exit 1; }
@@ -166,6 +166,24 @@ prism-withdraw:
 # runtime-descriptor-*.test.mjs files discover every one of them, schema
 # included, so a new engine's descriptor is checked without editing this list.
 validate:
+	node --test .github/scripts/strata-manifest.test.mjs
+	node --test .github/scripts/strata-catalog.test.mjs
+	node --experimental-strip-types --test .github/scripts/strata-catalog-compat.test.mjs
+	node .github/scripts/strata-manifest-check.mjs
+	python3 -m unittest discover -s .github/scripts/strata -p test_package.py
+	python3 -m unittest discover -s .github/scripts/strata -p test_atomic_owner_patch.py
+	python3 -m unittest discover -s .github/scripts/strata -p test_atomic_owner_runtime.py
+	npx --yes ajv-cli@5 validate -s backends/strata-schema.json -d backends/strata-manifest.json --strict=false
+	npx --yes ajv-cli@5 validate -s backends/strata-candidate-schema.json -d backends/strata-manifest.candidate.json --strict=false
+	node --test .github/scripts/fastflowlm-upstream.test.mjs
+	node --test .github/scripts/fastflowlm-manifest.test.mjs
+	node --experimental-strip-types --test .github/scripts/fastflowlm-models.test.mjs
+	node --test .github/scripts/fastflowlm-candidates.test.mjs
+	node --test .github/scripts/fastflowlm-production.test.mjs
+	node .github/scripts/fastflowlm-manifest-check.mjs
+	node --test .github/scripts/model-catalog.test.mjs
+	node .github/scripts/export-model-catalog.mjs --check
+	npx --yes ajv-cli@5 validate -s models/schema.catalog.json -d models/catalog.json --strict=false
 	node --test .github/scripts/recommendation-tiers.test.mjs
 	node --test .github/scripts/runtime-descriptor.test.mjs
 	node --test .github/scripts/environment-manifest.test.mjs
@@ -195,6 +213,7 @@ validate:
 	npx --yes ajv-cli@5 validate -s backends/schema.json -d backends/manifest.json --strict=false
 	node --test .github/scripts/upstream-releases.test.mjs
 	node --test .github/scripts/upstream-verify.test.mjs
+	node --test .github/scripts/mirror.test.mjs
 	npx --yes ajv-cli@5 validate -s backends/llamacpp-upstream-releases-schema.json -d backends/llamacpp-upstream-releases.json --strict=false
 	node .github/scripts/upstream-releases.mjs check
 	npx --yes ajv-cli@5 validate -s backends/turboquant-schema.json -d backends/turboquant-manifest.json --strict=false
@@ -214,9 +233,11 @@ validate:
 	node --test .github/scripts/audiocpp-manifest-check.test.mjs
 	node --test .github/scripts/audiocpp-approve.test.mjs
 	npx --yes ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.json --strict=false
+	npx --yes ajv-cli@5 validate -s backends/mlx-schema.json -d backends/mlx-manifest.staging.json --strict=false
 	node --test .github/scripts/mlx-manifest.test.mjs
-	npx --yes ajv-cli@5 validate -s backends/foundry-local-schema.json -d backends/foundry-local-manifest.json --strict=false
-	node .github/scripts/foundry-local-manifest-check.mjs
+	node --test .github/scripts/mlx-approve.test.mjs
+	npx --yes ajv-cli@5 validate -s backends/foundry-local-schema.json -d 'backends/foundry-local-manifest*.json' --strict=false
+	node .github/scripts/foundry-local-manifest-check.mjs backends/foundry-local-manifest.json backends/foundry-local-manifest.candidate.json
 	npx --yes ajv-cli@5 validate -s models/schema.foundry-local-models.json -d models/foundry-local-models.json --strict=false
 	node .github/scripts/foundry-local-models-check.mjs
 	npx --yes ajv-cli@5 validate -s backends/litert-lm-schema.json -d backends/litert-lm-manifest.json --strict=false

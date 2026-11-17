@@ -1,0 +1,197 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "engine",
+    "platform",
+    "manifest_id",
+    "recipes"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "engine": {
+      "const": "fastflowlm"
+    },
+    "platform": {
+      "const": "windows"
+    },
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^fastflowlm-windows-r[1-9][0-9]*$"
+    },
+    "recipes": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "recipe_id",
+          "revision",
+          "min_core_version",
+          "hardware",
+          "qualification",
+          "platforms",
+          "driver",
+          "action"
+        ],
+        "properties": {
+          "recipe_id": {
+            "type": "string",
+            "pattern": "^fastflowlm-windows-[a-z0-9][a-z0-9.-]*$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "min_core_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+          },
+          "hardware": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "npu_generation",
+              "pci_device_ids"
+            ],
+            "properties": {
+              "npu_generation": {
+                "const": "xdna2"
+              },
+              "pci_device_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^1022:[0-9a-f]{4}$"
+                }
+              }
+            }
+          },
+          "qualification": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "evidence",
+              "build_version"
+            ],
+            "properties": {
+              "evidence": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "url",
+                  "size",
+                  "sha256"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "pattern": "^https://github\\.com/AtomicBot-ai/atomic-chat-core/releases/download/[^/?#]+/[^/?#]+$"
+                  },
+                  "size": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  }
+                }
+              },
+              "build_version": {
+                "type": "string",
+                "pattern": "^flm-(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)-r[1-9][0-9]*$"
+              }
+            }
+          },
+          "platforms": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "os",
+                "version",
+                "arch"
+              ],
+              "properties": {
+                "os": {
+                  "const": "windows"
+                },
+                "version": {
+                  "const": "11"
+                },
+                "arch": {
+                  "const": "x64"
+                }
+              }
+            }
+          },
+          "driver": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "url",
+              "size",
+              "sha256",
+              "signer",
+              "catalog_sha256",
+              "kind"
+            ],
+            "properties": {
+              "version": {
+                "type": "string",
+                "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$"
+              },
+              "url": {
+                "type": "string",
+                "pattern": "^https://(download\\.amd\\.com/[^?#]+|catalog\\.s\\.download\\.windowsupdate\\.com/c/msdownload/update/driver/[^?#]+\\.cab)$"
+              },
+              "size": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "signer": {
+                "enum": [
+                  "Advanced Micro Devices, Inc.",
+                  "Microsoft Windows Hardware Compatibility Publisher"
+                ]
+              },
+              "catalog_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "kind": {
+                "enum": [
+                  "amd-installer",
+                  "windows-update-cab"
+                ]
+              }
+            }
+          },
+          "action": {
+            "const": "windows.install-amd-npu"
+          }
+        }
+      }
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FastFlowLM windows environment",
+  "description": "Data only; no commands, arguments or scripts. Empty recipes advertise no automatic setup. min_core_version is required on each qualified recipe; bootstrap makes no compatibility promise."
+}

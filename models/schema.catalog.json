@@ -1,0 +1,1039 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Atomic Chat unified model catalog",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "updated_at",
+    "models",
+    "collections"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "models": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "kind",
+          "definition",
+          "format",
+          "variants"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "chat",
+              "diffusion",
+              "embedding",
+              "decision",
+              "litert-lm",
+              "geniex",
+              "foundry-local",
+              "auxiliary",
+              "prism",
+              "audio",
+              "fastflowlm",
+              "strata",
+              "strata-cuda"
+            ]
+          },
+          "definition": {
+            "type": "object"
+          },
+          "omit_revisions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "format": {
+            "type": "string",
+            "minLength": 1
+          },
+          "variants": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "path",
+                "size"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "size": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "model_id": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "chat"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "files"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "fastflowlm"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "format": {
+                  "const": "fastflowlm"
+                },
+                "definition": {
+                  "$ref": "#/definitions/fastflowlm"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["strata", "strata-cuda"]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "format": {
+                  "const": "strata"
+                },
+                "definition": {
+                  "$ref": "#/definitions/strata"
+                }
+              },
+              "not": {
+                "required": [
+                  "omit_revisions"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "collections": {
+      "type": "object",
+      "required": [
+        "recommended",
+        "staff-picks",
+        "diffusion",
+        "embedding",
+        "decision",
+        "litert-lm-models",
+        "geniex-models",
+        "foundry-local-models",
+        "atomic-prism-models",
+        "audio"
+      ],
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "header"
+        ],
+        "properties": {
+          "header": {
+            "type": "object"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "model",
+                "variant"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "variant": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "properties": {
+        "fastflowlm-models": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "header",
+            "entries"
+          ],
+          "properties": {
+            "header": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "schema_version"
+              ],
+              "properties": {
+                "schema_version": {
+                  "const": 1
+                }
+              }
+            },
+            "entries": {
+              "type": "array",
+              "minItems": 0,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "model",
+                  "variant"
+                ],
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "variant": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9._-]*$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "strata-cuda-models": {
+          "$ref": "#/properties/collections/properties/strata-models"
+        },
+        "strata-models": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "header",
+            "entries"
+          ],
+          "properties": {
+            "header": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "schema_version"
+              ],
+              "properties": {
+                "schema_version": {
+                  "const": 1
+                }
+              }
+            },
+            "entries": {
+              "type": "array",
+              "minItems": 0,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "model",
+                  "variant"
+                ],
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "variant": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9._-]*$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "fastflowlm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_id",
+        "variant_id",
+        "name",
+        "checkpoint",
+        "minimum_flm_version",
+        "local_only_protocol",
+        "npu_generation",
+        "context_length",
+        "license",
+        "gated",
+        "capabilities",
+        "sources",
+        "files",
+        "components",
+        "qualification"
+      ],
+      "properties": {
+        "model_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "variant_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "checkpoint": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*:[a-z0-9][a-z0-9._-]*$"
+        },
+        "minimum_flm_version": {
+          "type": "string",
+          "pattern": "^flm-(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)-r[1-9][0-9]*$"
+        },
+        "local_only_protocol": {
+          "const": 1
+        },
+        "npu_generation": {
+          "const": "xdna2"
+        },
+        "context_length": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gated": {
+          "type": "boolean"
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "chat",
+            "tools",
+            "reasoning",
+            "structured_output"
+          ],
+          "properties": {
+            "chat": {
+              "const": true
+            },
+            "tools": {
+              "type": "boolean"
+            },
+            "reasoning": {
+              "type": "boolean"
+            },
+            "structured_output": {
+              "type": "boolean"
+            }
+          }
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "repo",
+              "revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9._-]*$"
+              },
+              "host": {
+                "enum": [
+                  "huggingface",
+                  "github"
+                ],
+                "default": "huggingface"
+              },
+              "repo": {
+                "type": "string",
+                "pattern": "^(?!\\.{1,2}/)[A-Za-z0-9_.-]+/(?!\\.{1,2}$)[A-Za-z0-9_.-]+$"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              }
+            }
+          }
+        },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source",
+              "source_path",
+              "path",
+              "size",
+              "sha256"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9._-]*$"
+              },
+              "source_path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              },
+              "size": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        },
+        "components": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "weights",
+            "tokenizer",
+            "config",
+            "chat_template",
+            "kernels",
+            "metadata"
+          ],
+          "properties": {
+            "weights": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              }
+            },
+            "tokenizer": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              }
+            },
+            "config": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              }
+            },
+            "chat_template": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              }
+            },
+            "kernels": {
+              "type": "array",
+              "minItems": 0,
+              "items": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              }
+            },
+            "metadata": {
+              "type": "array",
+              "minItems": 0,
+              "items": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              }
+            }
+          }
+        },
+        "qualification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "evidence"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "candidate",
+                "upstream",
+                "qualified"
+              ]
+            },
+            "evidence": {
+              "type": "array",
+              "minItems": 0,
+              "items": {
+                "type": "string",
+                "pattern": "^https://[^\\s]+$"
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "qualified",
+                      "upstream"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "evidence": {
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "recommended": {
+          "type": "boolean"
+        }
+      }
+    },
+    "strata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "family",
+        "variant_id",
+        "name",
+        "license",
+        "gated",
+        "context_length",
+        "engine_release",
+        "preparation_abi",
+        "preparation_recipe_id",
+        "sources",
+        "files",
+        "inputs",
+        "compatible_variants",
+        "capabilities",
+        "capability_requirements",
+        "requirements",
+        "qualification"
+      ],
+      "properties": {
+        "family": {
+          "enum": [
+            "qwen38",
+            "qwen36",
+            "deepseek41"
+          ]
+        },
+        "variant_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gated": {
+          "type": "boolean"
+        },
+        "context_length": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "engine_release": {
+          "type": "string",
+          "pattern": "^strata-[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?-r[1-9][0-9]*$"
+        },
+        "preparation_abi": {
+          "const": "strata-v1"
+        },
+        "preparation_recipe_id": {
+          "enum": [
+            "strata-qwen38-v1",
+            "strata-qwen36-v1",
+            "strata-deepseek41-v1"
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "host",
+              "repo",
+              "revision"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9._-]*$"
+              },
+              "host": {
+                "enum": [
+                  "huggingface",
+                  "github"
+                ]
+              },
+              "repo": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{40}$"
+              }
+            }
+          }
+        },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source",
+              "source_path",
+              "path",
+              "size",
+              "sha256",
+              "role"
+            ],
+            "properties": {
+              "source": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9._-]*$"
+              },
+              "source_path": {
+                "type": "string",
+                "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              },
+              "size": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "role": {
+                "enum": [
+                  "weights",
+                  "vision",
+                  "drafter",
+                  "drafter-config",
+                  "draft-vocab",
+                  "expert-profile",
+                  "engram",
+                  "engram-metadata",
+                  "pack",
+                  "ple",
+                  "embedding"
+                ]
+              }
+            }
+          }
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "weights",
+            "vision",
+            "tokenizer_from",
+            "chat_template_from",
+            "drafting"
+          ],
+          "properties": {
+            "weights": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+              }
+            },
+            "vision": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "drafter": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "drafter_config": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "draft_vocab": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "expert_profile": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "engram": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "engram_metadata": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "tokenizer_from": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "chat_template_from": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "drafter_embedded_in": {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9_][A-Za-z0-9._/-]*$"
+            },
+            "ple": {
+              "type": "string"
+            },
+            "embedding": {
+              "type": "string"
+            },
+            "pack_files": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "drafting": {
+              "enum": [
+                "dflash2",
+                "mtp-embedded",
+                "dspark",
+                "none"
+              ]
+            },
+            "experts_per_token": {
+              "const": 6
+            }
+          }
+        },
+        "compatible_variants": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]*$"
+          }
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "chat",
+            "tools",
+            "reasoning",
+            "vision",
+            "structured_output"
+          ],
+          "properties": {
+            "chat": {
+              "type": "boolean"
+            },
+            "tools": {
+              "type": "boolean"
+            },
+            "reasoning": {
+              "type": "boolean"
+            },
+            "vision": {
+              "type": "boolean"
+            },
+            "structured_output": {
+              "type": "boolean"
+            }
+          }
+        },
+        "capability_requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "vision",
+            "structured_output",
+            "drafting"
+          ],
+          "properties": {
+            "vision": {
+              "const": [
+                "compatible-picture-reader"
+              ]
+            },
+            "structured_output": {
+              "const": [
+                "full-json-schema-validator"
+              ]
+            },
+            "drafting": {
+              "const": [
+                "verified-family-profile"
+              ]
+            }
+          }
+        },
+        "requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "download_bytes",
+            "memory_accounting",
+            "resource_estimator",
+            "disk_components",
+            "memory_components",
+            "memory_modes",
+            "requires_core_check"
+          ],
+          "properties": {
+            "download_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "memory_accounting": {
+              "const": "separate-ram-vram-or-unified"
+            },
+            "resource_estimator": {
+              "enum": [
+                "strata-qwen38-v1",
+                "strata-qwen36-v1",
+                "strata-deepseek41-v1"
+              ]
+            },
+            "disk_components": {
+              "const": [
+                "sources",
+                "derivatives",
+                "temporary",
+                "previous-installation"
+              ]
+            },
+            "memory_components": {
+              "const": [
+                "ram",
+                "vram",
+                "unified-memory"
+              ]
+            },
+            "memory_modes": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "auto",
+                  "ram",
+                  "ssd"
+                ]
+              }
+            },
+            "requires_core_check": {
+              "const": true
+            }
+          }
+        },
+        "qualification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "evidence"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "upstream-supported",
+                "atomic-qualified"
+              ]
+            },
+            "evidence": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^https://[^\\s]+$"
+              }
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "family": {
+                "const": "qwen38"
+              },
+              "inputs": {
+                "properties": {
+                  "drafting": {
+                    "const": "dflash2"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "inputs": {
+                "required": [
+                  "drafter",
+                  "drafter_config",
+                  "draft_vocab",
+                  "expert_profile"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "family": {
+                "const": "qwen36"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "inputs": {
+                "required": [
+                  "drafter_embedded_in"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "family": {
+                "const": "deepseek41"
+              },
+              "inputs": {
+                "properties": {
+                  "drafting": {
+                    "const": "dspark"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "inputs": {
+                "required": [
+                  "drafter",
+                  "engram",
+                  "engram_metadata",
+                  "expert_profile",
+                  "experts_per_token"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

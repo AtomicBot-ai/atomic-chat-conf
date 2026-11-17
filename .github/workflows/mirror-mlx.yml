@@ -1,0 +1,311 @@
+name: Mirror MLX server
+run-name: Mirror mlx-server ${{ inputs.tag }} [cid:${{ inputs.candidate_id }}]
+
+# Copies an mlx-server build of the AtomicBot-ai/mlx-vlm fork into a release
+# here and points the MLX manifest at it. The fork's Release (Atomic) builds an
+# upstream tag of Neywa-Labs/mlx-vlm (vX.Y.Z) with its patch series, signs the
+# binary with the Developer ID and notarizes it, and publishes it as its own
+# release of that tag. Nothing is re-signed here: the job checks that
+# signature and the notarization, and copies the archive byte for byte.
+#
+# Why a copy and not the fork's release itself: the fork rebuilds a tag in
+# place (replace), and a release clients download must never change its bytes
+# (the manifest pins sha256). Released cores accept only tag_name
+# ^mlxvlm-macos-arm64-[0-9a-f]{7,40}$ and download from
+# https://github.com/<upstream_repo>/releases/download/<tag_name>/<asset>, so
+# the copy is the release mlxvlm-macos-arm64-<atomic_rev> here (atomic_rev: the
+# fork commit the build ran at) and the manifest names this repository. Cores
+# order MLX builds by published_at, which is this release's.
+#
+# A build reaches users through the staging manifest, this workflow's default
+# manifest_path (the candidate slot); then core's engine-candidate (engine=mlx)
+# on the release here; then mlx-approve.yml, which copies the staging manifest
+# that check read into the live one. Callers find this run by
+# `[cid:<candidate_id>]` in its title. Writing the live manifest here directly
+# skips the check.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Upstream tag the fork built (vX.Y.Z, e.g. v0.7.12): the fork's release to copy"
+        required: true
+        type: string
+      atomic_rev:
+        description: "Fork commit the build ran at (7 hex): the release here is mlxvlm-macos-arm64-<atomic_rev>"
+        required: true
+        type: string
+      source_repo:
+        description: "Repository whose release of the tag holds the build"
+        required: false
+        default: "AtomicBot-ai/mlx-vlm"
+        type: choice
+        options:
+          - AtomicBot-ai/mlx-vlm
+      retain:
+        description: "How many mirrored MLX releases to keep (older ones are deleted)"
+        required: false
+        default: "3"
+        type: string
+      publish_manifest:
+        description: "Commit the manifest (see manifest_path) so clients pick the build up"
+        required: false
+        default: true
+        type: boolean
+      manifest_path:
+        description: "Manifest to write: the staging one (candidate slot, read by engine-candidate), or the live one (emergencies only: skips the check)"
+        required: false
+        default: "backends/mlx-manifest.staging.json"
+        type: choice
+        options:
+          - backends/mlx-manifest.staging.json
+          - backends/mlx-manifest.json
+      candidate_id:
+        description: "Id the caller finds this run by in its title"
+        required: false
+        default: "manual"
+        type: string
+
+# mlx-approve.yml shares the group: it reads the staging manifest and the
+# release this workflow rewrites.
+concurrency:
+  group: mirror-mlx
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  TAG: ${{ inputs.tag }}
+  REV: ${{ inputs.atomic_rev }}
+  SOURCE_REPO: ${{ inputs.source_repo }}
+  # The name clients see: the release here and the manifest's tag_name.
+  RELEASE_TAG: mlxvlm-macos-arm64-${{ inputs.atomic_rev }}
+  ASSET: mlxvlm-mlx-server-macos-arm64.tar.gz
+  LOCK: requirements.lock.txt
+
+jobs:
+  check:
+    name: Check inputs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Inputs reach scripts through env only, never through `${{ }}` in `run:`.
+      - name: Validate inputs
+        env:
+          CANDIDATE_ID: ${{ inputs.candidate_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::tag must look like v0.7.12"; exit 1; }
+          [[ "$REV" =~ ^[0-9a-f]{7}$ ]] || { echo "::error::atomic_rev must be 7 lowercase hex characters"; exit 1; }
+          [[ "$CANDIDATE_ID" =~ ^[A-Za-z0-9._:-]{1,80}$ ]] || { echo "::error::candidate_id must match ^[A-Za-z0-9._:-]{1,80}\$"; exit 1; }
+          names="$(gh release view "$TAG" -R "$SOURCE_REPO" --json assets --jq '.assets[].name')" \
+            || { echo "::error::$SOURCE_REPO has no release $TAG"; exit 1; }
+          grep -qxF "$ASSET" <<<"$names" || { echo "::error::$SOURCE_REPO release $TAG has no $ASSET"; exit 1; }
+
+      # A re-run must not touch the release clients download right now. Read
+      # from main as it is now: the run may have waited behind an approval.
+      - name: Refuse the tag clients install
+        run: |
+          set -euo pipefail
+          git fetch --quiet --depth=1 origin main
+          LIVE="$(git show FETCH_HEAD:backends/mlx-manifest.json | jq -r .tag_name)"
+          if [ "$LIVE" = "$RELEASE_TAG" ]; then
+            echo "::error::$RELEASE_TAG is the build backends/mlx-manifest.json serves"
+            exit 1
+          fi
+          echo "Live tag: $LIVE; mirroring $SOURCE_REPO $TAG as $RELEASE_TAG"
+
+  # The fork signs and notarizes; this is what makes the copy safe to serve.
+  # The binary must carry a Developer ID signature that verifies strictly, and
+  # Gatekeeper must accept it as notarized. The archive holds a bare binary:
+  # no ticket is stapled, so spctl asks Apple online, and `--type execute`
+  # refuses anything that is not an app bundle; `--type open` with the
+  # primary-signature context assesses a plain file.
+  verify:
+    name: Verify signature and notarization
+    needs: check
+    runs-on: macos-15
+    steps:
+      - name: Download the fork's build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist unpacked
+          gh release download "$TAG" -R "$SOURCE_REPO" -p "$ASSET" -D dist
+          gh release download "$TAG" -R "$SOURCE_REPO" -p "$LOCK" -D dist || echo "No $LOCK in $SOURCE_REPO $TAG"
+          tar -xzf "dist/$ASSET" -C unpacked
+          ls -la dist unpacked
+          [ "$(ls unpacked)" = mlx-server ] || { echo "::error::$ASSET must hold exactly mlx-server"; exit 1; }
+
+      - name: Check the signature
+        run: |
+          set -euo pipefail
+          codesign --verify --strict --verbose=2 unpacked/mlx-server
+          info="$(codesign -dvv unpacked/mlx-server 2>&1)"
+          echo "$info"
+          grep -q '^Authority=Developer ID Application:' <<<"$info" || { echo "::error::mlx-server is not signed with a Developer ID"; exit 1; }
+          grep -q 'flags=.*runtime' <<<"$info" || { echo "::error::mlx-server lacks the hardened runtime"; exit 1; }
+
+      - name: Check the notarization
+        run: |
+          set -euo pipefail
+          out="$(spctl --assess --type open --context context:primary-signature -vv unpacked/mlx-server 2>&1)" \
+            || { echo "$out"; echo "::error::Gatekeeper rejects mlx-server"; exit 1; }
+          echo "$out"
+          grep -q 'source=Notarized Developer ID' <<<"$out" || { echo "::error::mlx-server is not notarized"; exit 1; }
+
+      - name: The binary starts
+        run: |
+          set -euo pipefail
+          unpacked/mlx-server --help > help.txt
+          head -3 help.txt
+          grep -q '^usage: mlx-server' help.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mlx-mirror
+          path: dist/
+          retention-days: 1
+
+  publish:
+    name: Publish release and manifest
+    needs: verify
+    runs-on: ubuntu-latest
+    env:
+      MANIFEST: ${{ inputs.manifest_path }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: mlx-mirror
+          path: dist
+
+      # The release must exist and hold the archive BEFORE the manifest moves:
+      # clients resolve download URLs from the manifest. A re-run copies the
+      # same signed bytes again.
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          {
+            printf 'Copy of [%s %s](https://github.com/%s/releases/tag/%s), built at [%s](https://github.com/%s/commit/%s) from [Neywa-Labs/mlx-vlm %s](https://github.com/Neywa-Labs/mlx-vlm/releases/tag/%s) with the fork'"'"'s patch series.\n\n' \
+              "$SOURCE_REPO" "$TAG" "$SOURCE_REPO" "$TAG" "$REV" "$SOURCE_REPO" "$REV" "$TAG" "$TAG"
+            printf '`mlx-server` is signed with the Developer ID and notarized by the fork; the archive is copied byte for byte.\n\n'
+            printf 'Consumed by Atomic Chat through `backends/mlx-manifest.json`.\n'
+          } > notes.md
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG exists; replacing its assets and notes"
+            gh release upload "$RELEASE_TAG" dist/* --clobber
+            gh release edit "$RELEASE_TAG" --notes-file notes.md
+          else
+            gh release create "$RELEASE_TAG" dist/* --title "mlx-server $RELEASE_TAG ($TAG)" --notes-file notes.md
+          fi
+
+      - name: Write ${{ inputs.manifest_path }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > release.json
+          node <<'EOF'
+          const { createHash } = require('crypto')
+          const fs = require('fs')
+          const release = JSON.parse(fs.readFileSync('release.json', 'utf8'))
+          const name = process.env.ASSET
+          const file = `dist/${name}`
+          const sha256 = createHash('sha256').update(fs.readFileSync(file)).digest('hex')
+          const size = fs.statSync(file).size
+          const published = release.assets.find((a) => a.name === name)
+          if (!published) throw new Error(`${name} is not in release ${process.env.RELEASE_TAG}`)
+          if (published.size !== size || published.digest !== `sha256:${sha256}`) {
+            throw new Error(`release ${process.env.RELEASE_TAG} holds other bytes than were verified`)
+          }
+          const manifest = {
+            $schema: './mlx-schema.json',
+            upstream_repo: process.env.GITHUB_REPOSITORY,
+            tag_name: process.env.RELEASE_TAG,
+            upstream_tag: process.env.TAG,
+            published_at: release.published_at,
+            assets: [{ backend: 'macos-arm64', name, sha256, size }],
+          }
+          const out = process.env.MANIFEST
+          if (!['backends/mlx-manifest.json', 'backends/mlx-manifest.staging.json'].includes(out)) throw new Error(`refusing to write ${out}`)
+          fs.writeFileSync(out, JSON.stringify(manifest, null, 2) + '\n')
+          console.error(`Wrote ${out}: ${process.env.RELEASE_TAG} (${process.env.TAG}), published ${release.published_at}`)
+          EOF
+
+      - name: Validate the manifest
+        run: |
+          set -euo pipefail
+          npm install -g ajv-cli@5
+          ajv validate -s backends/mlx-schema.json -d "$MANIFEST" --strict=false
+
+      # Someone may push to main between the checkout and here: rebase onto it
+      # and retry rather than fail with the release already up.
+      - name: Commit manifest
+        if: ${{ inputs.publish_manifest }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- "$MANIFEST"; then
+            echo "$MANIFEST already points at $RELEASE_TAG; nothing to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$MANIFEST"
+          git commit -m "chore(mlx-manifest): mirror $SOURCE_REPO $TAG as $RELEASE_TAG into $(basename "$MANIFEST")"
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected (attempt $attempt): rebasing onto main"
+            git pull --rebase
+          done
+          echo "::error::Could not push $MANIFEST for $RELEASE_TAG"
+          exit 1
+
+      - name: Prune old mirrored releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RETAIN: ${{ inputs.retain }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$RETAIN" =~ ^[0-9]+$ ]] || [ "$RETAIN" -lt 1 ]; then
+            echo "::error::retain must be a positive integer"
+            exit 1
+          fi
+          # Only MLX tags, newest release first: the commit hash carries no
+          # order. Other engines' tags never match. The tag just published and
+          # the tags the manifests in this checkout name (after the commit
+          # above) are never deleted.
+          mapfile -t keep < <(
+            echo "$RELEASE_TAG"
+            for m in backends/mlx-manifest.json backends/mlx-manifest.staging.json; do
+              if [ -f "$m" ]; then jq -r '.tag_name' "$m"; fi
+            done
+          )
+          mapfile -t stale < <(
+            gh release list --limit 200 --json tagName,createdAt --jq '
+              [ .[] | select(.tagName | test("^mlxvlm-macos-arm64-[0-9a-f]{7}$")) ]
+              | sort_by(.createdAt) | reverse | .[].tagName' \
+              | tail -n +$((RETAIN + 1))
+          )
+          pruned=0
+          for tag in "${stale[@]}"; do
+            if printf '%s\n' "${keep[@]}" | grep -qxF "$tag"; then
+              echo "Keeping $tag: a manifest names it"
+              continue
+            fi
+            echo "Deleting release $tag"
+            gh release delete "$tag" --yes --cleanup-tag
+            pruned=$((pruned + 1))
+          done
+          [ "$pruned" -gt 0 ] || echo "Nothing to prune (retaining $RETAIN)"

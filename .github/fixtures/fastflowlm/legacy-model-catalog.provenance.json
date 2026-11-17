@@ -1,0 +1,7 @@
+{
+  "repository": "AtomicBot-ai/atomic-chat-core",
+  "commit": "8cbab270c83587d3f0b431b55d4b24cb154618a9",
+  "path": "src/client/model-catalog.ts",
+  "sha256": "f8e2df32d4d36db6d33181b8f8b433a465b5ef026156a4becdd92b9242bd73bb",
+  "note": "Exact source copy; execute using node --experimental-strip-types. No FastFlowLM support added."
+}
