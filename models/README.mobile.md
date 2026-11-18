@@ -211,5 +211,10 @@ with embedded MTP layers, and Edge0 8B. MTP is an optional per-model setting,
 default off, and its badge does not promise a speedup. Edge0 is an iOS-only
 engine supported by the corresponding new mobile binary. Publish with that
 mobile release; do not promote these entries into a legacy-client compatibility
-export without verifying its engine support. Core AI and Edge0 35B are not
-published. The mobile bundle snapshots contain the same two manifests.
+export without verifying its engine support. Core AI is not published.
+
+Edge0 35B is also published in both mobile catalogs, matching the bundled entry
+supported by iOS 1.9.2. It downloads 19.7 GB, supports text only, and requires a
+physical iPhone or iPad with 8 GB RAM and iOS 26+. The app applies the device
+eligibility check; this model is not an onboarding recommendation. Keep its
+stable id so existing downloads continue to resolve to the same model.

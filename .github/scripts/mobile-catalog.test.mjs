@@ -56,6 +56,15 @@ const INVALID_SCHEMA = {
   'unknown-badge-tone': (c) => { c.models[0].badges = [{ label: 'vision', tone: 'red' }] },
   'insecure-icon': (c) => { c.models[0].iconUrl = 'http://example.com/icon.png' },
   'coreml-on-android': (c) => { c.models[0].engine = 'coreml-diffusion' },
+  'unknown-edge0-model': (c) => {
+    c.models.find((m) => m.engine === 'edge0').id = 'Edge0/unsupported-model'
+  },
+  'edge0-35b-on-android': (c) => {
+    c.models.find((m) => m.id === 'Edge0/Edge0-35B-A3B-preview').platforms = ['android']
+  },
+  'edge0-35b-onboarding': (c) => {
+    c.models.find((m) => m.id === 'Edge0/Edge0-35B-A3B-preview').isOnboarding = true
+  },
 }
 
 for (const field of ['path', 'status', 'progress', 'mmprojLocalPath', 'createdAt', 'updatedAt']) {

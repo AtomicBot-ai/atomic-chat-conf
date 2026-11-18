@@ -222,7 +222,10 @@
           "then": {
             "properties": {
               "id": {
-                "const": "Edge0/Edge0-8B-A1B-preview"
+                "enum": [
+                  "Edge0/Edge0-8B-A1B-preview",
+                  "Edge0/Edge0-35B-A3B-preview"
+                ]
               },
               "isOnboarding": {
                 "const": false

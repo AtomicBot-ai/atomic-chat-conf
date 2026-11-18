@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.mobile.json",
   "schema_version": 1,
-  "updated_at": "2026-11-17T20:40:03Z",
+  "updated_at": "2026-11-18T10:37:54Z",
   "models": [
     {
       "id": "LiquidAI/LFM2.5-2.6B-GGUF/LFM2.5-2.6B-Q4_K_M.gguf",
@@ -188,6 +188,33 @@
         {
           "label": "Preview",
           "tone": "orange"
+        }
+      ],
+      "categories": [
+        "general"
+      ],
+      "platforms": [
+        "ios"
+      ],
+      "isOnboarding": false
+    },
+    {
+      "id": "Edge0/Edge0-35B-A3B-preview",
+      "name": "Edge0 35B-A3B",
+      "description": "Qwen3.5 MoE with expert streaming from storage. Downloads 19.7 GB. Text only. Requires a physical iPhone or iPad with 8 GB RAM and iOS 26+.",
+      "size": 19695762712,
+      "iconUrl": "custom",
+      "engine": "edge0",
+      "mmprojRemoteId": null,
+      "supportsThinking": false,
+      "badges": [
+        {
+          "label": "Edge0",
+          "tone": "purple"
+        },
+        {
+          "label": "4-bit",
+          "tone": "gray"
         }
       ],
       "categories": [
