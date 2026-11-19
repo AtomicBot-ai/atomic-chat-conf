@@ -46,7 +46,8 @@
               "audio",
               "fastflowlm",
               "strata",
-              "strata-cuda"
+              "strata-cuda",
+              "strata-profile"
             ]
           },
           "definition": {
@@ -139,7 +140,7 @@
             "if": {
               "properties": {
                 "kind": {
-                  "enum": ["strata", "strata-cuda"]
+                  "enum": ["strata", "strata-cuda", "strata-profile"]
                 }
               }
             },
@@ -250,6 +251,9 @@
               }
             }
           }
+        },
+        "strata-profile-models": {
+          "$ref": "#/properties/collections/properties/strata-models"
         },
         "strata-cuda-models": {
           "$ref": "#/properties/collections/properties/strata-models"
@@ -621,6 +625,10 @@
         "engine_release": {
           "type": "string",
           "pattern": "^strata-[0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?-r[1-9][0-9]*$"
+        },
+        "profile_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
         },
         "preparation_abi": {
           "const": "strata-v1"

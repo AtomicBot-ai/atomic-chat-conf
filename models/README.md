@@ -104,7 +104,7 @@ The optional `strata-models` collection references six `kind/format: strata`
 entries. The additional `strata-cuda-models` collection references 29
 `kind: strata-cuda`, `format: strata` profiles, including three NVFP4 packs.
 Older Strata readers retain the original collection without interpreting new
-profile shapes. Both collections live only in `catalog.json`; no standalone
+profile shapes. These collections live only in `catalog.json`; no standalone
 Strata model export is generated. The
 released core 0.21.2 reader ignores this unknown kind/collection, and the new
 conf reader returns an empty Strata collection when it is absent. A pinned
@@ -140,3 +140,19 @@ successful Atomic acceptance. All 35 profiles are marked `upstream-supported`.
 Promotion to `atomic-qualified` requires evidence for the exact bundle, model
 and backend. Assign a real core version and qualify the runtime before offering
 these candidate definitions as installable models.
+
+### Add a model using an existing Strata profile
+
+Copy the matching descriptor and use kind `strata-profile` in the optional
+`strata-profile-models` collection. Give each quantization a unique
+`variant_id` and set `definition.profile_id` to the original profile's
+variant ID. Use the new ID in the variant map and collection reference.
+Pin the weights and auxiliary files independently, record their file evidence,
+and sum all file sizes in `requirements.download_bytes`. Keep the family's
+preparation contract and use a subset of the original profile's supported hosts.
+
+The three AtomicChat DeepSeek Uncensored entries show this format. Their weights
+come from AtomicChat and their shared Engram comes from ISTA-DASLab. The Hub
+groups their quantizations by the repository supplying the first weight shard.
+Clients through core 0.24.4 ignore the optional collection. A new converter,
+file layout, or hardware capability requires matching engine support.

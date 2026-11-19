@@ -33677,6 +33677,585 @@
           ]
         }
       }
+    },
+    "strata-atomicchat-deepseek41-uncensored-iq2-xxs": {
+      "kind": "strata-profile",
+      "format": "strata",
+      "definition": {
+        "family": "deepseek41",
+        "variant_id": "atomicchat-deepseek41-uncensored-iq2-xxs",
+        "name": "DeepSeek-V4.1-Flash-1017 Uncensored GSQ-RCO IQ2_XXS",
+        "license": "MIT",
+        "gated": false,
+        "context_length": 8192,
+        "engine_release": "strata-0.1.59-r5",
+        "preparation_abi": "strata-v1",
+        "preparation_recipe_id": "strata-deepseek41-v1",
+        "sources": [
+          {
+            "id": "weights",
+            "host": "huggingface",
+            "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+            "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+          },
+          {
+            "id": "engram",
+            "host": "huggingface",
+            "repo": "ISTA-DASLab/DeepSeek-V4.1-Flash-1017-GSQ-RCO-GGUF",
+            "revision": "cb02422c900df489cea5833e8a92171224059b3c"
+          },
+          {
+            "id": "auxiliary",
+            "host": "huggingface",
+            "repo": "unsloth/DeepSeek-V4.1-Flash-1017-GGUF",
+            "revision": "8a6ec9cf118e785a362ea94ee123c61c70553be6"
+          },
+          {
+            "id": "strata-data",
+            "host": "github",
+            "repo": "Niko1221/Strata",
+            "revision": "d2f096475817d4666c364c820b0ca830f751cfc5"
+          }
+        ],
+        "files": [
+          {
+            "source": "weights",
+            "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00001-of-00004.gguf",
+            "path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00001-of-00004.gguf",
+            "size": 39075714624,
+            "sha256": "d46efb67ccffd8fb5d7f18b423896381b9e06d8491e161c370ddf3b05b07e050",
+            "role": "weights"
+          },
+          {
+            "source": "weights",
+            "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00002-of-00004.gguf",
+            "path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00002-of-00004.gguf",
+            "size": 39388449504,
+            "sha256": "cec1b2c3da429dc768b8bb9bc4dc4403d81f74d34db660a6a34ee3e555bf2c70",
+            "role": "weights"
+          },
+          {
+            "source": "weights",
+            "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00003-of-00004.gguf",
+            "path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00003-of-00004.gguf",
+            "size": 39246891616,
+            "sha256": "9d9c2140fcb134a0b9a74dedd0e5167e68077af6d08ce7f856bce112f0a35dd3",
+            "role": "weights"
+          },
+          {
+            "source": "weights",
+            "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00004-of-00004.gguf",
+            "path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00004-of-00004.gguf",
+            "size": 20527837312,
+            "sha256": "92e1b7aac2c27451977f093b89207a877221bba909424309450420f66fa42bf9",
+            "role": "weights"
+          },
+          {
+            "source": "engram",
+            "source_path": "DeepSeek-V4.1-Flash-Engram-IQ4_NL.gguf",
+            "path": "DeepSeek-V4.1-Flash-Engram-IQ4_NL.gguf",
+            "size": 110595290816,
+            "sha256": "eb19f30d368d393784e1fc54fdfaffc427ebb2110bf3762fdf5a8fbb9a2d740a",
+            "role": "engram"
+          },
+          {
+            "source": "auxiliary",
+            "source_path": "UD-Q8_K_XL/DeepSeek-V4.1-Flash-1017-UD-Q8_K_XL-00001-of-00009.gguf",
+            "path": "metadata/DeepSeek-V4.1-Flash-1017-UD-Q8_K_XL-00001-of-00009.gguf",
+            "size": 5780589,
+            "sha256": "cc15d470afcb030558bbc4d8e2ccd840182e2e95de1a95198138efe63a5fd99f",
+            "role": "engram-metadata"
+          },
+          {
+            "source": "auxiliary",
+            "source_path": "dspark-DeepSeek-V4.1-Flash-1017-Q8_0.gguf",
+            "path": "dspark-DeepSeek-V4.1-Flash-1017-Q8_0.gguf",
+            "size": 7976914240,
+            "sha256": "6ba6ac1b331c540691a209e7fc97dec2a24e295acb1e755c84c7d24a4373927a",
+            "role": "drafter"
+          },
+          {
+            "source": "auxiliary",
+            "source_path": "mmproj-BF16.gguf",
+            "path": "mmproj-BF16.gguf",
+            "size": 972208288,
+            "sha256": "9a1ef7c40d0d702c7ed8c5f863f60abae64091387ba3fce0ad19ce9beeda3bf9",
+            "role": "vision"
+          },
+          {
+            "source": "strata-data",
+            "source_path": "data/dsv41/profile-2.00.bin",
+            "path": "profile.bin",
+            "size": 66048,
+            "sha256": "8db93e483b34b15dbf63a0826601f1db2107a8cfea73774e7d21d8559e0a9568",
+            "role": "expert-profile"
+          }
+        ],
+        "inputs": {
+          "weights": [
+            "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00001-of-00004.gguf",
+            "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00002-of-00004.gguf",
+            "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00003-of-00004.gguf",
+            "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00004-of-00004.gguf"
+          ],
+          "engram": "DeepSeek-V4.1-Flash-Engram-IQ4_NL.gguf",
+          "engram_metadata": "metadata/DeepSeek-V4.1-Flash-1017-UD-Q8_K_XL-00001-of-00009.gguf",
+          "drafter": "dspark-DeepSeek-V4.1-Flash-1017-Q8_0.gguf",
+          "vision": "mmproj-BF16.gguf",
+          "expert_profile": "profile.bin",
+          "tokenizer_from": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00001-of-00004.gguf",
+          "chat_template_from": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00001-of-00004.gguf",
+          "drafting": "dspark",
+          "experts_per_token": 6
+        },
+        "compatible_variants": [
+          "linux-arm64-spark-cuda13",
+          "linux-x64-cuda13",
+          "linux-x64-rx9070-deepseek",
+          "macos-arm64-metal",
+          "windows-x64-cuda13",
+          "windows-x64-rdna3-deepseek"
+        ],
+        "capabilities": {
+          "chat": true,
+          "tools": true,
+          "reasoning": true,
+          "vision": true,
+          "structured_output": true
+        },
+        "capability_requirements": {
+          "vision": [
+            "compatible-picture-reader"
+          ],
+          "structured_output": [
+            "full-json-schema-validator"
+          ],
+          "drafting": [
+            "verified-family-profile"
+          ]
+        },
+        "requirements": {
+          "download_bytes": 257789153037,
+          "memory_accounting": "separate-ram-vram-or-unified",
+          "resource_estimator": "strata-deepseek41-v1",
+          "disk_components": [
+            "sources",
+            "derivatives",
+            "temporary",
+            "previous-installation"
+          ],
+          "memory_components": [
+            "ram",
+            "vram",
+            "unified-memory"
+          ],
+          "memory_modes": [
+            "auto",
+            "ram",
+            "ssd"
+          ],
+          "requires_core_check": true
+        },
+        "qualification": {
+          "status": "upstream-supported",
+          "evidence": [
+            "https://github.com/Niko1221/Strata/blob/13eedf552417a6a791a7d13c6597e24300ee3a09/docs/CAPABILITIES.md",
+            "https://github.com/Niko1221/Strata/blob/13eedf552417a6a791a7d13c6597e24300ee3a09/docs/MODELS.md",
+            "https://github.com/Niko1221/Strata/blob/d2f096475817d4666c364c820b0ca830f751cfc5/setup.py",
+            "https://huggingface.co/AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF/blob/4f1d2f730cff977961db81789e81bfc0d3e6dd2e/README.md"
+          ]
+        },
+        "profile_id": "ista-2-00bpw-dspark"
+      },
+      "variants": {
+        "atomicchat-deepseek41-uncensored-iq2-xxs": {
+          "family": "deepseek41"
+        }
+      }
+    },
+    "strata-atomicchat-deepseek41-uncensored-iq1-m": {
+      "kind": "strata-profile",
+      "format": "strata",
+      "variants": {
+        "atomicchat-deepseek41-uncensored-iq1-m": {
+          "family": "deepseek41"
+        }
+      },
+      "definition": {
+        "family": "deepseek41",
+        "variant_id": "atomicchat-deepseek41-uncensored-iq1-m",
+        "name": "DeepSeek-V4.1-Flash-1017 Uncensored GSQ-RCO IQ1_M",
+        "license": "MIT",
+        "gated": false,
+        "context_length": 8192,
+        "engine_release": "strata-0.1.59-r5",
+        "preparation_abi": "strata-v1",
+        "preparation_recipe_id": "strata-deepseek41-v1",
+        "sources": [
+          {
+            "id": "weights",
+            "host": "huggingface",
+            "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+            "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+          },
+          {
+            "id": "engram",
+            "host": "huggingface",
+            "repo": "ISTA-DASLab/DeepSeek-V4.1-Flash-1017-GSQ-RCO-GGUF",
+            "revision": "cb02422c900df489cea5833e8a92171224059b3c"
+          },
+          {
+            "id": "auxiliary",
+            "host": "huggingface",
+            "repo": "unsloth/DeepSeek-V4.1-Flash-1017-GGUF",
+            "revision": "8a6ec9cf118e785a362ea94ee123c61c70553be6"
+          },
+          {
+            "id": "strata-data",
+            "host": "github",
+            "repo": "Niko1221/Strata",
+            "revision": "d2f096475817d4666c364c820b0ca830f751cfc5"
+          }
+        ],
+        "files": [
+          {
+            "source": "engram",
+            "source_path": "DeepSeek-V4.1-Flash-Engram-IQ4_NL.gguf",
+            "path": "DeepSeek-V4.1-Flash-Engram-IQ4_NL.gguf",
+            "size": 110595290816,
+            "sha256": "eb19f30d368d393784e1fc54fdfaffc427ebb2110bf3762fdf5a8fbb9a2d740a",
+            "role": "engram"
+          },
+          {
+            "source": "auxiliary",
+            "source_path": "UD-Q8_K_XL/DeepSeek-V4.1-Flash-1017-UD-Q8_K_XL-00001-of-00009.gguf",
+            "path": "metadata/DeepSeek-V4.1-Flash-1017-UD-Q8_K_XL-00001-of-00009.gguf",
+            "size": 5780589,
+            "sha256": "cc15d470afcb030558bbc4d8e2ccd840182e2e95de1a95198138efe63a5fd99f",
+            "role": "engram-metadata"
+          },
+          {
+            "source": "auxiliary",
+            "source_path": "dspark-DeepSeek-V4.1-Flash-1017-Q8_0.gguf",
+            "path": "dspark-DeepSeek-V4.1-Flash-1017-Q8_0.gguf",
+            "size": 7976914240,
+            "sha256": "6ba6ac1b331c540691a209e7fc97dec2a24e295acb1e755c84c7d24a4373927a",
+            "role": "drafter"
+          },
+          {
+            "source": "auxiliary",
+            "source_path": "mmproj-BF16.gguf",
+            "path": "mmproj-BF16.gguf",
+            "size": 972208288,
+            "sha256": "9a1ef7c40d0d702c7ed8c5f863f60abae64091387ba3fce0ad19ce9beeda3bf9",
+            "role": "vision"
+          },
+          {
+            "source": "weights",
+            "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00001-of-00004.gguf",
+            "path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00001-of-00004.gguf",
+            "size": 39358830464,
+            "sha256": "6e3f0d5ff53d00428ec32c079db9e8255cb410ccaa435e5342aaa8a47fe1339d",
+            "role": "weights"
+          },
+          {
+            "source": "weights",
+            "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00002-of-00004.gguf",
+            "path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00002-of-00004.gguf",
+            "size": 39176113248,
+            "sha256": "34d68c99fdae9948f9f0af0dafe308e805ce0a78d2c48641b24cc57242fdc0af",
+            "role": "weights"
+          },
+          {
+            "source": "weights",
+            "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00003-of-00004.gguf",
+            "path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00003-of-00004.gguf",
+            "size": 39997334720,
+            "sha256": "fb1dd52e9029400beb3457da7f819bbdd18eafe8a28eb12a8151db391bf0cd1e",
+            "role": "weights"
+          },
+          {
+            "source": "weights",
+            "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00004-of-00004.gguf",
+            "path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00004-of-00004.gguf",
+            "size": 2188841824,
+            "sha256": "25eb979db1aac9da8d9f8603fbc99694e361d2526440df71433f7242e0342e98",
+            "role": "weights"
+          },
+          {
+            "source": "strata-data",
+            "source_path": "data/dsv41/profile-2.00.bin",
+            "path": "profile.bin",
+            "size": 66048,
+            "sha256": "8db93e483b34b15dbf63a0826601f1db2107a8cfea73774e7d21d8559e0a9568",
+            "role": "expert-profile"
+          }
+        ],
+        "inputs": {
+          "weights": [
+            "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00001-of-00004.gguf",
+            "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00002-of-00004.gguf",
+            "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00003-of-00004.gguf",
+            "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00004-of-00004.gguf"
+          ],
+          "engram": "DeepSeek-V4.1-Flash-Engram-IQ4_NL.gguf",
+          "engram_metadata": "metadata/DeepSeek-V4.1-Flash-1017-UD-Q8_K_XL-00001-of-00009.gguf",
+          "drafter": "dspark-DeepSeek-V4.1-Flash-1017-Q8_0.gguf",
+          "vision": "mmproj-BF16.gguf",
+          "expert_profile": "profile.bin",
+          "tokenizer_from": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00001-of-00004.gguf",
+          "chat_template_from": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00001-of-00004.gguf",
+          "drafting": "dspark",
+          "experts_per_token": 6
+        },
+        "compatible_variants": [
+          "linux-arm64-spark-cuda13",
+          "linux-x64-cuda13",
+          "windows-x64-cuda13"
+        ],
+        "capabilities": {
+          "chat": true,
+          "tools": true,
+          "reasoning": true,
+          "vision": true,
+          "structured_output": true
+        },
+        "capability_requirements": {
+          "vision": [
+            "compatible-picture-reader"
+          ],
+          "structured_output": [
+            "full-json-schema-validator"
+          ],
+          "drafting": [
+            "verified-family-profile"
+          ]
+        },
+        "requirements": {
+          "download_bytes": 240271380237,
+          "memory_accounting": "separate-ram-vram-or-unified",
+          "resource_estimator": "strata-deepseek41-v1",
+          "disk_components": [
+            "sources",
+            "derivatives",
+            "temporary",
+            "previous-installation"
+          ],
+          "memory_components": [
+            "ram",
+            "vram",
+            "unified-memory"
+          ],
+          "memory_modes": [
+            "auto",
+            "ram",
+            "ssd"
+          ],
+          "requires_core_check": true
+        },
+        "qualification": {
+          "status": "upstream-supported",
+          "evidence": [
+            "https://github.com/Niko1221/Strata/blob/13eedf552417a6a791a7d13c6597e24300ee3a09/docs/CAPABILITIES.md",
+            "https://github.com/Niko1221/Strata/blob/13eedf552417a6a791a7d13c6597e24300ee3a09/docs/MODELS.md",
+            "https://github.com/Niko1221/Strata/blob/d2f096475817d4666c364c820b0ca830f751cfc5/setup.py",
+            "https://huggingface.co/AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF/blob/4f1d2f730cff977961db81789e81bfc0d3e6dd2e/README.md"
+          ]
+        },
+        "profile_id": "ista-1-75bpw-dspark"
+      }
+    },
+    "strata-atomicchat-deepseek41-uncensored-iq2-xs": {
+      "kind": "strata-profile",
+      "format": "strata",
+      "variants": {
+        "atomicchat-deepseek41-uncensored-iq2-xs": {
+          "family": "deepseek41"
+        }
+      },
+      "definition": {
+        "family": "deepseek41",
+        "variant_id": "atomicchat-deepseek41-uncensored-iq2-xs",
+        "name": "DeepSeek-V4.1-Flash-1017 Uncensored GSQ-RCO IQ2_XS",
+        "license": "MIT",
+        "gated": false,
+        "context_length": 8192,
+        "engine_release": "strata-0.1.59-r5",
+        "preparation_abi": "strata-v1",
+        "preparation_recipe_id": "strata-deepseek41-v1",
+        "sources": [
+          {
+            "id": "weights",
+            "host": "huggingface",
+            "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+            "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+          },
+          {
+            "id": "engram",
+            "host": "huggingface",
+            "repo": "ISTA-DASLab/DeepSeek-V4.1-Flash-1017-GSQ-RCO-GGUF",
+            "revision": "cb02422c900df489cea5833e8a92171224059b3c"
+          },
+          {
+            "id": "auxiliary",
+            "host": "huggingface",
+            "repo": "unsloth/DeepSeek-V4.1-Flash-1017-GGUF",
+            "revision": "8a6ec9cf118e785a362ea94ee123c61c70553be6"
+          },
+          {
+            "id": "strata-data",
+            "host": "github",
+            "repo": "Niko1221/Strata",
+            "revision": "d2f096475817d4666c364c820b0ca830f751cfc5"
+          }
+        ],
+        "files": [
+          {
+            "source": "engram",
+            "source_path": "DeepSeek-V4.1-Flash-Engram-IQ4_NL.gguf",
+            "path": "DeepSeek-V4.1-Flash-Engram-IQ4_NL.gguf",
+            "size": 110595290816,
+            "sha256": "eb19f30d368d393784e1fc54fdfaffc427ebb2110bf3762fdf5a8fbb9a2d740a",
+            "role": "engram"
+          },
+          {
+            "source": "auxiliary",
+            "source_path": "UD-Q8_K_XL/DeepSeek-V4.1-Flash-1017-UD-Q8_K_XL-00001-of-00009.gguf",
+            "path": "metadata/DeepSeek-V4.1-Flash-1017-UD-Q8_K_XL-00001-of-00009.gguf",
+            "size": 5780589,
+            "sha256": "cc15d470afcb030558bbc4d8e2ccd840182e2e95de1a95198138efe63a5fd99f",
+            "role": "engram-metadata"
+          },
+          {
+            "source": "auxiliary",
+            "source_path": "dspark-DeepSeek-V4.1-Flash-1017-Q8_0.gguf",
+            "path": "dspark-DeepSeek-V4.1-Flash-1017-Q8_0.gguf",
+            "size": 7976914240,
+            "sha256": "6ba6ac1b331c540691a209e7fc97dec2a24e295acb1e755c84c7d24a4373927a",
+            "role": "drafter"
+          },
+          {
+            "source": "auxiliary",
+            "source_path": "mmproj-BF16.gguf",
+            "path": "mmproj-BF16.gguf",
+            "size": 972208288,
+            "sha256": "9a1ef7c40d0d702c7ed8c5f863f60abae64091387ba3fce0ad19ce9beeda3bf9",
+            "role": "vision"
+          },
+          {
+            "source": "weights",
+            "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00001-of-00004.gguf",
+            "path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00001-of-00004.gguf",
+            "size": 39535776992,
+            "sha256": "4c65307992ab586c527ca1f6f64062aa96a33b23c02b7fed103f45f75e854798",
+            "role": "weights"
+          },
+          {
+            "source": "weights",
+            "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00002-of-00004.gguf",
+            "path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00002-of-00004.gguf",
+            "size": 39494617536,
+            "sha256": "933461a974fcccee741bf2f9798201e72ab4aa3f8a952be56f849896ca6ea30e",
+            "role": "weights"
+          },
+          {
+            "source": "weights",
+            "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00003-of-00004.gguf",
+            "path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00003-of-00004.gguf",
+            "size": 39423838496,
+            "sha256": "bbf91fa346a85ebaf32dd4fd5c456b534d780d381e54f46ac90783a481373240",
+            "role": "weights"
+          },
+          {
+            "source": "weights",
+            "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00004-of-00004.gguf",
+            "path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00004-of-00004.gguf",
+            "size": 36771591232,
+            "sha256": "18305a5afbf8087e1f88a9f2978cc74650357f482629d346349ed374cb7c8451",
+            "role": "weights"
+          },
+          {
+            "source": "strata-data",
+            "source_path": "data/dsv41/profile-2.25.bin",
+            "path": "profile.bin",
+            "size": 66048,
+            "sha256": "c8de062c5f3c71725ecf5328bd4ee02c71dca88478bf7f6b0f2ec258567ac6b6",
+            "role": "expert-profile"
+          }
+        ],
+        "inputs": {
+          "weights": [
+            "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00001-of-00004.gguf",
+            "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00002-of-00004.gguf",
+            "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00003-of-00004.gguf",
+            "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00004-of-00004.gguf"
+          ],
+          "engram": "DeepSeek-V4.1-Flash-Engram-IQ4_NL.gguf",
+          "engram_metadata": "metadata/DeepSeek-V4.1-Flash-1017-UD-Q8_K_XL-00001-of-00009.gguf",
+          "drafter": "dspark-DeepSeek-V4.1-Flash-1017-Q8_0.gguf",
+          "vision": "mmproj-BF16.gguf",
+          "expert_profile": "profile.bin",
+          "tokenizer_from": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00001-of-00004.gguf",
+          "chat_template_from": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00001-of-00004.gguf",
+          "drafting": "dspark",
+          "experts_per_token": 6
+        },
+        "compatible_variants": [
+          "linux-arm64-spark-cuda13",
+          "linux-x64-cuda13",
+          "windows-x64-cuda13"
+        ],
+        "capabilities": {
+          "chat": true,
+          "tools": true,
+          "reasoning": true,
+          "vision": true,
+          "structured_output": true
+        },
+        "capability_requirements": {
+          "vision": [
+            "compatible-picture-reader"
+          ],
+          "structured_output": [
+            "full-json-schema-validator"
+          ],
+          "drafting": [
+            "verified-family-profile"
+          ]
+        },
+        "requirements": {
+          "download_bytes": 274776084237,
+          "memory_accounting": "separate-ram-vram-or-unified",
+          "resource_estimator": "strata-deepseek41-v1",
+          "disk_components": [
+            "sources",
+            "derivatives",
+            "temporary",
+            "previous-installation"
+          ],
+          "memory_components": [
+            "ram",
+            "vram",
+            "unified-memory"
+          ],
+          "memory_modes": [
+            "auto",
+            "ram",
+            "ssd"
+          ],
+          "requires_core_check": true
+        },
+        "qualification": {
+          "status": "upstream-supported",
+          "evidence": [
+            "https://github.com/Niko1221/Strata/blob/13eedf552417a6a791a7d13c6597e24300ee3a09/docs/CAPABILITIES.md",
+            "https://github.com/Niko1221/Strata/blob/13eedf552417a6a791a7d13c6597e24300ee3a09/docs/MODELS.md",
+            "https://github.com/Niko1221/Strata/blob/d2f096475817d4666c364c820b0ca830f751cfc5/setup.py",
+            "https://huggingface.co/AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF/blob/4f1d2f730cff977961db81789e81bfc0d3e6dd2e/README.md"
+          ]
+        },
+        "profile_id": "ista-2-25bpw-dspark"
+      }
     }
   },
   "collections": {
@@ -34984,6 +35563,25 @@
         {
           "model": "strata-qwen38-nvfp4-qad",
           "variant": "nvfp4-qad"
+        }
+      ]
+    },
+    "strata-profile-models": {
+      "header": {
+        "schema_version": 1
+      },
+      "entries": [
+        {
+          "model": "strata-atomicchat-deepseek41-uncensored-iq2-xxs",
+          "variant": "atomicchat-deepseek41-uncensored-iq2-xxs"
+        },
+        {
+          "model": "strata-atomicchat-deepseek41-uncensored-iq1-m",
+          "variant": "atomicchat-deepseek41-uncensored-iq1-m"
+        },
+        {
+          "model": "strata-atomicchat-deepseek41-uncensored-iq2-xs",
+          "variant": "atomicchat-deepseek41-uncensored-iq2-xs"
         }
       ]
     }

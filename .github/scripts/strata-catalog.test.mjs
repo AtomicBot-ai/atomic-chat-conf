@@ -72,14 +72,14 @@ test('strata-catalog: Qwen3.6/Metal and DeepSeek/SYCL are rejected before acquis
 test('strata-catalog: wrong recipe/build, absent collection and invalid collection references', () => {
   const model = sample('qwen38'); model.definition.engine_release = 'strata-0.1.58-r1'
   assert.throws(() => validateStrataModel(model, candidate), /model\/build/)
-  const old = catalog(); delete old.collections['strata-models']; delete old.collections['strata-cuda-models']
+  const old = catalog(); delete old.collections['strata-models']; delete old.collections['strata-cuda-models']; delete old.collections['strata-profile-models']
   assert.deepEqual(projectStrata(old), { schema_version: 1, models: [] })
   const bad = catalog(); bad.collections['strata-models'].entries[0].variant = 'unknown'
   assert.throws(() => projectStrata(bad), /collection reference/)
 })
 
 test('strata-catalog: CUDA includes the full upstream menu and all three NVFP4 options', () => {
-  const models = projectStrata(catalog(), candidate).models
+  const models = projectStrata(catalog(), candidate).models.filter(d => !d.profile_id)
   for (const kind of ['linux', 'windows']) {
     const visible = version => models.filter(d => d.compatible_variants.includes(`${kind}-x64-cuda${version}`))
     assert.equal(visible(13).length, 35)
@@ -88,4 +88,21 @@ test('strata-catalog: CUDA includes the full upstream menu and all three NVFP4 o
     assert.equal(visible(13).filter(d => d.variant_id.startsWith('nvfp4-')).length, 3)
   }
   assert.equal(models.filter(d => d.compatible_variants.includes('macos-arm64-metal')).length, 4)
+})
+
+test('strata-catalog: Uncensored quants use their own weights and the original shared Engram', () => {
+  const models = projectStrata(catalog(), candidate).models
+  for (const quant of ['IQ1_M', 'IQ2_XXS', 'IQ2_XS']) {
+    const d = models.find(d => d.variant_id === 'atomicchat-deepseek41-uncensored-' + quant.toLowerCase().replaceAll('_', '-'))
+    const original = models.find(base => base.variant_id === d.profile_id)
+    assert.deepEqual(d.inputs.weights, original.inputs.weights)
+    assert.deepEqual(d.compatible_variants, original.compatible_variants)
+    const repoFor = role => d.files.filter(f => f.role === role).map(f => d.sources.find(s => s.id === f.source).repo)
+    assert.deepEqual(new Set(repoFor('weights')), new Set(['AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF']))
+    const shared = original.files.find(file => file.path === original.inputs.engram)
+    assert.ok(shared)
+    const engram = d.files.find(file => file.path === d.inputs.engram)
+    assert.equal(engram.size, shared.size)
+    assert.equal(engram.sha256, shared.sha256)
+  }
 })
