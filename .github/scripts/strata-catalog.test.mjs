@@ -99,6 +99,10 @@ test('strata-catalog: Uncensored quants use their own weights and the original s
     assert.deepEqual(d.compatible_variants, original.compatible_variants)
     const repoFor = role => d.files.filter(f => f.role === role).map(f => d.sources.find(s => s.id === f.source).repo)
     assert.deepEqual(new Set(repoFor('weights')), new Set(['AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF']))
-    assert.deepEqual(repoFor('engram'), ['ISTA-DASLab/DeepSeek-V4.1-Flash-1017-GSQ-RCO-GGUF'])
+    const shared = original.files.find(file => file.path === original.inputs.engram)
+    assert.ok(shared)
+    const engram = d.files.find(file => file.path === d.inputs.engram)
+    assert.equal(engram.size, shared.size)
+    assert.equal(engram.sha256, shared.sha256)
   }
 })
