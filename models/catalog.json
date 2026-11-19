@@ -33684,7 +33684,7 @@
       "definition": {
         "family": "deepseek41",
         "variant_id": "atomicchat-deepseek41-uncensored-iq2-xxs",
-        "name": "DeepSeek-V4.1-Flash-1017 Uncensored GSQ-RCO IQ2_XXS",
+        "name": "DeepSeek-V4.1-Flash-1017 Uncensored",
         "license": "MIT",
         "gated": false,
         "context_length": 8192,
@@ -33884,7 +33884,7 @@
       "definition": {
         "family": "deepseek41",
         "variant_id": "atomicchat-deepseek41-uncensored-iq1-m",
-        "name": "DeepSeek-V4.1-Flash-1017 Uncensored GSQ-RCO IQ1_M",
+        "name": "DeepSeek-V4.1-Flash-1017 Uncensored",
         "license": "MIT",
         "gated": false,
         "context_length": 8192,
@@ -34076,7 +34076,7 @@
       "definition": {
         "family": "deepseek41",
         "variant_id": "atomicchat-deepseek41-uncensored-iq2-xs",
-        "name": "DeepSeek-V4.1-Flash-1017 Uncensored GSQ-RCO IQ2_XS",
+        "name": "DeepSeek-V4.1-Flash-1017 Uncensored",
         "license": "MIT",
         "gated": false,
         "context_length": 8192,
