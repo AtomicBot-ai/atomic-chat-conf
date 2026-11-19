@@ -25,7 +25,7 @@ export function validateCatalog(catalog, options) {
   for (const [id, model] of Object.entries(catalog.models)) {
     if (!id || !record(model) || typeof model.kind !== 'string' || typeof model.format !== 'string' || !record(model.variants) || !record(model.definition)) throw new Error(`Invalid model ${id}`)
     checkSources(model.definition)
-    if (model.kind === 'strata' || model.kind === 'strata-cuda') validateStrataModel(model, options?.strataCandidate)
+    if (model.kind === 'strata' || model.kind === 'strata-cuda' || model.kind === 'strata-profile') validateStrataModel(model, options?.strataCandidate)
     if (model.kind === 'fastflowlm') {
       validateFastflowlm(model, options)
       if (flmVariants.has(model.definition.variant_id)) throw new Error('Duplicate FastFlowLM variant_id')

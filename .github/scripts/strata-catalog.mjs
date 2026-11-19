@@ -35,6 +35,15 @@ const cudaProfiles = {
   'nvfp4-qad': { family: 'qwen38', weights: 1, drafting: "none", readyPack: true },
 }
 
+const baseProfiles = {
+  'iq3-xxs-dflash2': 'qwen38',
+  'q2-0-dflash2': 'qwen38',
+  'iq3-s-dflash2': 'qwen38',
+  'iq2-xs-dflash2': 'qwen38',
+  'ud-q4-k-xl-mtp': 'qwen36',
+  'ista-2-00bpw-dspark': 'deepseek41',
+}
+
 const packFiles = [
   'pack/dense.bin',
   'pack/experts.bin',
@@ -49,7 +58,7 @@ const packFiles = [
 
 export function validateStrataModel(model, candidate) {
   const d = model.definition, recipe = recipes[d?.family]
-  if (!['strata', 'strata-cuda'].includes(model.kind) || model.format !== 'strata' || !recipe || d.preparation_recipe_id !== `strata-${d.family}-v1` || d.preparation_abi !== 'strata-v1') throw new Error('Invalid Strata recipe/format')
+  if (!['strata', 'strata-cuda', 'strata-profile'].includes(model.kind) || model.format !== 'strata' || !recipe || d.preparation_recipe_id !== `strata-${d.family}-v1` || d.preparation_abi !== 'strata-v1') throw new Error('Invalid Strata recipe/format')
   if (!model.variants?.[d.variant_id]) throw new Error('Missing Strata variant')
   const sources = new Map(), files = new Map(), paths = new Set()
   for (const s of d.sources ?? []) {
@@ -63,8 +72,13 @@ export function validateStrataModel(model, candidate) {
   }
   if (!Number.isSafeInteger(bytes) || d.requirements?.download_bytes !== bytes) throw new Error('Strata download size differs from file plan')
   const inputs = d.inputs ?? {}, referenced = new Set()
-  const profile = Object.hasOwn(cudaProfiles, d.variant_id) ? cudaProfiles[d.variant_id] : undefined
-  if (Boolean(profile) !== (model.kind === 'strata-cuda')) throw new Error('Invalid Strata entry kind')
+  const profileId = d.profile_id ?? d.variant_id
+  const profile = Object.hasOwn(cudaProfiles, profileId) ? cudaProfiles[profileId] : undefined
+  if ((d.profile_id !== undefined) !== (model.kind === 'strata-profile')) throw new Error('Invalid Strata entry profile')
+  if (model.kind === 'strata-profile') {
+    const family = profile?.family ?? (Object.hasOwn(baseProfiles, profileId) ? baseProfiles[profileId] : undefined)
+    if (typeof d.profile_id !== 'string' || family !== d.family) throw new Error('Unknown or incompatible Strata profile')
+  } else if (Boolean(profile) !== (model.kind === 'strata-cuda')) throw new Error('Invalid Strata entry kind')
   if (profile && profile.family !== d.family) throw new Error('Invalid Strata profile family')
   const drafting = profile?.drafting ?? recipe.drafting
   const weightCount = profile?.weights ?? recipe.weights
@@ -89,7 +103,7 @@ export function validateStrataModel(model, candidate) {
   if (profile?.externalEngram) {
     const prefix = inputs.weights[0].replace(/-00001-of-\d{5}\.gguf$/, '')
     const final = String(splitCount).padStart(5, '0')
-    const engram = d.variant_id === 'ista-coder-dspark' ? 'DeepSeek-V4.1-Flash-Engram-IQ4_NL.gguf' : `${prefix}-${final}-of-${final}.gguf`
+    const engram = profileId === 'ista-coder-dspark' ? 'DeepSeek-V4.1-Flash-Engram-IQ4_NL.gguf' : `${prefix}-${final}-of-${final}.gguf`
     if (inputs.engram !== engram || inputs.engram_metadata !== inputs.weights[0]) throw new Error('Invalid final Engram shard')
   }
   if (profile?.readyPack) {
@@ -120,17 +134,22 @@ export function validateStrataModel(model, candidate) {
 // Keep the expanded profiles outside the collection understood by older Strata readers.
 export function projectStrata(catalog, candidate) {
   const seen = new Set(), models = []
-  for (const [name, kind] of [['strata-models', 'strata'], ['strata-cuda-models', 'strata-cuda']]) {
+  for (const [name, kind] of [['strata-models', 'strata'], ['strata-cuda-models', 'strata-cuda'], ['strata-profile-models', 'strata-profile']]) {
     const collection = catalog.collections?.[name]
     if (!collection) continue
     if (collection.header?.schema_version !== 1 || !Array.isArray(collection.entries)) throw new Error('Invalid Strata collection')
     for (const ref of collection.entries) {
       const model = catalog.models[ref.model]
-      if (model?.kind !== kind || !model.variants?.[ref.variant] || model.definition.variant_id !== ref.variant || seen.has(ref.model)) throw new Error('Invalid Strata collection reference')
-      seen.add(ref.model)
+      if (model?.kind !== kind || !model.variants?.[ref.variant] || model.definition.variant_id !== ref.variant || seen.has(ref.variant)) throw new Error('Invalid Strata collection reference')
+      seen.add(ref.variant)
       validateStrataModel(model, candidate)
       models.push(structuredClone(model.definition))
     }
+  }
+  const originals = new Map(models.filter(d => !d.profile_id).map(d => [d.variant_id, d]))
+  for (const d of models.filter(d => d.profile_id)) {
+    const original = originals.get(d.profile_id)
+    if (!original || d.compatible_variants.some(host => !original.compatible_variants.includes(host))) throw new Error('Unsupported host for Strata profile')
   }
   return { schema_version: 1, models }
 }

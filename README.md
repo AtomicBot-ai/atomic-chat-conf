@@ -3388,10 +3388,12 @@ successfully on macOS 26.6.2 arm64. This is **package smoke evidence**, not GPU
 inference, lifecycle or model-preparation qualification. See
 [the package evidence](.github/fixtures/strata/macos-package-evidence.json).
 Windows/Linux/Spark native probes and runtime/model qualification remain open.
-The catalog records 35 `upstream-supported` profiles across three recipe families;
+The catalog records 35 original `upstream-supported` profiles across three recipe families;
 none is marked `atomic-qualified` in this data. Six profiles retain the original
 `strata-models` collection, and 29 additional CUDA profiles use the optional
-`strata-cuda-models` collection so older Strata readers keep their known inputs.
+`strata-cuda-models` collection so older Strata readers keep their known inputs. The optional
+`strata-profile-models` collection adds independently pinned models that reuse
+these profiles, including the three AtomicChat DeepSeek Uncensored quantizations.
 
 ### Build one candidate
 

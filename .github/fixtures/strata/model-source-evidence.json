@@ -1927,6 +1927,150 @@
       "size": 5737005,
       "sha256": "4ba64f0332abcfb0b600b7df1537d1e836e68009d5fb7cdb77339738dc6365c4",
       "source_checksum_manifest": "SHA256SUMS"
+    },
+    {
+      "source": {
+        "id": "weights",
+        "host": "huggingface",
+        "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+        "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+      },
+      "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00001-of-00004.gguf",
+      "size": 39075714624,
+      "sha256": "d46efb67ccffd8fb5d7f18b423896381b9e06d8491e161c370ddf3b05b07e050",
+      "hub_lfs_sha256": "d46efb67ccffd8fb5d7f18b423896381b9e06d8491e161c370ddf3b05b07e050"
+    },
+    {
+      "source": {
+        "id": "weights",
+        "host": "huggingface",
+        "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+        "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+      },
+      "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00002-of-00004.gguf",
+      "size": 39388449504,
+      "sha256": "cec1b2c3da429dc768b8bb9bc4dc4403d81f74d34db660a6a34ee3e555bf2c70",
+      "hub_lfs_sha256": "cec1b2c3da429dc768b8bb9bc4dc4403d81f74d34db660a6a34ee3e555bf2c70"
+    },
+    {
+      "source": {
+        "id": "weights",
+        "host": "huggingface",
+        "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+        "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+      },
+      "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00003-of-00004.gguf",
+      "size": 39246891616,
+      "sha256": "9d9c2140fcb134a0b9a74dedd0e5167e68077af6d08ce7f856bce112f0a35dd3",
+      "hub_lfs_sha256": "9d9c2140fcb134a0b9a74dedd0e5167e68077af6d08ce7f856bce112f0a35dd3"
+    },
+    {
+      "source": {
+        "id": "weights",
+        "host": "huggingface",
+        "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+        "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+      },
+      "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XXS-00004-of-00004.gguf",
+      "size": 20527837312,
+      "sha256": "92e1b7aac2c27451977f093b89207a877221bba909424309450420f66fa42bf9",
+      "hub_lfs_sha256": "92e1b7aac2c27451977f093b89207a877221bba909424309450420f66fa42bf9"
+    },
+    {
+      "source": {
+        "id": "weights",
+        "host": "huggingface",
+        "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+        "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+      },
+      "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00001-of-00004.gguf",
+      "size": 39358830464,
+      "sha256": "6e3f0d5ff53d00428ec32c079db9e8255cb410ccaa435e5342aaa8a47fe1339d",
+      "hub_lfs_sha256": "6e3f0d5ff53d00428ec32c079db9e8255cb410ccaa435e5342aaa8a47fe1339d"
+    },
+    {
+      "source": {
+        "id": "weights",
+        "host": "huggingface",
+        "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+        "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+      },
+      "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00002-of-00004.gguf",
+      "size": 39176113248,
+      "sha256": "34d68c99fdae9948f9f0af0dafe308e805ce0a78d2c48641b24cc57242fdc0af",
+      "hub_lfs_sha256": "34d68c99fdae9948f9f0af0dafe308e805ce0a78d2c48641b24cc57242fdc0af"
+    },
+    {
+      "source": {
+        "id": "weights",
+        "host": "huggingface",
+        "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+        "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+      },
+      "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00003-of-00004.gguf",
+      "size": 39997334720,
+      "sha256": "fb1dd52e9029400beb3457da7f819bbdd18eafe8a28eb12a8151db391bf0cd1e",
+      "hub_lfs_sha256": "fb1dd52e9029400beb3457da7f819bbdd18eafe8a28eb12a8151db391bf0cd1e"
+    },
+    {
+      "source": {
+        "id": "weights",
+        "host": "huggingface",
+        "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+        "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+      },
+      "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ1_M-00004-of-00004.gguf",
+      "size": 2188841824,
+      "sha256": "25eb979db1aac9da8d9f8603fbc99694e361d2526440df71433f7242e0342e98",
+      "hub_lfs_sha256": "25eb979db1aac9da8d9f8603fbc99694e361d2526440df71433f7242e0342e98"
+    },
+    {
+      "source": {
+        "id": "weights",
+        "host": "huggingface",
+        "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+        "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+      },
+      "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00001-of-00004.gguf",
+      "size": 39535776992,
+      "sha256": "4c65307992ab586c527ca1f6f64062aa96a33b23c02b7fed103f45f75e854798",
+      "hub_lfs_sha256": "4c65307992ab586c527ca1f6f64062aa96a33b23c02b7fed103f45f75e854798"
+    },
+    {
+      "source": {
+        "id": "weights",
+        "host": "huggingface",
+        "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+        "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+      },
+      "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00002-of-00004.gguf",
+      "size": 39494617536,
+      "sha256": "933461a974fcccee741bf2f9798201e72ab4aa3f8a952be56f849896ca6ea30e",
+      "hub_lfs_sha256": "933461a974fcccee741bf2f9798201e72ab4aa3f8a952be56f849896ca6ea30e"
+    },
+    {
+      "source": {
+        "id": "weights",
+        "host": "huggingface",
+        "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+        "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+      },
+      "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00003-of-00004.gguf",
+      "size": 39423838496,
+      "sha256": "bbf91fa346a85ebaf32dd4fd5c456b534d780d381e54f46ac90783a481373240",
+      "hub_lfs_sha256": "bbf91fa346a85ebaf32dd4fd5c456b534d780d381e54f46ac90783a481373240"
+    },
+    {
+      "source": {
+        "id": "weights",
+        "host": "huggingface",
+        "repo": "AtomicChat/DeepSeek-V4.1-Flash-1017-Uncensored-GSQ-RCO-GGUF",
+        "revision": "4f1d2f730cff977961db81789e81bfc0d3e6dd2e"
+      },
+      "source_path": "DeepSeek-V4.1-Flash-1017-GSQ-RCO-IQ2_XS-00004-of-00004.gguf",
+      "size": 36771591232,
+      "sha256": "18305a5afbf8087e1f88a9f2978cc74650357f482629d346349ed374cb7c8451",
+      "hub_lfs_sha256": "18305a5afbf8087e1f88a9f2978cc74650357f482629d346349ed374cb7c8451"
     }
   ]
 }
