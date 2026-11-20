@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-10-22T12:00:00Z",
+  "updated_at": "2026-11-09T12:00:00Z",
   "providers": [
     {
       "active": true,
@@ -1406,6 +1406,82 @@
           "name": "GPT-6 Luna (EU)",
           "version": "1.0",
           "description": "GPT-6 Luna via the Databricks EU route on Eden AI.",
+          "capabilities": ["completion", "tools", "vision"]
+        }
+      ],
+      "supports_model_listing": true
+    },
+    {
+      "active": true,
+      "api_key": "",
+      "base_url": "https://api.stdcmpt.com/v1",
+      "explore_models_url": "https://standardcompute.com",
+      "provider": "standardcompute",
+      "settings": [
+        {
+          "key": "api-key",
+          "title": "API Key",
+          "description": "The Standard Compute API uses API keys for authentication. Visit your [Standard Compute dashboard](https://standardcompute.com/dashboard) to create the API key you'll use in your requests.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "Insert API Key",
+            "value": "",
+            "type": "password",
+            "input_actions": ["unobscure", "copy"]
+          }
+        },
+        {
+          "key": "base-url",
+          "title": "Base URL",
+          "description": "The base OpenAI-compatible endpoint to use. See the [Standard Compute documentation](https://docs.standardcompute.com) for more information.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "https://api.stdcmpt.com/v1",
+            "value": "https://api.stdcmpt.com/v1"
+          }
+        }
+      ],
+      "models": [
+        {
+          "id": "StandardCompute",
+          "name": "Standard Compute (routed)",
+          "version": "1.0",
+          "description": "Routed model. Picks from the models you have enabled, by your quality preference. 1M ctx, tools.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "anthropic/claude-sonnet-5.5",
+          "name": "Claude Sonnet 5.5",
+          "version": "1.0",
+          "description": "Claude Sonnet 5.5. 1M ctx, vision + tools.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "openai/gpt-6.1-sol",
+          "name": "GPT-6.1 Sol",
+          "version": "1.0",
+          "description": "GPT-6.1 Sol. 1.05M ctx, vision + tools.",
+          "capabilities": ["completion", "tools", "vision"]
+        },
+        {
+          "id": "deepseek/deepseek-v4-pro",
+          "name": "DeepSeek V4 Pro",
+          "version": "1.0",
+          "description": "DeepSeek V4 Pro. 1M ctx, tools.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "z-ai/glm-5.3",
+          "name": "GLM 5.3",
+          "version": "1.0",
+          "description": "GLM 5.3. 1M ctx, tools.",
+          "capabilities": ["completion", "tools"]
+        },
+        {
+          "id": "moonshotai/kimi-k3",
+          "name": "Kimi K3",
+          "version": "1.0",
+          "description": "Kimi K3. 1M ctx, vision + tools.",
           "capabilities": ["completion", "tools", "vision"]
         }
       ],
