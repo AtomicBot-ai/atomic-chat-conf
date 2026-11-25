@@ -156,3 +156,7 @@ come from AtomicChat and their shared Engram comes from ISTA-DASLab. The Hub
 groups their quantizations by the repository supplying the first weight shard.
 Clients through core 0.24.4 ignore the optional collection. A new converter,
 file layout, or hardware capability requires matching engine support.
+
+## Desktop DSpark GGUF heads
+
+Use an `auxiliary` entry with `definition.method = "dspark"`. The definition identifies the exact target checkpoint, a reference target file by SHA-256 and size, and the draft repository, pinned revision and quantization. The optional `target_repo` identifies the GGUF conversion repository for offline search. The file plan pins each draft by size and SHA-256, including mainline GGUF files published with a `.gguf_file` suffix. A draft can be installed independently of the target. The first two pairs were exercised against upstream b12722 on macOS arm64.

@@ -31,6 +31,14 @@ export function validateCatalog(catalog, options) {
       if (flmVariants.has(model.definition.variant_id)) throw new Error('Duplicate FastFlowLM variant_id')
       flmVariants.add(model.definition.variant_id)
     }
+    if (model.kind === 'auxiliary' && model.definition.method === 'dspark') {
+      const { target, repo, quant, target_sha256, target_size } = model.definition
+      const repoId = /^[\w-][\w.-]*\/[\w-][\w.-]*$/
+      if (!repoId.test(target) || !repoId.test(repo) || (model.definition.target_repo !== undefined && !repoId.test(model.definition.target_repo)) || !quant || !/^[a-f0-9]{64}$/.test(target_sha256)
+          || !Number.isSafeInteger(target_size) || target_size <= 0 || model.format !== 'gguf'
+          || model.files?.length !== 1 || !/^.+\.gguf(?:_file)?$/i.test(model.files[0].path)
+          || !model.files[0].sha256 || !model.files[0].size) throw new Error(`Invalid DSpark file plan for ${id}`)
+    }
     if (model.kind === 'chat' && (!Array.isArray(model.files) || model.files.length === 0)) throw new Error('Missing catalog file plan')
     if (Array.isArray(model.files)) for (const file of model.files) {
       if (!record(file) || typeof file.path !== 'string' || file.path.split(/[\\/]/).some(p => !p || p === '.' || p === '..') || !Number.isSafeInteger(file.size) || file.size < 0 || (file.sha256 !== undefined && !/^[0-9a-f]{64}$/.test(file.sha256))) throw new Error('Invalid catalog file metadata')

@@ -16,7 +16,7 @@ const snapshot = read('.github/fixtures/strata/legacy-snapshot.json')
 const current = () => read('models/catalog.json')
 const withoutStrata = () => {
   const data = current()
-  for (const [id, model] of Object.entries(data.models)) if (['strata', 'strata-cuda', 'strata-profile'].includes(model.kind)) delete data.models[id]
+  for (const [id, model] of Object.entries(data.models)) if (['strata', 'strata-cuda', 'strata-profile'].includes(model.kind) || (model.kind === 'auxiliary' && model.definition.method === 'dspark')) delete data.models[id]
   delete data.collections['strata-models']
   delete data.collections['strata-cuda-models']
   delete data.collections['strata-profile-models']
