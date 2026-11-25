@@ -1,8 +1,8 @@
 {
   "$schema": "./schema.atomic-prism-models.json",
   "schema_version": 1,
-  "updated_at": "2026-10-15T20:00:00Z",
-  "rules_version": 2,
+  "updated_at": "2026-11-25T07:10:07Z",
+  "rules_version": 3,
   "tensor_types": {
     "41": "q1_0",
     "42": "q2_0",
@@ -17,6 +17,97 @@
     "q2_0_g64"
   ],
   "families": [
+    {
+      "id": "ternary-bonsai-2.5-27b",
+      "title": "Ternary Bonsai 2.5 27B",
+      "repo": "prism-ml/Ternary-Bonsai-2.5-27B-GGUF",
+      "revision": "28a7093cc25bc151cc2b284c5570f12ce343fdcf",
+      "featured": true,
+      "default_packing": "pq2_0",
+      "sampling": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 20,
+        "min_p": 0.0
+      },
+      "default_ctx": 16384,
+      "files": [
+        {
+          "file": "Ternary-Bonsai-2.5-27B-PQ2_0.gguf",
+          "size": 7253354848,
+          "sha256": "103a11c94324029d8bae3f8152f30bba414730064cfb77438f8589db72e1aa85",
+          "packing": "pq2_0",
+          "treatment": "prism_required",
+          "requires": [
+            "pq2_0",
+            "hadamard"
+          ],
+          "min_prism_build": 12178,
+          "default": true,
+          "summary": "Recommended for Apple Metal."
+        },
+        {
+          "file": "Ternary-Bonsai-2.5-27B-PTQ1_0.gguf",
+          "size": 5993834848,
+          "sha256": "929560ec9d37cf3cadd4b00cc87b51c570082a628dd830b4692dc0b2ed18dbbe",
+          "packing": "ptq1_0",
+          "treatment": "prism_required",
+          "requires": [
+            "ptq1_0",
+            "hadamard"
+          ],
+          "min_prism_build": 12178,
+          "summary": "Smallest packing, recommended for NVIDIA GPUs."
+        },
+        {
+          "file": "Ternary-Bonsai-2.5-27B-Q2_0.gguf",
+          "size": 7673194848,
+          "sha256": "84496171ca79d4d33fb45612a2afd8303ec494baf916281023b7dc9cb3b3b9fa",
+          "packing": "q2_0_g64",
+          "treatment": "prism_required",
+          "requires": [
+            "q2_0_g64",
+            "hadamard"
+          ],
+          "min_prism_build": 12178,
+          "summary": "Group-64 packing. Requires the Hadamard runtime, also available in stock llama.cpp from b11556."
+        },
+        {
+          "file": "Ternary-Bonsai-2.5-27B-PQ2_0-mtp.gguf",
+          "size": 7492338944,
+          "sha256": "ededc9fc0a8a6a8dd30914d107b2d2ce7674d789f1d05a1a481f240609aa6c23",
+          "treatment": "excluded",
+          "summary": "Includes an MTP draft head. Speculative decoding is disabled for the PrismML provider."
+        },
+        {
+          "file": "Ternary-Bonsai-2.5-27B-PTQ1_0-mtp.gguf",
+          "size": 6232818944,
+          "sha256": "e0fc5f3d47b9c926d52677d303b19df356a2376614b3e1cb9973865fc04ca431",
+          "treatment": "excluded",
+          "summary": "Includes an MTP draft head. Speculative decoding is disabled for the PrismML provider."
+        },
+        {
+          "file": "Ternary-Bonsai-2.5-27B-Q2_0-mtp.gguf",
+          "size": 7912178944,
+          "sha256": "b0f83de8481c3200c529aef5fb495dbfedf2a4a3f017f7a3ea0a69c67be1d306",
+          "treatment": "excluded",
+          "summary": "Includes an MTP draft head. Speculative decoding is disabled for the PrismML provider."
+        }
+      ],
+      "projectors": [
+        {
+          "file": "Ternary-Bonsai-2.5-27B-mmproj-Q8_0.gguf",
+          "size": 629246976,
+          "sha256": "6807ede61d570bb86ba34b756a0fa109edc33668604de867c6ea6d8f1d631903",
+          "default": true
+        },
+        {
+          "file": "Ternary-Bonsai-2.5-27B-mmproj-BF16.gguf",
+          "size": 931145856,
+          "sha256": "e287342d92332fa3577ed1d42e921dac9370c08da58ba9337fa450f6cc76cfd7"
+        }
+      ]
+    },
     {
       "id": "ternary-bonsai-2-27b",
       "title": "Ternary Bonsai 2 27B",

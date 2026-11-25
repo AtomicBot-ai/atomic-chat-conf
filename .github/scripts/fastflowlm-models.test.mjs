@@ -193,6 +193,19 @@ test('all legacy payload bytes match the pre-FLM git baseline', () => {
     const path = `models/${name}.json`
     const before = spawnSync('git', ['show', `5741fd4:${path}`])
     assert.equal(before.status, 0)
+    if (name === 'atomic-prism-models') {
+      const baseline = JSON.parse(before.stdout)
+      const current = read(path)
+      const [bonsai25] = current.families
+      assert.equal(bonsai25.id, 'ternary-bonsai-2.5-27b')
+      assert.equal(current.rules_version, 3)
+      assert.ok(Date.parse(current.updated_at) > Date.parse(baseline.updated_at))
+      assert.deepEqual(current, {
+        ...baseline, updated_at: current.updated_at, rules_version: 3,
+        families: [bonsai25, ...baseline.families],
+      })
+      continue
+    }
     const added = ADDED_SINCE_BASELINE[name]
     if (added) assert.equal(withoutEntries(readFileSync(path, 'utf8'), added), before.stdout.toString('utf8'), path)
     else assert.deepEqual(readFileSync(path), before.stdout, path)
