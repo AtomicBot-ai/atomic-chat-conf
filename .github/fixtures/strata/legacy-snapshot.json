@@ -6,11 +6,11 @@
     "path": ".github/fixtures/fastflowlm/legacy-model-catalog.ts",
     "sha256": "f8e2df32d4d36db6d33181b8f8b433a465b5ef026156a4becdd92b9242bd73bb"
   },
-  "catalog_without_strata_sha256": "56f1fb87774799e332c70c5e9efdf6f29b65102f1d0e98d8e8d397e1fbcce916",
+  "catalog_without_strata_sha256": "5ee575715dbe0ff47d5e97dc4a7fa2e6ab94f05c2514e0c760d3048f7ee47a66",
   "legacy_files": {
     "models/recommended.json": "a40472d7a59c7f96ec9779155f9a0cedf744bf7dddadebe4dec20b810637c631",
     "models/audio.json": "c848d21045caa4d520f6ae4a6a5abeea703b8dcc2403790fa818a50ae89ada00",
-    "models/atomic-prism-models.json": "2537e96db2a2ce738c126b911a8a4f04b8913e5fc54704a912bd4ccb205be859",
+    "models/atomic-prism-models.json": "6fac16e2446450228e121d4382830d8989b959147dc5c718e805c9c19b17c034",
     "models/staff-picks.json": "cde475524f49b3f9a813e26d86e8141f6c3cfe28561af6e53bd656fb69fbbd24",
     "models/diffusion.json": "483572f6f9cc0cb36f92d3be8bc7a15142098bc361df8436363a2ceaaeef62db",
     "models/embedding.json": "f2850a39fc203380ab83edc0a5bb3b0e9129cabd03ca3429c41da162d657098c",
@@ -20,6 +20,7 @@
     "models/foundry-local-models.json": "ab83448b293d3effdd3f010a0eed009713f339fab55ba380fa315a78df1950dc"
   },
   "catalog_updates_after_conf_base": [
-    "Ternary Bonsai 2.5 27B (Prism rules v3)"
+    "Ternary Bonsai 2.5 27B (Prism rules v3)",
+    "AtomicChat Ternary Bonsai 2.5 27B Uncensored (Prism rules v4)"
   ]
 }
