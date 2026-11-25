@@ -196,13 +196,14 @@ test('all legacy payload bytes match the pre-FLM git baseline', () => {
     if (name === 'atomic-prism-models') {
       const baseline = JSON.parse(before.stdout)
       const current = read(path)
-      const [bonsai25] = current.families
+      const [bonsai25, uncensored] = current.families
       assert.equal(bonsai25.id, 'ternary-bonsai-2.5-27b')
-      assert.equal(current.rules_version, 3)
+      assert.equal(uncensored.id, 'ternary-bonsai-2.5-27b-uncensored')
+      assert.equal(current.rules_version, 4)
       assert.ok(Date.parse(current.updated_at) > Date.parse(baseline.updated_at))
       assert.deepEqual(current, {
-        ...baseline, updated_at: current.updated_at, rules_version: 3,
-        families: [bonsai25, ...baseline.families],
+        ...baseline, updated_at: current.updated_at, rules_version: 4,
+        families: [bonsai25, uncensored, ...baseline.families],
       })
       continue
     }

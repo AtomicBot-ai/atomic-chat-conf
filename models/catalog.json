@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.catalog.json",
   "schema_version": 1,
-  "updated_at": "2026-11-25T07:10:07Z",
+  "updated_at": "2026-11-25T08:25:50Z",
   "models": {
     "chat:AtomicChat/Qwen3.8-27B-GGUF": {
       "kind": "chat",
@@ -19049,6 +19049,58 @@
         }
       }
     },
+    "prism:ternary-bonsai-2.5-27b-uncensored": {
+      "kind": "prism",
+      "format": "gguf",
+      "definition": {
+        "id": "ternary-bonsai-2.5-27b-uncensored",
+        "title": "Ternary Bonsai 2.5 27B Uncensored",
+        "repo": "AtomicChat/Ternary-Bonsai-2.5-27B-Uncensored-GGUF",
+        "revision": "500fdfc33ca0baaa2e59230b8d20a9062ab188fa",
+        "default_packing": "ptq1_0",
+        "sampling": {
+          "temperature": 1.0,
+          "top_p": 0.95,
+          "top_k": 20,
+          "min_p": 0.0
+        },
+        "default_ctx": 16384,
+        "files": [
+          {
+            "file": "Ternary-Bonsai-2.5-27B-Uncensored-PTQ1_0.gguf",
+            "size": 5993834848,
+            "sha256": "f6b5f856c3981ff5ba1db1ce13cdf1ca85f2f701d26ce287e03983b659b681b4",
+            "packing": "ptq1_0",
+            "treatment": "prism_required",
+            "requires": [
+              "ptq1_0",
+              "hadamard"
+            ],
+            "min_prism_build": 12128,
+            "default": true,
+            "summary": "Standalone AtomicChat PTQ1_0 model."
+          },
+          {
+            "file": "Ternary-Bonsai-2.5-27B-Uncensored-LoRA.gguf",
+            "size": 8669280,
+            "sha256": "0573a04fa75ffbf72282e5cff13ae95b05fe6598b653d296c6007cffdb82430d",
+            "treatment": "excluded",
+            "summary": "Optional LoRA adapter for the original PrismML PTQ1_0 model."
+          }
+        ]
+      },
+      "variants": {
+        "default": {
+          "selection": "default"
+        },
+        "Ternary-Bonsai-2.5-27B-Uncensored-PTQ1_0.gguf": {
+          "selection": "Ternary-Bonsai-2.5-27B-Uncensored-PTQ1_0.gguf"
+        },
+        "Ternary-Bonsai-2.5-27B-Uncensored-LoRA.gguf": {
+          "selection": "Ternary-Bonsai-2.5-27B-Uncensored-LoRA.gguf"
+        }
+      }
+    },
     "prism:ternary-bonsai-2-27b": {
       "kind": "prism",
       "format": "gguf",
@@ -35271,8 +35323,8 @@
       "header": {
         "$schema": "./schema.atomic-prism-models.json",
         "schema_version": 1,
-        "updated_at": "2026-11-25T07:10:07Z",
-        "rules_version": 3,
+        "updated_at": "2026-11-25T08:25:50Z",
+        "rules_version": 4,
         "tensor_types": {
           "41": "q1_0",
           "42": "q2_0",
@@ -35290,6 +35342,10 @@
       "entries": [
         {
           "model": "prism:ternary-bonsai-2.5-27b",
+          "variant": "default"
+        },
+        {
+          "model": "prism:ternary-bonsai-2.5-27b-uncensored",
           "variant": "default"
         },
         {
