@@ -62,14 +62,14 @@
       },
       "variants": {
         "default": {
-          "selection": "flux-spritesheet-lora.safetensors"
+          "selection": "mFtSubaAlDqtHyKk6eIPi_pytorch_lora_weights_comfy_converted.safetensors"
         }
       },
       "files": [
         {
-          "path": "flux-spritesheet-lora.safetensors",
-          "size": 76039072,
-          "sha256": "8aff1fc288755bfc99d91c9d31313062a0d5a0e2935afc3b87edcc431a45da5a"
+          "path": "mFtSubaAlDqtHyKk6eIPi_pytorch_lora_weights_comfy_converted.safetensors",
+          "size": 76038936,
+          "sha256": "9daf5d163f390afa8a0c6d091e3f028b1689d43ef15afe483b8eb4de1a40adaf"
         }
       ]
     },
