@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "schema_version": 1,
-  "updated_at": "2026-10-22T12:00:00Z",
+  "updated_at": "2026-11-27T15:23:35Z",
   "providers": [
     {
       "active": true,
@@ -314,6 +314,60 @@
           "version": "1.0",
           "description": "Xiaomi's frontier open-weight model for reasoning and coding.",
           "capabilities": ["completion", "tools"]
+        }
+      ]
+    },
+    {
+      "active": true,
+      "api_key": "",
+      "base_url": "https://llmtr.com/v1",
+      "explore_models_url": "https://llmtr.com",
+      "provider": "llmtr",
+      "settings": [
+        {
+          "key": "api-key",
+          "title": "API Key",
+          "description": "The LLMTR API uses API keys for authentication. Visit your [API Keys](https://llmtr.com/dashboard/keys) page to retrieve the API key you'll use in your requests.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "Insert API Key",
+            "value": "",
+            "type": "password",
+            "input_actions": ["unobscure", "copy"]
+          }
+        },
+        {
+          "key": "base-url",
+          "title": "Base URL",
+          "description": "The base OpenAI-compatible endpoint to use. See [llmtr.com](https://llmtr.com) for more information.",
+          "controller_type": "input",
+          "controller_props": {
+            "placeholder": "https://llmtr.com/v1",
+            "value": "https://llmtr.com/v1"
+          }
+        }
+      ],
+      "models": [
+        {
+          "id": "qwen/qwen3.8-27b-free",
+          "name": "Qwen3.8 27B (free)",
+          "version": "1.0",
+          "description": "Free-quota Qwen model on LLMTR. Model IDs use the vendor/model form.",
+          "capabilities": ["completion"]
+        },
+        {
+          "id": "lgai/k-exaone-2.5",
+          "name": "K-EXAONE 2.5 (free)",
+          "version": "1.0",
+          "description": "Free-quota LG AI EXAONE model on LLMTR.",
+          "capabilities": ["completion"]
+        },
+        {
+          "id": "nvidia/nemotron-3.5-super-vl-free",
+          "name": "Nemotron 3.5 Super VL (free)",
+          "version": "1.0",
+          "description": "Free-quota NVIDIA Nemotron vision-language model on LLMTR.",
+          "capabilities": ["completion", "vision"]
         }
       ]
     },
