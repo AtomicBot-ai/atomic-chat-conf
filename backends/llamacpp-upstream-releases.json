@@ -1,7 +1,7 @@
 {
   "$schema": "./llamacpp-upstream-releases-schema.json",
   "schema_version": 1,
-  "updated_at": "2026-11-28T06:29:04Z",
+  "updated_at": "2026-11-28T06:40:35Z",
   "upstream_repo": "ggml-org/llama.cpp",
   "download_base": "https://github.com/AtomicBot-ai/atomic-chat-conf/releases/download",
   "releases": [
@@ -16,109 +16,109 @@
           "name": "llama-b12823-bin-macos-arm64.tar.gz",
           "sha256": "96c785a01652b4db15b20406d908be95954c01d43c8b35214e9fc279f4bdcc2c",
           "size": 16968119,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-ubuntu-arm64.tar.gz",
           "sha256": "b4cb1daa9f11e562820f730eca456e3b6b5045e48f62fca3f23b27a81b86e03e",
           "size": 19068999,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-ubuntu-cuda-12.8-x64.tar.gz",
           "sha256": "c6c3e6d604df5518f16054e17c1a6a7e164317a7e47c1209a16e6e68b42cb032",
           "size": 227388033,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-ubuntu-cuda-13.5-arm64.tar.gz",
           "sha256": "18b02cd9975543a645a23d1c6c7896f346abe64faebc8a68d5cfd73470b6c0d0",
           "size": 226561396,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-ubuntu-cuda-13.5-x64.tar.gz",
           "sha256": "6096ff9eef0e913495a0553053428052e8f1a78ac693f6b3414522884f743326",
           "size": 231602262,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-ubuntu-rocm-10.0-x64.tar.gz",
           "sha256": "248c46a8296b975ebc0d55733856f73b770efab9aabed3c2b2c9e6d9151f6934",
           "size": 290551038,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-ubuntu-vulkan-arm64.tar.gz",
           "sha256": "b1c3950459d1eebe6ec31276d2934456c25f0fed83fe0313afa9e19ab64bab6e",
           "size": 30216575,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-ubuntu-vulkan-x64.tar.gz",
           "sha256": "760732581b5034f459810c582f7271cb931c392f34f46b237697d11369a117a7",
           "size": 37325308,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-ubuntu-x64.tar.gz",
           "sha256": "7f5a7c2ea9fe5b4ec3ef2af1ece4841f7dd9d82d07f8f96e6f0b4ac4ec46e16e",
           "size": 23521717,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-win-cpu-arm64.zip",
           "sha256": "709efbbaf91a38412d5011c5016f43abc5c70aede7d17ee5390b7e9b5186ce42",
           "size": 11493828,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-win-cpu-x64.zip",
           "sha256": "109e0baecc8e64fb974ba41866d5c8393a36552cf37b4998f3bf98779d9de641",
           "size": 19279143,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-win-cuda-12.4-x64.zip",
           "sha256": "d97850aa023dbbc3def2444f5bed61c1109581a23230dc0921edc762f3f633bc",
           "size": 363397667,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-win-cuda-13.5-arm64.zip",
           "sha256": "8e0caa09abe477a30579eb04f572032e1d7d862bbd2989b81791d4d138e351d3",
           "size": 217757267,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-win-cuda-13.5-x64.zip",
           "sha256": "8024e6c1931549b898bcb351bc0f0f7ae917092f1f2f4599826abee065d21501",
           "size": 225882293,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-win-opencl-adreno-arm64.zip",
           "sha256": "3549980e3353019e5499956418e6caf8f44232a5dd744680c49e82e35ed81ce4",
           "size": 12277998,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-win-rocm-10.0-x64.zip",
           "sha256": "f9a3c1b0952f292d53d13d7d0a01f969b4686c00a93a618617c289de8dd624f6",
           "size": 291739536,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-win-vulkan-arm64.zip",
           "sha256": "1546bcdf481614784b78ed2d0745ffc772d56f34a67682637f41022bbb321e02",
           "size": 24728010,
-          "validation": "candidate"
+          "validation": "approved"
         },
         {
           "name": "llama-b12823-bin-win-vulkan-x64.zip",
           "sha256": "a6da530148b6d24a0c3487b2bbbcba2fde1fad6487074e34c2ec4e061de207c3",
           "size": 32487137,
-          "validation": "candidate"
+          "validation": "approved"
         }
       ]
     },
