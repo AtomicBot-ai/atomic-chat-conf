@@ -1,9 +1,142 @@
 {
   "$schema": "./atomic-prism-schema.json",
   "schema_version": 1,
-  "updated_at": "2026-11-25T06:50:36Z",
+  "updated_at": "2026-11-28T06:24:23Z",
   "upstream_repo": "PrismML-Eng/llama.cpp",
   "releases": [
+    {
+      "tag": "prism-b12232-f702476",
+      "commit": "f70247610e588c7f843349f769c9a6fe7f683695",
+      "published_at": "2026-11-26T04:01:33Z",
+      "min_core_version": "0.24.10",
+      "notes_url": "https://github.com/PrismML-Eng/llama.cpp/releases/tag/prism-b12232-f702476",
+      "capabilities": [
+        "q1_0",
+        "q2_0_g64",
+        "pq2_0",
+        "ptq1_0",
+        "hadamard",
+        "vision"
+      ],
+      "assets": [
+        {
+          "backend": "linux-cpu-x64",
+          "name": "llama-prism-b12232-f702476-bin-ubuntu-x64.tar.gz",
+          "size": 19834002,
+          "sha256": "c768a086d35baebcd836c68d4eeecf12c5221b6c6123aeed3c8d9b15e9dedbea",
+          "validation": "candidate"
+        },
+        {
+          "backend": "linux-cuda-12.4-x64",
+          "name": "llama-prism-b12232-f702476-bin-linux-cuda-12.4-x64.tar.gz",
+          "size": 361399028,
+          "sha256": "b5750a2e4eb7369093d5ec7a1e82bf3e3772fefd5e398a46e8f245d4fb3490ed",
+          "validation": "candidate",
+          "min_driver": "525.60.13"
+        },
+        {
+          "backend": "linux-cuda-12.8-x64",
+          "name": "llama-prism-b12232-f702476-bin-linux-cuda-12.8-x64.tar.gz",
+          "size": 227998718,
+          "sha256": "5aeef1a6c543765a488920a771c4cde0931b95f4cb52dfa9aa3c7e0e106d329f",
+          "validation": "candidate",
+          "min_driver": "525.60.13"
+        },
+        {
+          "backend": "linux-cuda-13.3-x64",
+          "name": "llama-prism-b12232-f702476-bin-linux-cuda-13.3-x64.tar.gz",
+          "size": 224483425,
+          "sha256": "69db0170344c7d57e0f60c1431bc6c36abd43ae81e032be013787b5e450ad472",
+          "validation": "candidate",
+          "min_driver": "580",
+          "min_compute_capability": "7.5"
+        },
+        {
+          "backend": "linux-rocm-7.2-x64",
+          "name": "llama-prism-b12232-f702476-bin-ubuntu-rocm-7.2-x64.tar.gz",
+          "size": 206404062,
+          "sha256": "ed844aa3c0842e7b4db102256d24c8c25fe8c6f52e3826a353ed3812eadf8385",
+          "validation": "candidate"
+        },
+        {
+          "backend": "linux-vulkan-x64",
+          "name": "llama-prism-b12232-f702476-bin-ubuntu-vulkan-x64.tar.gz",
+          "size": 34017697,
+          "sha256": "c65f0134336b8c60cf18998cfd5ac0dd863340e756bcf9ed255c3e463d64f263",
+          "validation": "candidate"
+        },
+        {
+          "backend": "macos-arm64",
+          "name": "llama-prism-b12232-f702476-bin-macos-arm64.tar.gz",
+          "size": 13452745,
+          "sha256": "27833c746ce1b5db066f3c8484229a0b8cb8e2638ea14941bb7891c2c8ecca0e",
+          "validation": "candidate"
+        },
+        {
+          "backend": "macos-x64",
+          "name": "llama-prism-b12232-f702476-bin-macos-x64.tar.gz",
+          "size": 13276992,
+          "sha256": "beb817eae37dc14156c5b2bc1ac65182c02a1e7352ae4211ff1e5922c98b07bd",
+          "validation": "candidate"
+        },
+        {
+          "backend": "win-cpu-x64",
+          "name": "llama-prism-b12232-f702476-bin-win-cpu-x64.zip",
+          "size": 19333560,
+          "sha256": "84784ccc5ced83c68ec506f30bbad91983d256ea9e9c8bd55579745010ee2adf",
+          "validation": "candidate"
+        },
+        {
+          "backend": "win-cuda-12.4-x64",
+          "name": "llama-prism-b12232-f702476-bin-win-cuda-12.4-x64.zip",
+          "size": 342974721,
+          "sha256": "dfaa3d59022d0e8e8a642ecdc65e28a4427140440335726b733bc5b7aff9391b",
+          "validation": "candidate",
+          "min_driver": "551.61",
+          "companion_backend": "win-cudart-12.4-x64"
+        },
+        {
+          "backend": "win-cuda-13.3-x64",
+          "name": "llama-prism-b12232-f702476-bin-win-cuda-13.3-x64.zip",
+          "size": 216582418,
+          "sha256": "1524d8d3aa06b313d2a1010e9476fa9c801d324feac0f42713af378eeeefdf51",
+          "validation": "candidate",
+          "min_driver": "581.15",
+          "min_compute_capability": "7.5",
+          "companion_backend": "win-cudart-13.3-x64"
+        },
+        {
+          "backend": "win-cudart-12.4-x64",
+          "name": "cudart-llama-bin-win-cuda-12.4-x64.zip",
+          "size": 391443627,
+          "sha256": "8c79a9b226de4b3cacfd1f83d24f962d0773be79f1e7b75c6af4ded7e32ae1d6",
+          "validation": "candidate",
+          "companion": true
+        },
+        {
+          "backend": "win-cudart-13.3-x64",
+          "name": "cudart-llama-bin-win-cuda-13.3-x64.zip",
+          "size": 390970417,
+          "sha256": "1462a050eb4c684921ba51dcc4cc488a036674c3e73e9945ee705b854808d03e",
+          "validation": "candidate",
+          "companion": true
+        },
+        {
+          "backend": "win-hip-radeon-x64",
+          "name": "llama-prism-b12232-f702476-bin-win-hip-radeon-x64.zip",
+          "size": 385387286,
+          "sha256": "248ef023c26ae9eff02ae38a2416ca0367f6e5d5345cada0ffc62d9bf5924225",
+          "validation": "candidate"
+        },
+        {
+          "backend": "win-vulkan-x64",
+          "name": "llama-prism-b12232-f702476-bin-win-vulkan-x64.zip",
+          "size": 26855118,
+          "sha256": "9e277ed64d8fc38806d84b20d48cb75b592f8da71cfd395756789a4dd7eeeb35",
+          "validation": "candidate"
+        }
+      ]
+    },
     {
       "tag": "prism-b12178-03ec600",
       "commit": "03ec60072cdd32a03ae931969af62e57bfb0c8dc",
